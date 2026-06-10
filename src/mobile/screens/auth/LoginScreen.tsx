@@ -13,67 +13,54 @@ import {
   type TextInputProps
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Controller, type Control, type FieldValues, type Path } from 'react-hook-form';
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck } from 'lucide-react-native';
-import { useForm } from 'react-hook-form';
 import { loginSchema, type LoginForm } from '@/schemas/auth.schema';
 import { useAuthStore } from '@/store/useAuthStore';
 
 const logoImage = require('../../../assets/home/kaamasaan-cart.png');
 
-const LoginField = <T extends FieldValues>({
-  control,
-  name,
-  label,
-  Icon,
-  secure,
-  ...props
-}: TextInputProps & {
-  control: Control<T>;
-  name: Path<T>;
+type LoginFieldProps = TextInputProps & {
   label: string;
   Icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
+  error?: string;
+  inputRef?: React.Ref<TextInput>;
   secure?: boolean;
-}) => {
-  const [focused, setFocused] = useState(false);
+};
+
+const LoginField = ({
+  label,
+  Icon,
+  error,
+  inputRef,
+  secure,
+  ...props
+}: LoginFieldProps) => {
   const [visible, setVisible] = useState(false);
   const isSecure = secure && !visible;
 
   return (
-    <Controller
-      control={control}
-      name={name}
-      render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
-        <View style={styles.fieldBlock}>
-          <Text style={styles.label}>{label}</Text>
-          <View style={[styles.inputWrap, focused && styles.inputWrapFocused, error && styles.inputWrapError]}>
-            <View style={styles.inputIcon}>
-              <Icon size={16} color="#C28B00" strokeWidth={2.2} />
-            </View>
-            <TextInput
-              {...props}
-              value={typeof value === 'string' ? value : ''}
-              onChangeText={onChange}
-              onFocus={() => setFocused(true)}
-              onBlur={() => {
-                setFocused(false);
-                onBlur();
-              }}
-              secureTextEntry={isSecure}
-              placeholderTextColor="#A7B0BE"
-              style={styles.input}
-            />
-            {secure ? (
-              <Pressable style={styles.eyeButton} onPress={() => setVisible((next) => !next)} accessibilityLabel={visible ? 'Hide password' : 'Show password'}>
-                {visible ? <EyeOff size={17} color="#8B97A8" strokeWidth={2.1} /> : <Eye size={17} color="#8B97A8" strokeWidth={2.1} />}
-              </Pressable>
-            ) : null}
-          </View>
-          {error ? <Text style={styles.errorText}>{error.message}</Text> : null}
+    <View style={styles.fieldBlock}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={[styles.inputWrap, error && styles.inputWrapError]}>
+        <View style={styles.inputIcon}>
+          <Icon size={16} color="#C28B00" strokeWidth={2.2} />
         </View>
-      )}
-    />
+        <TextInput
+          {...props}
+          ref={inputRef}
+          defaultValue=""
+          secureTextEntry={isSecure}
+          placeholderTextColor="#A7B0BE"
+          style={styles.input}
+        />
+        {secure ? (
+          <Pressable style={styles.eyeButton} onPress={() => setVisible((next) => !next)} accessibilityLabel={visible ? 'Hide password' : 'Show password'}>
+            {visible ? <EyeOff size={17} color="#8B97A8" strokeWidth={2.1} /> : <Eye size={17} color="#8B97A8" strokeWidth={2.1} />}
+          </Pressable>
+        ) : null}
+      </View>
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+    </View>
   );
 };
 
@@ -125,7 +112,9 @@ export const LoginScreen = ({ navigation, route }: any) => {
   const storeError = useAuthStore((state) => state.error);
   const loading = useAuthStore((state) => state.loading);
   const [error, setError] = useState('');
-  const form = useForm<LoginForm>({ resolver: zodResolver(loginSchema), defaultValues: { email: '', password: '' } });
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof LoginForm, string>>>({});
+  const credentialsRef = useRef<LoginForm>({ email: '', password: '' });
+  const passwordInputRef = useRef<TextInput>(null);
   const heroOpacity = useRef(new Animated.Value(0)).current;
   const cardOpacity = useRef(new Animated.Value(0)).current;
   const cardTranslate = useRef(new Animated.Value(24)).current;
@@ -139,20 +128,43 @@ export const LoginScreen = ({ navigation, route }: any) => {
     return () => clearError();
   }, [cardOpacity, cardTranslate, clearError, heroOpacity]);
 
-  const submit = form.handleSubmit(async ({ email, password }) => {
+  const submit = async () => {
     setError('');
+    setFieldErrors({});
+
+    const result = loginSchema.safeParse({
+      email: credentialsRef.current.email.trim(),
+      password: credentialsRef.current.password
+    });
+
+    if (!result.success) {
+      const nextErrors = result.error.flatten().fieldErrors;
+      setFieldErrors({
+        email: nextErrors.email?.[0],
+        password: nextErrors.password?.[0]
+      });
+      return;
+    }
+
     try {
+      const { email, password } = result.data;
       await signIn(email, password);
       navigation.replace(route.params?.redirectTo ?? 'MainTabs');
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Invalid email or password.');
     }
-  });
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView enabled={Platform.OS === 'ios'} style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardDismissMode="none"
+          keyboardShouldPersistTaps="always"
+          removeClippedSubviews={false}
+          showsVerticalScrollIndicator={false}
+        >
           <Animated.View style={[styles.hero, { opacity: heroOpacity }]}>
             <View style={styles.logoCircle}>
               <Image source={logoImage} style={styles.logo} resizeMode="contain" />
@@ -167,24 +179,36 @@ export const LoginScreen = ({ navigation, route }: any) => {
             <AuthMessage text={error || storeError} />
 
             <LoginField
-              control={form.control}
-              name="email"
               label="Email Address"
               Icon={Mail}
+              error={fieldErrors.email}
               placeholder="your email@example.com"
               autoCapitalize="none"
+              autoComplete="email"
               autoCorrect={false}
+              blurOnSubmit={false}
               keyboardType="email-address"
-              textContentType="emailAddress"
+              onChangeText={(value) => {
+                credentialsRef.current.email = value;
+              }}
+              onSubmitEditing={() => passwordInputRef.current?.focus()}
+              returnKeyType="next"
+              textContentType={Platform.OS === 'ios' ? 'emailAddress' : 'none'}
             />
             <LoginField
-              control={form.control}
-              name="password"
               label="Password"
               Icon={LockKeyhole}
+              error={fieldErrors.password}
+              inputRef={passwordInputRef}
               placeholder="••••••••"
               autoCapitalize="none"
-              textContentType="password"
+              autoComplete="password"
+              onChangeText={(value) => {
+                credentialsRef.current.password = value;
+              }}
+              onSubmitEditing={submit}
+              returnKeyType="done"
+              textContentType={Platform.OS === 'ios' ? 'password' : 'none'}
               secure
             />
 
