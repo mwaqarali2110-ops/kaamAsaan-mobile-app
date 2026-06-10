@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 360" fill="none">
+  <defs>
+    <linearGradient id="panelFace" x1="92" y1="70" x2="320" y2="244" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#16335A"/>
+      <stop offset="1" stop-color="#284A7A"/>
+    </linearGradient>
+    <linearGradient id="panelEdge" x1="112" y1="120" x2="331" y2="198" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9CBDE8" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#7DA0CF" stop-opacity="0.4"/>
+    </linearGradient>
+    <filter id="shadow" x="44" y="74" width="432" height="220" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#081321" flood-opacity="0.26"/>
+    </filter>
+  </defs>
+  <ellipse cx="260" cy="286" rx="156" ry="24" fill="#06101B" fill-opacity="0.22"/>
+  <g filter="url(#shadow)">
+    <polygon points="88,202 203,130 391,174 274,246" fill="url(#panelFace)" stroke="url(#panelEdge)" stroke-opacity="0.75" stroke-width="5"/>
+    <polygon points="128,172 243,100 431,144 314,216" fill="url(#panelFace)" stroke="url(#panelEdge)" stroke-opacity="0.75" stroke-width="5"/>
+    <polygon points="168,144 283,72 471,116 354,188" fill="url(#panelFace)" stroke="url(#panelEdge)" stroke-opacity="0.75" stroke-width="5"/>
+    <g stroke="#8AB0E7" stroke-opacity="0.38" stroke-width="3">
+      <path d="M126 179L243 107"/>
+      <path d="M164 188L281 116"/>
+      <path d="M202 197L319 125"/>
+      <path d="M240 206L357 134"/>
+      <path d="M278 215L395 143"/>
+      <path d="M315 224L432 152"/>
+      <path d="M165 150L354 194"/>
+      <path d="M127 174L316 218"/>
+      <path d="M89 198L278 242"/>
+      <path d="M205 127L394 171"/>
+      <path d="M245 101L434 145"/>
+      <path d="M285 75L474 119"/>
+    </g>
+    <path d="M196 246L196 270" stroke="#89A2B8" stroke-width="8" stroke-linecap="round"/>
+    <path d="M248 228L248 270" stroke="#89A2B8" stroke-width="8" stroke-linecap="round"/>
+    <path d="M302 211L302 270" stroke="#89A2B8" stroke-width="8" stroke-linecap="round"/>
+    <path d="M354 193L354 270" stroke="#89A2B8" stroke-width="8" stroke-linecap="round"/>
+  </g>
+</svg>

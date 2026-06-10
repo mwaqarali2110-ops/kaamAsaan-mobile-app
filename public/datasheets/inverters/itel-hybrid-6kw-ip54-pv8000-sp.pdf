@@ -1,0 +1,61 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 1 /Kids [3 0 R] >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 1917 >>
+stream
+BT /F1 18 Tf 48 790 Td (ITEL Hybrid 6kW IP54 PV8000 SP) Tj ET
+BT /F1 10 Tf 48 764 Td (Brand: ITEL) Tj ET
+BT /F1 10 Tf 48 750 Td (Model: IPV-6K48U) Tj ET
+BT /F1 10 Tf 48 736 Td (Series: IPV Hybrid) Tj ET
+BT /F1 10 Tf 48 722 Td (Category: Inverters) Tj ET
+BT /F1 10 Tf 48 702 Td (Summary: IP54 hybrid inverter with 48V battery support and integrated communications.) Tj ET
+BT /F1 10 Tf 48 682 Td (Technical Snapshot) Tj ET
+BT /F1 10 Tf 48 668 Td (Rated Power: 6kW) Tj ET
+BT /F1 10 Tf 48 654 Td (Phase: Single Phase) Tj ET
+BT /F1 10 Tf 48 640 Td (Inverter Type: Hybrid Inverter) Tj ET
+BT /F1 10 Tf 48 626 Td (Max Efficiency: 99.9% MPPT) Tj ET
+BT /F1 10 Tf 48 612 Td (Euro Efficiency: Not available) Tj ET
+BT /F1 10 Tf 48 598 Td (MPPT Count: 1) Tj ET
+BT /F1 10 Tf 48 584 Td (Strings per MPPT: Not available) Tj ET
+BT /F1 10 Tf 48 570 Td (Max PV Input Power: 6.0kW) Tj ET
+BT /F1 10 Tf 48 556 Td (Max Input Voltage: Not available) Tj ET
+BT /F1 10 Tf 48 542 Td (Start-up Voltage: Not available) Tj ET
+BT /F1 10 Tf 48 528 Td (MPPT Voltage Range: Not available) Tj ET
+BT /F1 10 Tf 48 514 Td (Battery Voltage Range: 48V battery \(lead-acid / Li-ion / user-defined\)) Tj ET
+BT /F1 10 Tf 48 500 Td (Max Charge Current: Not available) Tj ET
+BT /F1 10 Tf 48 486 Td (Max Discharge Current: Not available) Tj ET
+BT /F1 10 Tf 48 472 Td (Backup Output: Yes \(10ms switch time\)) Tj ET
+BT /F1 10 Tf 48 458 Td (IP Rating: IP54) Tj ET
+BT /F1 10 Tf 48 444 Td (Cooling Method: Not available) Tj ET
+BT /F1 10 Tf 48 430 Td (Communication: WIFI/RS485\(BMS\)/Dry Contact/RS232; optional WiFi/Bluetooth) Tj ET
+BT /F1 10 Tf 48 416 Td (Warranty: 3 Years) Tj ET
+BT /F1 10 Tf 48 402 Td (Dimensions: Not available) Tj ET
+BT /F1 10 Tf 48 388 Td (Weight: Not available) Tj ET
+BT /F1 10 Tf 48 368 Td (Reference: https://itelsolar.com/product/itel-6kw-inverter-hybrid-48v-ip54-1phase-ipv-6k48u/) Tj ET
+BT /F1 10 Tf 48 354 Td (Generated: 2026-03-18) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000002210 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+2280
+%%EOF
