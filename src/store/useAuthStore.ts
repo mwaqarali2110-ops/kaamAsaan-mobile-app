@@ -19,6 +19,12 @@ type SignupInput = {
   password: string;
 };
 
+type ProfileUpdateInput = {
+  full_name: string;
+  phone: string;
+  city: string;
+};
+
 type AuthState = {
   session: Session | null;
   profile: CustomerProfile | null;
@@ -27,6 +33,7 @@ type AuthState = {
   error: string | null;
   initialize: () => Promise<void>;
   refreshProfile: (userId?: string) => Promise<CustomerProfile | null>;
+  updateProfile: (input: ProfileUpdateInput) => Promise<CustomerProfile>;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (input: SignupInput) => Promise<{ needsEmailConfirmation: boolean }>;
   requestPasswordReset: (email: string) => Promise<void>;
@@ -110,6 +117,35 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       set({ error: message });
       return null;
+    }
+  },
+  updateProfile: async ({ full_name, phone, city }) => {
+    requireSupabase();
+    const userId = get().session?.user.id;
+    if (!userId) throw new Error('Log in to update your profile.');
+
+    set({ loading: true, error: null });
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: full_name.trim(),
+          phone: phone.trim(),
+          city: city.trim()
+        })
+        .eq('id', userId)
+        .select('id, full_name, phone, city, role, created_at')
+        .single();
+      if (error) throw error;
+      const profile = data as CustomerProfile;
+      set({ profile, error: null });
+      return profile;
+    } catch (reason) {
+      const message = reason instanceof Error ? reason.message : 'Unable to update your profile.';
+      set({ error: message });
+      throw new Error(message);
+    } finally {
+      set({ loading: false });
     }
   },
   signIn: async (email, password) => {

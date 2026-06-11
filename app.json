@@ -1,11 +1,13 @@
 {
   "expo": {
     "name": "KaamAsaan",
-    "slug": "kaamasaan-mobile",
+    "slug": "kaamasaan",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false
     },
@@ -18,6 +20,12 @@
     },
     "web": {
       "bundler": "metro"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "0ed21df1-a473-4ba4-a4f9-132e2b5d9cf3"
+      }
+    },
+    "owner": "mwaqarali2110s-organization"
   }
 }
