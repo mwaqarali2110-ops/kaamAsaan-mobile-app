@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 import { create } from 'zustand';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+import i18n from '@/i18n';
 
 export type CustomerProfile = {
   id: string;
@@ -45,7 +46,7 @@ let subscribed = false;
 
 const requireSupabase = () => {
   if (!isSupabaseConfigured) {
-    throw new Error('Supabase is not configured. Add the Expo public Supabase environment variables.');
+    throw new Error(i18n.t('errors.supabaseMissing'));
   }
 };
 
@@ -56,8 +57,8 @@ const fetchCustomerProfile = async (userId: string) => {
     .eq('id', userId)
     .maybeSingle();
   if (error) throw error;
-  if (!data) throw new Error('Your customer profile is still being prepared. Please try again.');
-  if (data.role !== 'customer') throw new Error('This mobile app is for customer accounts only.');
+  if (!data) throw new Error(i18n.t('errors.profilePreparing'));
+  if (data.role !== 'customer') throw new Error(i18n.t('errors.customerOnly'));
   return data as CustomerProfile;
 };
 
@@ -81,7 +82,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           set({ profile: await fetchCustomerProfile(session.user.id) });
         } catch (reason) {
           await supabase.auth.signOut();
-          set({ session: null, profile: null, error: reason instanceof Error ? reason.message : 'Unable to load your profile.' });
+          set({ session: null, profile: null, error: reason instanceof Error ? reason.message : i18n.t('errors.loadProfile') });
         }
       }
 
@@ -97,7 +98,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         });
       }
     } catch (reason) {
-      set({ error: reason instanceof Error ? reason.message : 'Unable to restore your session.' });
+      set({ error: reason instanceof Error ? reason.message : i18n.t('errors.restoreSession') });
     } finally {
       set({ initialized: true, loading: false });
     }
@@ -110,8 +111,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ profile, error: null });
       return profile;
     } catch (reason) {
-      const message = reason instanceof Error ? reason.message : 'Unable to load your profile.';
-      if (message === 'This mobile app is for customer accounts only.') {
+      const message = reason instanceof Error ? reason.message : i18n.t('errors.loadProfile');
+      if (message === i18n.t('errors.customerOnly')) {
         await supabase.auth.signOut();
         set({ session: null, profile: null });
       }
@@ -122,7 +123,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   updateProfile: async ({ full_name, phone, city }) => {
     requireSupabase();
     const userId = get().session?.user.id;
-    if (!userId) throw new Error('Log in to update your profile.');
+    if (!userId) throw new Error(i18n.t('errors.loginRequired'));
 
     set({ loading: true, error: null });
     try {
@@ -141,7 +142,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ profile, error: null });
       return profile;
     } catch (reason) {
-      const message = reason instanceof Error ? reason.message : 'Unable to update your profile.';
+      const message = reason instanceof Error ? reason.message : i18n.t('profile.updateFailed');
       set({ error: message });
       throw new Error(message);
     } finally {
@@ -157,7 +158,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const profile = await fetchCustomerProfile(data.user.id);
       set({ session: data.session, profile });
     } catch (reason) {
-      const message = reason instanceof Error ? reason.message : 'Unable to log in.';
+      const message = reason instanceof Error ? reason.message : i18n.t('errors.loginFailed');
       await supabase.auth.signOut();
       set({ session: null, profile: null, error: message });
       throw new Error(message);
@@ -181,7 +182,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       return { needsEmailConfirmation: !data.session };
     } catch (reason) {
-      const message = reason instanceof Error ? reason.message : 'Unable to create your account.';
+      const message = reason instanceof Error ? reason.message : i18n.t('auth.signup.unable');
       await supabase.auth.signOut();
       set({ session: null, profile: null });
       set({ error: message });
@@ -197,7 +198,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
       if (error) throw error;
     } catch (reason) {
-      const message = reason instanceof Error ? reason.message : 'Unable to send the reset email.';
+      const message = reason instanceof Error ? reason.message : i18n.t('auth.forgot.unable');
       set({ error: message });
       throw new Error(message);
     } finally {

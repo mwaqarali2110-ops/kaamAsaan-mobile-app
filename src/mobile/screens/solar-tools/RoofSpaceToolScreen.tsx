@@ -2,31 +2,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import { Animated, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, ArrowRight, MessageCircle, Ruler } from 'lucide-react-native';
-
-type Orientation = 'landscape' | 'portrait';
-
-const PANEL_LONG_FT = 7.5;
-const PANEL_SHORT_FT = 3.75;
-const PANEL_SPACING_FT = 1 / 12;
-
-const getLayout = (panelCount: number, orientation: Orientation) => {
-  const panelWidth = orientation === 'landscape' ? PANEL_LONG_FT : PANEL_SHORT_FT;
-  const panelHeight = orientation === 'landscape' ? PANEL_SHORT_FT : PANEL_LONG_FT;
-  const columns = Math.max(1, Math.ceil(Math.sqrt((panelCount * panelHeight) / panelWidth)));
-  const rows = Math.max(1, Math.ceil(panelCount / columns));
-  const width = columns * panelWidth + Math.max(0, columns - 1) * PANEL_SPACING_FT;
-  const height = rows * panelHeight + Math.max(0, rows - 1) * PANEL_SPACING_FT;
-
-  return {
-    columns,
-    rows,
-    width,
-    height,
-    area: Math.ceil(width * height),
-    panelWidth,
-    panelHeight
-  };
-};
+import { calculatePanelLayout, type PanelOrientation } from '@/utils/calculations';
 
 const BackgroundVideo = () => {
   if (Platform.OS === 'web') {
@@ -61,7 +37,7 @@ const BackgroundVideo = () => {
   );
 };
 
-const PanelGrid = ({ panelCount, layout }: { panelCount: number; layout: ReturnType<typeof getLayout> }) => (
+const PanelGrid = ({ panelCount, layout }: { panelCount: number; layout: ReturnType<typeof calculatePanelLayout> }) => (
   <View style={styles.layoutCanvas}>
     <Text style={styles.widthDimension}>{layout.width.toFixed(1)} ft</Text>
     <View
@@ -89,7 +65,7 @@ export const RoofSpaceToolScreen = ({ navigation }: any) => {
   const [panelCount, setPanelCount] = useState('');
   const [calculatedPanels, setCalculatedPanels] = useState<number | null>(null);
   const [showInput, setShowInput] = useState(true);
-  const [orientation, setOrientation] = useState<Orientation>('landscape');
+  const [orientation, setOrientation] = useState<PanelOrientation>('landscape');
   const [isCalculating, setIsCalculating] = useState(false);
   const inputOpacity = useRef(new Animated.Value(1)).current;
   const inputTranslate = useRef(new Animated.Value(0)).current;
@@ -97,8 +73,14 @@ export const RoofSpaceToolScreen = ({ navigation }: any) => {
   const resultTranslate = useRef(new Animated.Value(14)).current;
 
   const normalizedPanels = Math.max(1, Number.parseInt(panelCount, 10) || 12);
-  const layout = useMemo(() => getLayout(calculatedPanels || normalizedPanels, orientation), [calculatedPanels, normalizedPanels, orientation]);
-  const alternate = useMemo(() => getLayout(calculatedPanels || normalizedPanels, orientation === 'landscape' ? 'portrait' : 'landscape'), [calculatedPanels, normalizedPanels, orientation]);
+  const layout = useMemo(
+    () => calculatePanelLayout({ panelCount: calculatedPanels || normalizedPanels, orientation }),
+    [calculatedPanels, normalizedPanels, orientation]
+  );
+  const alternate = useMemo(
+    () => calculatePanelLayout({ panelCount: calculatedPanels || normalizedPanels, orientation: orientation === 'landscape' ? 'portrait' : 'landscape' }),
+    [calculatedPanels, normalizedPanels, orientation]
+  );
 
   const calculate = () => {
     const nextPanels = normalizedPanels;
@@ -188,7 +170,7 @@ export const RoofSpaceToolScreen = ({ navigation }: any) => {
               </View>
 
               <View style={styles.toggle}>
-                {(['landscape', 'portrait'] as Orientation[]).map((item) => (
+                {(['landscape', 'portrait'] as PanelOrientation[]).map((item) => (
                   <Pressable key={item} style={[styles.toggleItem, orientation === item && styles.toggleItemActive]} onPress={() => setOrientation(item)}>
                     <Text style={[styles.toggleText, orientation === item && styles.toggleTextActive]}>{item === 'landscape' ? 'Landscape' : 'Portrait'}</Text>
                   </Pressable>

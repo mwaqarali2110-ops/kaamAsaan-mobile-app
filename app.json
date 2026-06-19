@@ -26,6 +26,9 @@
         "projectId": "0ed21df1-a473-4ba4-a4f9-132e2b5d9cf3"
       }
     },
-    "owner": "mwaqarali2110s-organization"
+    "owner": "mwaqarali2110s-organization",
+    "plugins": [
+      "expo-video"
+    ]
   }
 }

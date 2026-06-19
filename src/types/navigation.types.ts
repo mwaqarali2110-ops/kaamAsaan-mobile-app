@@ -1,4 +1,5 @@
 import type { ProductCategory } from './product.types';
+import type { MaintenanceBooking, MaintenancePlanSelection } from './maintenance.types';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -15,7 +16,10 @@ export type RootStackParamList = {
   SurveyConfirmation: { bookingId?: string };
   MySolarJourney: { bookingId: string };
   PreventiveMaintenance: undefined;
-  MaintenancePackages: undefined;
+  MaintenancePackages: { plan?: MaintenancePlanSelection } | undefined;
+  MaintenancePlanDetails: { plan: MaintenancePlanSelection };
+  MaintenanceBooking: { plan: MaintenancePlanSelection };
+  MaintenanceBookingConfirmation: { booking: MaintenanceBooking };
   LiveTracking: undefined;
   PostServiceHealthReport: undefined;
   SolarCareMembership: undefined;
@@ -25,6 +29,7 @@ export type RootStackParamList = {
   SolarSizeTool: undefined;
   RecommendedSolarSize: { loadKw: number; systemKw: number };
   BatterySizeTool: undefined;
+  Notifications: undefined;
 };
 
 export type MainTabParamList = {

@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Mail } from 'lucide-react-native';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { AuthField, AuthMessage, AuthShell, AuthSubmit } from './AuthComponents';
 import { forgotPasswordSchema, type ForgotPasswordForm } from '@/schemas/auth.schema';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export const ForgotPasswordScreen = ({ navigation }: any) => {
+  const { t } = useTranslation();
   const requestPasswordReset = useAuthStore((state) => state.requestPasswordReset);
   const clearError = useAuthStore((state) => state.clearError);
   const loading = useAuthStore((state) => state.loading);
@@ -21,18 +23,18 @@ export const ForgotPasswordScreen = ({ navigation }: any) => {
     setMessage('');
     try {
       await requestPasswordReset(email);
-      setMessage('Password reset instructions have been sent to your email.');
+      setMessage(t('auth.forgot.sent'));
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Unable to send the reset email.');
+      setError(reason instanceof Error ? reason.message : t('auth.forgot.unable'));
     }
   });
 
   return (
-    <AuthShell title="Reset password" subtitle="Enter your email and we will send reset instructions." onBack={() => navigation.goBack()}>
+    <AuthShell title={t('auth.forgot.title')} subtitle={t('auth.forgot.subtitle')} onBack={() => navigation.goBack()}>
       <AuthMessage text={message} tone="success" />
       <AuthMessage text={error} />
-      <AuthField control={form.control} name="email" label="Email" Icon={Mail} placeholder="you@example.com" autoCapitalize="none" keyboardType="email-address" />
-      <AuthSubmit title="Send Reset Email" loading={loading} onPress={submit} />
+      <AuthField control={form.control} name="email" label={t('auth.signup.email')} Icon={Mail} placeholder={t('auth.signup.emailPlaceholder')} autoCapitalize="none" keyboardType="email-address" />
+      <AuthSubmit title={t('auth.forgot.send')} loading={loading} onPress={submit} />
     </AuthShell>
   );
 };

@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Sun } from 'lucide-react-native';
 import { Controller, type Control, type FieldValues, type Path } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 
 export const AuthShell = ({ title, subtitle, onBack, children }: { title: string; subtitle: string; onBack?: () => void; children: React.ReactNode }) => (
   <SafeAreaView style={styles.safe}>
@@ -63,11 +64,14 @@ export const AuthMessage = ({ text, tone = 'error' }: { text?: string | null; to
   text ? <Text style={[styles.message, tone === 'success' && styles.messageSuccess]}>{text}</Text> : null
 );
 
-export const AuthSubmit = ({ title, loading, onPress }: { title: string; loading?: boolean; onPress: () => void }) => (
-  <Pressable style={[styles.submit, loading && styles.submitDisabled]} disabled={loading} onPress={onPress}>
-    <Text style={styles.submitText}>{loading ? 'Please wait...' : title}</Text>
-  </Pressable>
-);
+export const AuthSubmit = ({ title, loading, onPress }: { title: string; loading?: boolean; onPress: () => void }) => {
+  const { t } = useTranslation();
+  return (
+    <Pressable style={[styles.submit, loading && styles.submitDisabled]} disabled={loading} onPress={onPress}>
+      <Text style={styles.submitText}>{loading ? t('common.pleaseWait') : title}</Text>
+    </Pressable>
+  );
+};
 
 export const AuthLink = ({ title, onPress }: { title: string; onPress: () => void }) => (
   <Pressable onPress={onPress}>

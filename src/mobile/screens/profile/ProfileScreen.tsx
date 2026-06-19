@@ -2,8 +2,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Building2, CheckCircle2, LogOut, Mail, Phone, ShieldCheck, User, UserRound } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { colors } from '@/constants/colors';
 import { AppButton } from '@/components/ui/AppButton';
+import { languages } from '@/i18n';
+import { useAppLanguage } from '@/i18n/I18nProvider';
 import { useAuthStore } from '@/store/useAuthStore';
 
 type ProfileForm = {
@@ -13,6 +16,8 @@ type ProfileForm = {
 };
 
 export const ProfileScreen = ({ navigation }: any) => {
+  const { t } = useTranslation();
+  const { language, restartRequired, rtl, setLanguage } = useAppLanguage();
   const session = useAuthStore((state) => state.session);
   const profile = useAuthStore((state) => state.profile);
   const loading = useAuthStore((state) => state.loading);
@@ -32,7 +37,7 @@ export const ProfileScreen = ({ navigation }: any) => {
   }, [profile]);
 
   const initials = useMemo(() => {
-    const source = form.fullName || session?.user.email || 'KaamAsaan Customer';
+    const source = form.fullName || session?.user.email || t('profile.customerAccount');
     return source
       .split(/[.\s@]+/)
       .filter(Boolean)
@@ -45,15 +50,15 @@ export const ProfileScreen = ({ navigation }: any) => {
     setError('');
     setMessage('');
     if (form.fullName.trim().length < 2) {
-      setError('Enter your full name.');
+      setError(t('auth.errors.fullName'));
       return;
     }
     if (form.phone.trim().length < 10) {
-      setError('Enter a valid phone number.');
+      setError(t('auth.errors.phone'));
       return;
     }
     if (form.city.trim().length < 2) {
-      setError('Enter your city.');
+      setError(t('auth.errors.city'));
       return;
     }
 
@@ -63,10 +68,17 @@ export const ProfileScreen = ({ navigation }: any) => {
         phone: form.phone,
         city: form.city
       });
-      setMessage('Profile updated successfully.');
+      setMessage(t('profile.updated'));
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Unable to update your profile.');
+      setError(reason instanceof Error ? reason.message : t('profile.updateFailed'));
     }
+  };
+
+  const updateLanguage = async (nextLanguage: typeof language) => {
+    setError('');
+    setMessage('');
+    await setLanguage(nextLanguage);
+    setMessage(t('profile.languageChanged'));
   };
 
   if (!session) {
@@ -77,16 +89,16 @@ export const ProfileScreen = ({ navigation }: any) => {
             <View style={styles.guestAvatar}>
               <UserRound color="#172031" size={36} strokeWidth={2.2} />
             </View>
-            <Text style={styles.guestTitle}>Your Solar Profile</Text>
-            <Text style={styles.guestSubtitle}>Log in to keep your contact details, survey bookings, and solar journey in one place.</Text>
+            <Text style={[styles.guestTitle, rtl && styles.rtlText]}>{t('profile.guestTitle')}</Text>
+            <Text style={[styles.guestSubtitle, rtl && styles.rtlText]}>{t('profile.guestSubtitle')}</Text>
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Customer account</Text>
-            <Text style={styles.cardText}>Save your details once and use them across bookings, support, and marketplace requests.</Text>
+            <Text style={[styles.cardTitle, rtl && styles.rtlText]}>{t('profile.customerAccount')}</Text>
+            <Text style={[styles.cardText, rtl && styles.rtlText]}>{t('profile.guestCardText')}</Text>
             <View style={styles.guestActions}>
-              <AppButton title="Login" onPress={() => rootNavigation?.navigate('Login')} />
-              <AppButton title="Create Account" tone="secondary" onPress={() => rootNavigation?.navigate('Signup')} />
+              <AppButton title={t('auth.login.signIn')} onPress={() => rootNavigation?.navigate('Login')} />
+              <AppButton title={t('auth.signup.createAccount')} tone="secondary" onPress={() => rootNavigation?.navigate('Signup')} />
             </View>
           </View>
         </ScrollView>
@@ -106,10 +118,10 @@ export const ProfileScreen = ({ navigation }: any) => {
         >
           <View style={styles.topRow}>
             <View>
-              <Text style={styles.eyebrow}>Profile</Text>
-              <Text style={styles.title}>Account details</Text>
+              <Text style={[styles.eyebrow, rtl && styles.rtlText]}>{t('profile.eyebrow')}</Text>
+              <Text style={[styles.title, rtl && styles.rtlText]}>{t('profile.title')}</Text>
             </View>
-            <Pressable disabled={loading} onPress={() => void signOut()} style={styles.logoutIcon} accessibilityLabel="Logout">
+            <Pressable disabled={loading} onPress={() => void signOut()} style={styles.logoutIcon} accessibilityLabel={t('profile.logout')}>
               <LogOut color="#8A6A16" size={19} strokeWidth={2.3} />
             </Pressable>
           </View>
@@ -121,56 +133,80 @@ export const ProfileScreen = ({ navigation }: any) => {
               </View>
             </View>
             <View style={styles.heroCopy}>
-              <Text style={styles.name}>{form.fullName || 'KaamAsaan Customer'}</Text>
-              <Text style={styles.email}>{session.user.email || 'Customer account'}</Text>
+              <Text style={[styles.name, rtl && styles.rtlText]}>{form.fullName || t('profile.customerAccount')}</Text>
+              <Text style={[styles.email, rtl && styles.rtlText]}>{session.user.email || t('profile.customerAccount')}</Text>
               <View style={styles.statusPill}>
                 <ShieldCheck color="#128A3E" size={13} strokeWidth={2.4} />
-                <Text style={styles.statusText}>Verified customer</Text>
+                <Text style={styles.statusText}>{t('profile.verified')}</Text>
               </View>
             </View>
           </View>
 
           <View style={styles.formCard}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Basic Details</Text>
+              <Text style={[styles.sectionTitle, rtl && styles.rtlText]}>{t('profile.basicDetails')}</Text>
               <CheckCircle2 color="#F5A400" size={18} strokeWidth={2.4} />
             </View>
 
             <ProfileInput
-              label="Full Name"
+              label={t('profile.fullName')}
               value={form.fullName}
               onChangeText={(fullName) => setForm((next) => ({ ...next, fullName }))}
-              placeholder="Your full name"
+              placeholder={t('profile.fullNamePlaceholder')}
               Icon={User}
+              rtl={rtl}
             />
-            <ProfileInput label="Email Address" value={session.user.email ?? ''} editable={false} placeholder="you@example.com" Icon={Mail} />
+            <ProfileInput label={t('profile.email')} value={session.user.email ?? ''} editable={false} placeholder={t('auth.signup.emailPlaceholder')} Icon={Mail} rtl={rtl} />
             <ProfileInput
-              label="Phone Number"
+              label={t('profile.phone')}
               value={form.phone}
               onChangeText={(phone) => setForm((next) => ({ ...next, phone }))}
-              placeholder="03XXXXXXXXX"
+              placeholder={t('profile.phonePlaceholder')}
               keyboardType="phone-pad"
               Icon={Phone}
+              rtl={rtl}
             />
             <ProfileInput
-              label="City"
+              label={t('profile.city')}
               value={form.city}
               onChangeText={(city) => setForm((next) => ({ ...next, city }))}
-              placeholder="Lahore"
+              placeholder={t('profile.cityPlaceholder')}
               Icon={Building2}
+              rtl={rtl}
             />
 
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
             {message ? <Text style={styles.successText}>{message}</Text> : null}
 
             <Pressable disabled={loading} onPress={saveProfile} style={[styles.saveButton, loading && styles.disabledButton]}>
-              <Text style={styles.saveText}>{loading ? 'Saving...' : 'Save Changes'}</Text>
+              <Text style={styles.saveText}>{loading ? t('common.saving') : t('common.saveChanges')}</Text>
             </Pressable>
           </View>
 
+          <View style={styles.languageCard}>
+            <Text style={[styles.sectionTitle, rtl && styles.rtlText]}>{t('profile.language')}</Text>
+            <Text style={[styles.languageSubtitle, rtl && styles.rtlText]}>{t('profile.languageSubtitle')}</Text>
+            <View style={styles.languageOptions}>
+              {languages.map((item) => {
+                const selected = item.code === language;
+                return (
+                  <Pressable
+                    key={item.code}
+                    onPress={() => void updateLanguage(item.code)}
+                    style={[styles.languageOption, selected && styles.languageOptionActive]}
+                  >
+                    <Text style={[styles.languageText, selected && styles.languageTextActive]}>{item.nativeLabel}</Text>
+                    {selected ? <CheckCircle2 color="#128A3E" size={17} strokeWidth={2.4} /> : null}
+                  </Pressable>
+                );
+              })}
+            </View>
+            {restartRequired ? <Text style={[styles.restartText, rtl && styles.rtlText]}>{t('profile.restartRequired')}</Text> : null}
+          </View>
+
           <View style={styles.supportCard}>
-            <Text style={styles.supportTitle}>Need solar support?</Text>
-            <Text style={styles.supportText}>Your saved profile helps our team prepare quotes, survey calls, and service follow-ups faster.</Text>
+            <Text style={[styles.supportTitle, rtl && styles.rtlText]}>{t('profile.supportTitle')}</Text>
+            <Text style={[styles.supportText, rtl && styles.rtlText]}>{t('profile.supportText')}</Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -181,21 +217,23 @@ export const ProfileScreen = ({ navigation }: any) => {
 const ProfileInput = ({
   label,
   Icon,
+  rtl,
   editable = true,
   ...props
 }: {
   label: string;
   Icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
+  rtl?: boolean;
 } & React.ComponentProps<typeof TextInput>) => (
   <View style={styles.inputBlock}>
-    <Text style={styles.inputLabel}>{label}</Text>
+    <Text style={[styles.inputLabel, rtl && styles.rtlText]}>{label}</Text>
     <View style={[styles.inputWrap, !editable && styles.inputWrapDisabled]}>
       <Icon color="#9A6C00" size={17} strokeWidth={2.2} />
       <TextInput
         {...props}
         editable={editable}
         placeholderTextColor="#9CA3AF"
-        style={[styles.input, !editable && styles.inputDisabled]}
+        style={[styles.input, rtl && styles.rtlText, !editable && styles.inputDisabled]}
       />
     </View>
   </View>
@@ -425,6 +463,58 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     lineHeight: 18,
     fontWeight: '700'
+  },
+  languageCard: {
+    marginTop: 16,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#E9DEC9',
+    backgroundColor: '#FFFFFF',
+    padding: 16
+  },
+  languageSubtitle: {
+    marginTop: 5,
+    color: '#64748B',
+    fontSize: 12.5,
+    fontWeight: '700'
+  },
+  languageOptions: {
+    marginTop: 13,
+    gap: 9
+  },
+  languageOption: {
+    minHeight: 48,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#E5DED3',
+    backgroundColor: '#FFFEFB',
+    paddingHorizontal: 13,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  languageOptionActive: {
+    borderColor: '#F5B700',
+    backgroundColor: '#FFF8E5'
+  },
+  languageText: {
+    color: '#10213A',
+    fontSize: 14,
+    fontWeight: '900'
+  },
+  languageTextActive: {
+    color: '#7A5600'
+  },
+  restartText: {
+    marginTop: 10,
+    color: '#9A6C00',
+    fontSize: 11.5,
+    lineHeight: 17,
+    fontWeight: '800'
+  },
+  rtlText: {
+    textAlign: 'right',
+    writingDirection: 'rtl'
   },
   guestHero: {
     alignItems: 'center',

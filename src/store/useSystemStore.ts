@@ -1,12 +1,19 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Appliance, BackupDecision, SystemSummary } from '@/types/system.types';
 import type { Product } from '@/types/product.types';
 import { defaultAppliances } from '@/constants/products';
 import { calculatePanelCount, calculateRoofSpace, recommendSolarKw } from '@/utils/calculations';
 
+export const designSystemSteps = ['appliances', 'solar', 'roof', 'backupNeed', 'backupAppliances', 'backupPlan', 'recommended', 'packages'] as const;
+export type DesignSystemStep = typeof designSystemSteps[number];
+
 type SystemState = {
   appliances: Appliance[];
   backupAppliances: Appliance[];
+  designStarted: boolean;
+  lastDesignStep: DesignSystemStep;
   recommendedSolarKw: number;
   selectedBatteryKwh: number;
   panelWattage: number;
@@ -17,6 +24,7 @@ type SystemState = {
   selectedBattery: Product | null;
   selectedAccessories: Product[];
   packageName: string;
+  setDesignProgress: (step: DesignSystemStep) => void;
   setApplianceQuantity: (id: string, quantity: number) => void;
   addAppliance: (appliance: Appliance) => void;
   setBackupApplianceQuantity: (id: string, quantity: number) => void;
@@ -37,9 +45,11 @@ type SystemState = {
 const initialAppliances = defaultAppliances;
 const DEFAULT_BACKUP_HOURS = 1;
 
-export const useSystemStore = create<SystemState>((set, get) => ({
+export const useSystemStore = create<SystemState>()(persist((set, get) => ({
   appliances: initialAppliances,
   backupAppliances: initialAppliances.map((item) => ({ ...item, quantity: 0, hours: DEFAULT_BACKUP_HOURS })),
+  designStarted: false,
+  lastDesignStep: 'appliances',
   recommendedSolarKw: 3,
   selectedBatteryKwh: 0,
   panelWattage: 610,
@@ -50,44 +60,50 @@ export const useSystemStore = create<SystemState>((set, get) => ({
   selectedBattery: null,
   selectedAccessories: [],
   packageName: 'Balanced',
+  setDesignProgress: (lastDesignStep) => set({ designStarted: true, lastDesignStep }),
   setApplianceQuantity: (id, quantity) => set((state) => ({
+    designStarted: true,
     appliances: state.appliances.map((item) => item.id === id ? { ...item, quantity: Math.max(0, quantity) } : item)
   })),
   addAppliance: (appliance) => set((state) => {
     if (state.appliances.some((item) => item.id === appliance.id)) {
       return {
+        designStarted: true,
         appliances: state.appliances.map((item) => item.id === appliance.id ? { ...item, quantity: Math.max(1, item.quantity) } : item)
       };
     }
-    return { appliances: [...state.appliances, appliance] };
+    return { designStarted: true, appliances: [...state.appliances, appliance] };
   }),
   setBackupApplianceQuantity: (id, quantity) => set((state) => ({
+    designStarted: true,
     backupAppliances: state.backupAppliances.map((item) => item.id === id ? { ...item, quantity: Math.max(0, quantity) } : item)
   })),
   setBackupApplianceHours: (id, hours) => set((state) => ({
+    designStarted: true,
     backupAppliances: state.backupAppliances.map((item) => item.id === id ? { ...item, hours } : item)
   })),
   addBackupAppliance: (appliance) => set((state) => {
     if (state.backupAppliances.some((item) => item.id === appliance.id)) {
       return {
+        designStarted: true,
         backupAppliances: state.backupAppliances.map((item) => item.id === appliance.id ? { ...item, quantity: Math.max(1, item.quantity) } : item)
       };
     }
-    return { backupAppliances: [...state.backupAppliances, appliance] };
+    return { designStarted: true, backupAppliances: [...state.backupAppliances, appliance] };
   }),
-  calculateRecommendation: () => set((state) => ({ recommendedSolarKw: recommendSolarKw(state.appliances) })),
-  setRecommendedSolarKw: (recommendedSolarKw) => set({ recommendedSolarKw }),
-  setSelectedBatteryKwh: (selectedBatteryKwh) => set({ selectedBatteryKwh }),
-  setPanelWattage: (panelWattage) => set({ panelWattage }),
-  setSelectedPanelBrand: (selectedPanelBrand) => set({ selectedPanelBrand }),
-  setBackupDecision: (backupDecision) => set({ backupDecision }),
+  calculateRecommendation: () => set((state) => ({ designStarted: true, recommendedSolarKw: recommendSolarKw(state.appliances) })),
+  setRecommendedSolarKw: (recommendedSolarKw) => set({ designStarted: true, recommendedSolarKw }),
+  setSelectedBatteryKwh: (selectedBatteryKwh) => set({ designStarted: true, selectedBatteryKwh }),
+  setPanelWattage: (panelWattage) => set({ designStarted: true, panelWattage }),
+  setSelectedPanelBrand: (selectedPanelBrand) => set({ designStarted: true, selectedPanelBrand }),
+  setBackupDecision: (backupDecision) => set({ designStarted: true, backupDecision }),
   setSelectedProduct: (product) => set((state) => {
-    if (product.category === 'panel') return { selectedPanels: product };
-    if (product.category === 'inverter') return { selectedInverter: product };
-    if (product.category === 'battery') return { selectedBattery: product };
-    return { selectedAccessories: [...state.selectedAccessories.filter((item) => item.id !== product.id), product] };
+    if (product.category === 'panel') return { designStarted: true, selectedPanels: product };
+    if (product.category === 'inverter') return { designStarted: true, selectedInverter: product };
+    if (product.category === 'battery') return { designStarted: true, selectedBattery: product };
+    return { designStarted: true, selectedAccessories: [...state.selectedAccessories.filter((item) => item.id !== product.id), product] };
   }),
-  setPackageName: (packageName) => set({ packageName }),
+  setPackageName: (packageName) => set({ designStarted: true, lastDesignStep: 'packages', packageName }),
   getSummary: () => {
     const state = get();
     const panelCount = calculatePanelCount(state.recommendedSolarKw, state.panelWattage);
@@ -107,6 +123,8 @@ export const useSystemStore = create<SystemState>((set, get) => ({
   reset: () => set({
     appliances: initialAppliances,
     backupAppliances: initialAppliances.map((item) => ({ ...item, quantity: 0, hours: DEFAULT_BACKUP_HOURS })),
+    designStarted: false,
+    lastDesignStep: 'appliances',
     recommendedSolarKw: 3,
     selectedBatteryKwh: 0,
     panelWattage: 610,
@@ -117,5 +135,24 @@ export const useSystemStore = create<SystemState>((set, get) => ({
     selectedBattery: null,
     selectedAccessories: [],
     packageName: 'Balanced'
+  })
+}), {
+  name: 'kaamasaan-system-draft',
+  storage: createJSONStorage(() => AsyncStorage),
+  partialize: (state) => ({
+    appliances: state.appliances,
+    backupAppliances: state.backupAppliances,
+    designStarted: state.designStarted,
+    lastDesignStep: state.lastDesignStep,
+    recommendedSolarKw: state.recommendedSolarKw,
+    selectedBatteryKwh: state.selectedBatteryKwh,
+    panelWattage: state.panelWattage,
+    selectedPanelBrand: state.selectedPanelBrand,
+    backupDecision: state.backupDecision,
+    selectedPanels: state.selectedPanels,
+    selectedInverter: state.selectedInverter,
+    selectedBattery: state.selectedBattery,
+    selectedAccessories: state.selectedAccessories,
+    packageName: state.packageName
   })
 }));

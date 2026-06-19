@@ -3,7 +3,9 @@ import { ActivityIndicator, Text, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Home, PanelsTopLeft, ShoppingBag, User, ClipboardList } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { colors } from '@/constants/colors';
 import { useAppStore } from '@/store/useAppStore';
 import { SplashScreen } from '@/mobile/screens/onboarding/SplashScreen';
@@ -22,6 +24,9 @@ import { SurveyConfirmationScreen } from '@/mobile/screens/survey/SurveyConfirma
 import { MySolarJourneyScreen } from '@/mobile/screens/survey/MySolarJourneyScreen';
 import { PreventiveMaintenanceScreen } from '@/mobile/screens/services/PreventiveMaintenanceScreen';
 import { MaintenancePackagesScreen } from '@/mobile/screens/services/MaintenancePackagesScreen';
+import { MaintenancePlanDetailsScreen } from '@/mobile/screens/services/MaintenancePlanDetailsScreen';
+import { MaintenanceBookingScreen } from '@/mobile/screens/services/MaintenanceBookingScreen';
+import { MaintenanceBookingConfirmationScreen } from '@/mobile/screens/services/MaintenanceBookingConfirmationScreen';
 import { LiveTrackingScreen } from '@/mobile/screens/services/LiveTrackingScreen';
 import { PostServiceHealthReportScreen } from '@/mobile/screens/services/PostServiceHealthReportScreen';
 import { SolarCareMembershipScreen } from '@/mobile/screens/services/SolarCareMembershipScreen';
@@ -30,6 +35,7 @@ import { ROICalculatorScreen, ROIResultScreen } from '@/mobile/screens/solar-too
 import { SolarSizeToolScreen } from '@/mobile/screens/solar-tools/SolarSizeToolScreen';
 import { RecommendedSolarSizeScreen } from '@/mobile/screens/solar-tools/RecommendedSolarSizeScreen';
 import { BatterySizeToolScreen } from '@/mobile/screens/solar-tools/BatterySizeToolScreen';
+import { NotificationsScreen } from '@/mobile/screens/notifications/NotificationsScreen';
 import { LoginScreen } from '@/mobile/screens/auth/LoginScreen';
 import { SignupScreen } from '@/mobile/screens/auth/SignupScreen';
 import { ForgotPasswordScreen } from '@/mobile/screens/auth/ForgotPasswordScreen';
@@ -40,12 +46,15 @@ import type { MainTabParamList, RootStackParamList } from '@/types/navigation.ty
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tabs = createBottomTabNavigator<MainTabParamList>();
 
-const AuthLoadingScreen = () => (
-  <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, backgroundColor: '#FBF8F1' }}>
-    <ActivityIndicator color={colors.amber} size="large" />
-    <Text style={{ color: colors.navy, fontSize: 13, fontWeight: '800' }}>Checking your account...</Text>
-  </View>
-);
+const AuthLoadingScreen = () => {
+  const { t } = useTranslation();
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, backgroundColor: '#FBF8F1' }}>
+      <ActivityIndicator color={colors.amber} size="large" />
+      <Text style={{ color: colors.navy, fontSize: 13, fontWeight: '800' }}>{t('auth.checkingAccount')}</Text>
+    </View>
+  );
+};
 
 const ProtectedBookSurveyScreen = (props: any) => {
   const initialized = useAuthStore((state) => state.initialized);
@@ -59,31 +68,35 @@ const ProtectedBookSurveyScreen = (props: any) => {
   return <BookSurveyScreen {...props} />;
 };
 
-const MainTabs = () => (
-  <Tabs.Navigator
-    screenOptions={{
-      headerShown: false,
-      tabBarActiveTintColor: colors.amber,
-      tabBarInactiveTintColor: colors.muted,
-      tabBarStyle: {
-        height: 60,
-        paddingBottom: 6,
-        paddingTop: 5,
-        backgroundColor: colors.card,
-        borderTopColor: colors.line,
-        borderTopWidth: 1
-      },
-      tabBarItemStyle: { paddingVertical: 2 },
-      tabBarLabelStyle: { fontSize: 10, fontWeight: '800' }
-    }}
-  >
-    <Tabs.Screen name="Home" component={HomeScreen} options={{ tabBarIcon: ({ color }) => <Home color={color} size={19} /> }} />
-    <Tabs.Screen name="Marketplace" component={ExploreMarketplaceScreen} options={{ tabBarIcon: ({ color }) => <ShoppingBag color={color} size={19} /> }} />
-    <Tabs.Screen name="MySystem" component={MySystemScreen} options={{ title: 'My System', tabBarIcon: ({ color }) => <PanelsTopLeft color={color} size={19} /> }} />
-    <Tabs.Screen name="MyProject" component={MyProjectScreen} options={{ title: 'My Project', tabBarIcon: ({ color }) => <ClipboardList color={color} size={19} /> }} />
-    <Tabs.Screen name="Profile" component={ProfileScreen} options={{ tabBarIcon: ({ color }) => <User color={color} size={19} /> }} />
-  </Tabs.Navigator>
-);
+const MainTabs = () => {
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  return (
+    <Tabs.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: colors.amber,
+        tabBarInactiveTintColor: colors.muted,
+        tabBarStyle: {
+          height: 60 + insets.bottom,
+          paddingBottom: Math.max(6, insets.bottom),
+          paddingTop: 5,
+          backgroundColor: colors.card,
+          borderTopColor: colors.line,
+          borderTopWidth: 1
+        },
+        tabBarItemStyle: { paddingVertical: 2 },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '800' }
+      }}
+    >
+      <Tabs.Screen name="Home" component={HomeScreen} options={{ title: t('tabs.home'), tabBarIcon: ({ color }) => <Home color={color} size={19} /> }} />
+      <Tabs.Screen name="Marketplace" component={ExploreMarketplaceScreen} options={{ title: t('tabs.marketplace'), tabBarIcon: ({ color }) => <ShoppingBag color={color} size={19} /> }} />
+      <Tabs.Screen name="MySystem" component={MySystemScreen} options={{ title: t('tabs.mySystem'), tabBarIcon: ({ color }) => <PanelsTopLeft color={color} size={19} /> }} />
+      <Tabs.Screen name="MyProject" component={MyProjectScreen} options={{ title: t('tabs.myProject'), tabBarIcon: ({ color }) => <ClipboardList color={color} size={19} /> }} />
+      <Tabs.Screen name="Profile" component={ProfileScreen} options={{ title: t('tabs.profile'), tabBarIcon: ({ color }) => <User color={color} size={19} /> }} />
+    </Tabs.Navigator>
+  );
+};
 
 export const RootNavigator = () => {
   const [showSplash, setShowSplash] = useState(true);
@@ -115,6 +128,9 @@ export const RootNavigator = () => {
         <Stack.Screen name="MySolarJourney" component={MySolarJourneyScreen} />
         <Stack.Screen name="PreventiveMaintenance" component={PreventiveMaintenanceScreen} />
         <Stack.Screen name="MaintenancePackages" component={MaintenancePackagesScreen} />
+        <Stack.Screen name="MaintenancePlanDetails" component={MaintenancePlanDetailsScreen} />
+        <Stack.Screen name="MaintenanceBooking" component={MaintenanceBookingScreen} />
+        <Stack.Screen name="MaintenanceBookingConfirmation" component={MaintenanceBookingConfirmationScreen} />
         <Stack.Screen name="LiveTracking" component={LiveTrackingScreen} />
         <Stack.Screen name="PostServiceHealthReport" component={PostServiceHealthReportScreen} />
         <Stack.Screen name="SolarCareMembership" component={SolarCareMembershipScreen} />
@@ -124,6 +140,7 @@ export const RootNavigator = () => {
         <Stack.Screen name="SolarSizeTool" component={SolarSizeToolScreen} />
         <Stack.Screen name="RecommendedSolarSize" component={RecommendedSolarSizeScreen} />
         <Stack.Screen name="BatterySizeTool" component={BatterySizeToolScreen} />
+        <Stack.Screen name="Notifications" component={NotificationsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

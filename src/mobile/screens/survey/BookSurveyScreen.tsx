@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -9,6 +10,8 @@ import { surveyBookingSchema, SurveyBookingForm } from '@/schemas/survey.schema'
 import { systemApi } from '@/services/system.api';
 import { useSystemStore } from '@/store/useSystemStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import { activeSurveyJourneyQueryKey } from '@/hooks/useSurveyJourney';
+import { saveLocalActiveSurveyBooking } from '@/services/journey.api';
 
 const solarHouse = require('../../../assets/home/hero-house.png');
 
@@ -71,6 +74,7 @@ const AddressField = ({
 );
 
 export const BookSurveyScreen = ({ navigation }: any) => {
+  const insets = useSafeAreaInsets();
   const [selectedDate, setSelectedDate] = useState(1);
   const [selectedTime, setSelectedTime] = useState('10:00 AM');
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -118,7 +122,12 @@ export const BookSurveyScreen = ({ navigation }: any) => {
         preferredTimeSlot: selectedTime,
         notes: JSON.stringify({ source: 'mobile-app', systemSummary: getSummary() })
       });
-      await queryClient.invalidateQueries({ queryKey: ['survey-bookings', 'active', session.user.id] });
+      if (result.booking) {
+        await saveLocalActiveSurveyBooking(result.booking);
+        queryClient.setQueryData(activeSurveyJourneyQueryKey(session.user.id), result.booking);
+        queryClient.setQueryData(['survey-bookings', 'detail', result.booking.id], result.booking);
+      }
+      await queryClient.invalidateQueries({ queryKey: activeSurveyJourneyQueryKey(session.user.id) });
       navigation.replace('SurveyConfirmation', { bookingId: result.bookingId });
     } catch {
       // Mutation error is shown inline below the trust card.
@@ -136,7 +145,7 @@ export const BookSurveyScreen = ({ navigation }: any) => {
         <View style={styles.topSpacer} />
       </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: 176 + insets.bottom }]} showsVerticalScrollIndicator={false}>
         <View style={styles.heroCard}>
           <View style={styles.heroIcon}>
             <CalendarCheck2 color="#F5A400" size={28} strokeWidth={2} />
@@ -227,18 +236,18 @@ export const BookSurveyScreen = ({ navigation }: any) => {
         {mutation.error ? <Text style={styles.submitErrorText}>{mutation.error.message}</Text> : null}
       </ScrollView>
 
-      <Pressable style={styles.chatButton} accessibilityLabel="WhatsApp help">
+      <Pressable style={[styles.chatButton, { bottom: 102 + insets.bottom }]} accessibilityLabel="WhatsApp help">
         <MessageCircle color="#FFFFFF" size={20} strokeWidth={2.2} />
       </Pressable>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { bottom: 64 + insets.bottom }]}>
         <Pressable style={[styles.confirmButton, (mutation.isPending || isSubmitted) && styles.confirmButtonDisabled]} onPress={submit} disabled={mutation.isPending || isSubmitted}>
           <Text style={styles.confirmText}>{mutation.isPending || isSubmitted ? 'Confirming...' : 'Confirm Booking'}</Text>
           <ArrowRight color="#111827" size={27} strokeWidth={2.3} />
         </Pressable>
       </View>
 
-      <View style={styles.bottomNav}>
+      <View style={[styles.bottomNav, { height: 64 + insets.bottom, paddingBottom: Math.max(4, insets.bottom) }]}>
         {bottomTabs.map(({ title, Icon, route, params }) => {
           const active = title === 'Home';
           return (

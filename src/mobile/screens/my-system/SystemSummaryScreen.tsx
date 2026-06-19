@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, CalendarDays, ChevronRight, DollarSign, Download, Home, Info, ShieldCheck, Sun, TrendingUp, Zap } from 'lucide-react-native';
 import { useSystemStore } from '@/store/useSystemStore';
 import { calculatePanelCount, calculateRoofSpace } from '@/utils/calculations';

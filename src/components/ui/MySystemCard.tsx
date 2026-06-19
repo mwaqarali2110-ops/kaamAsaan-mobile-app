@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 import { BatteryCharging, Sun, Zap } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 type MySystemCardProps = {
   solarKw: number;
@@ -16,6 +17,7 @@ const formatKw = (value: number) => `${formatSystemValue(value)} kW`;
 const formatKwh = (value: number) => `${formatSystemValue(value)} kWh`;
 
 export const MySystemCard = ({ solarKw, inverterKw, batteryKwh }: MySystemCardProps) => {
+  const { t } = useTranslation();
   const pulse = useRef(new Animated.Value(0)).current;
   const blink = useRef(new Animated.Value(0)).current;
   const fill = useRef(new Animated.Value(0)).current;
@@ -65,13 +67,13 @@ export const MySystemCard = ({ solarKw, inverterKw, batteryKwh }: MySystemCardPr
 
   return (
     <View style={styles.card}>
-      <Text style={styles.eyebrow}>MY SYSTEM</Text>
+      <Text style={styles.eyebrow}>{t('tools.mySystem')}</Text>
       <View style={styles.values}>
         <View style={styles.item}>
           <Animated.View style={[styles.iconWrap, solarStyle]}>
             <Sun color="#B98900" size={14} strokeWidth={2.2} />
           </Animated.View>
-          <Text style={styles.label}>Solar Size</Text>
+          <Text style={styles.label}>{t('tools.solarSizeLabel')}</Text>
           <Text style={styles.value}>{formatKw(solarKw)}</Text>
         </View>
         <View style={styles.divider} />
@@ -79,7 +81,7 @@ export const MySystemCard = ({ solarKw, inverterKw, batteryKwh }: MySystemCardPr
           <Animated.View style={[styles.iconWrap, styles.inverterGlow, inverterStyle]}>
             <Zap color="#9D7200" size={14} strokeWidth={2.35} />
           </Animated.View>
-          <Text style={styles.label}>Inverter Size</Text>
+          <Text style={styles.label}>{t('tools.inverterSizeLabel')}</Text>
           <Text style={styles.value}>{formatKw(inverterKw)}</Text>
         </View>
         <View style={styles.divider} />
@@ -87,7 +89,7 @@ export const MySystemCard = ({ solarKw, inverterKw, batteryKwh }: MySystemCardPr
           <Animated.View style={[styles.iconWrap, batteryStyle]}>
             <BatteryCharging color="#B98900" size={14} strokeWidth={2.2} />
           </Animated.View>
-          <Text style={styles.label}>Battery Size</Text>
+          <Text style={styles.label}>{t('tools.batterySizeLabel')}</Text>
           <Text style={styles.value}>{formatKwh(batteryKwh)}</Text>
         </View>
       </View>

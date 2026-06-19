@@ -1,6 +1,7 @@
 import type { SystemSummary } from '@/types/system.types';
 import { api } from './api';
 import { supabase } from '@/lib/supabase';
+import type { SurveyJourneyBooking } from './journey.api';
 
 export type SurveyBookingPayload = {
   userId: string;
@@ -32,9 +33,9 @@ export const systemApi = {
         notes: payload.notes ?? null,
         system_design_id: payload.systemDesignId ?? null
       })
-      .select('id')
+      .select('*')
       .single();
     if (error) throw error;
-    return { ok: true, bookingId: data.id };
+    return { ok: true, bookingId: data.id, booking: data as SurveyJourneyBooking };
   }
 };

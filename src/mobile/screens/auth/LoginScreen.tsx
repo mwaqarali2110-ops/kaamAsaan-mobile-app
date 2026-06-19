@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, Animated, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { loginSchema, type LoginForm } from '@/schemas/auth.schema';
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -57,6 +58,7 @@ const AuthMessage = ({ text, tone = 'error' }: { text?: string | null; tone?: 'e
 );
 
 const AnimatedSignInButton = ({ loading, onPress }: { loading?: boolean; onPress: () => void }) => {
+  const { t } = useTranslation();
   const scale = useRef(new Animated.Value(1)).current;
 
   const animateTo = (value: number) => {
@@ -78,23 +80,27 @@ const AnimatedSignInButton = ({ loading, onPress }: { loading?: boolean; onPress
         style={[styles.primaryButton, loading && styles.primaryButtonDisabled]}
       >
         <View style={styles.buttonGlow} />
-        <Text style={styles.primaryButtonText}>{loading ? 'Signing in...' : 'Sign In'}</Text>
+        <Text style={styles.primaryButtonText}>{loading ? t('auth.login.signingIn') : t('auth.login.signIn')}</Text>
         <ArrowRight color="#172031" size={20} strokeWidth={2.6} style={styles.primaryButtonIcon} />
       </Pressable>
     </Animated.View>
   );
 };
 
-const SocialButton = ({ provider, icon, color }: { provider: string; icon: string; color: string }) => (
-  <Pressable style={({ pressed }) => [styles.socialButton, pressed && styles.socialButtonPressed]}>
-    <View style={[styles.socialIcon, { backgroundColor: `${color}12` }]}>
-      <Text style={[styles.socialIconText, { color }]}>{icon}</Text>
-    </View>
-    <Text style={styles.socialText}>Continue with {provider}</Text>
-  </Pressable>
-);
+const SocialButton = ({ provider, icon, color }: { provider: string; icon: string; color: string }) => {
+  const { t } = useTranslation();
+  return (
+    <Pressable style={({ pressed }) => [styles.socialButton, pressed && styles.socialButtonPressed]}>
+      <View style={[styles.socialIcon, { backgroundColor: `${color}12` }]}>
+        <Text style={[styles.socialIconText, { color }]}>{icon}</Text>
+      </View>
+      <Text style={styles.socialText}>{t('auth.login.continueWith', { provider })}</Text>
+    </Pressable>
+  );
+};
 
 export const LoginScreen = ({ navigation, route }: any) => {
+  const { t } = useTranslation();
   const signIn = useAuthStore((state) => state.signIn);
   const clearError = useAuthStore((state) => state.clearError);
   const storeError = useAuthStore((state) => state.error);
@@ -139,7 +145,7 @@ export const LoginScreen = ({ navigation, route }: any) => {
       await signIn(email, password);
       navigation.replace(route.params?.redirectTo ?? 'MainTabs');
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Invalid email or password.');
+      setError(reason instanceof Error ? reason.message : t('auth.login.invalid'));
     }
   };
 
@@ -157,8 +163,8 @@ export const LoginScreen = ({ navigation, route }: any) => {
             <View style={styles.logoCircle}>
               <Image source={logoImage} style={styles.logo} resizeMode="contain" />
             </View>
-            <Text style={styles.appName}>KaamAsaan</Text>
-            <Text style={styles.tagline}>Pakistan's No.1 Solar Marketplace</Text>
+            <Text style={styles.appName}>{t('auth.login.title')}</Text>
+            <Text style={styles.tagline}>{t('auth.login.tagline')}</Text>
             <View style={styles.goldDivider} />
           </Animated.View>
 
@@ -167,10 +173,10 @@ export const LoginScreen = ({ navigation, route }: any) => {
             <AuthMessage text={error || storeError} />
 
             <LoginField
-              label="Email Address"
+              label={t('auth.login.email')}
               Icon={Mail}
               error={fieldErrors.email}
-              placeholder="your email@example.com"
+              placeholder={t('auth.login.emailPlaceholder')}
               autoCapitalize="none"
               autoComplete="email"
               autoCorrect={false}
@@ -184,11 +190,11 @@ export const LoginScreen = ({ navigation, route }: any) => {
               textContentType={Platform.OS === 'ios' ? 'emailAddress' : 'none'}
             />
             <LoginField
-              label="Password"
+              label={t('auth.login.password')}
               Icon={LockKeyhole}
               error={fieldErrors.password}
               inputRef={passwordInputRef}
-              placeholder="••••••••"
+              placeholder={t('auth.login.passwordPlaceholder')}
               autoCapitalize="none"
               autoComplete="password"
               onChangeText={(value) => {
@@ -204,12 +210,12 @@ export const LoginScreen = ({ navigation, route }: any) => {
 
             <View style={styles.securityNote}>
               <ShieldCheck color="#7C8797" size={13} strokeWidth={2.2} />
-              <Text style={styles.securityText}>Secure login • Your data is protected</Text>
+              <Text style={styles.securityText}>{t('auth.login.secureNote')}</Text>
             </View>
 
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or continue with</Text>
+              <Text style={styles.dividerText}>{t('auth.login.orContinue')}</Text>
               <View style={styles.dividerLine} />
             </View>
 
@@ -219,18 +225,18 @@ export const LoginScreen = ({ navigation, route }: any) => {
             </View>
 
             <Pressable style={styles.forgotButton} onPress={() => navigation.navigate('ForgotPassword')}>
-              <Text style={styles.forgotText}>Forgot Password?</Text>
+              <Text style={styles.forgotText}>{t('auth.login.forgotPassword')}</Text>
             </Pressable>
 
             <View style={styles.signupRow}>
-              <Text style={styles.signupMuted}>Don't have an account?</Text>
+              <Text style={styles.signupMuted}>{t('auth.login.noAccount')}</Text>
               <Pressable onPress={() => navigation.navigate('Signup', { redirectTo: route.params?.redirectTo })}>
-                <Text style={styles.signupLink}>Sign Up</Text>
+                <Text style={styles.signupLink}>{t('auth.login.signup')}</Text>
               </Pressable>
             </View>
           </Animated.View>
 
-          <Text style={styles.footer}>Powering Smart Solar Decisions</Text>
+          <Text style={styles.footer}>{t('home.heroSubtitle')}</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

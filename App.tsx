@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from '@/mobile/navigation/RootNavigator';
+import { I18nProvider } from '@/i18n/I18nProvider';
 
 const queryClient = new QueryClient();
 
@@ -13,10 +14,12 @@ export default function App() {
   const { width } = useWindowDimensions();
   const app = (
     <QueryClientProvider client={queryClient}>
-      <SafeAreaProvider>
-        <StatusBar style="dark" />
-        <RootNavigator />
-      </SafeAreaProvider>
+      <I18nProvider>
+        <SafeAreaProvider>
+          <StatusBar style="dark" />
+          <RootNavigator />
+        </SafeAreaProvider>
+      </I18nProvider>
     </QueryClientProvider>
   );
 

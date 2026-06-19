@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Image,
   ImageBackground,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -23,8 +24,10 @@ import Reanimated, {
   withTiming,
 } from 'react-native-reanimated';
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Rect, Stop } from 'react-native-svg';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   ArrowRight,
   Bell,
@@ -45,8 +48,10 @@ import {
   Zap,
 } from 'lucide-react-native';
 import { useActiveSurveyJourney } from '@/hooks/useSurveyJourney';
+import { useHomeLocation } from '@/hooks/useHomeLocation';
 import { formatSurveyReference, SurveyJourneyBooking } from '@/services/journey.api';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useSystemStore } from '@/store/useSystemStore';
 
 /* ─── Assets ─── */
 const logo = require('../../../assets/home/kaamasaan-cart.png');
@@ -75,30 +80,31 @@ const BRAND_LOGOS = [
 ];
 
 const QUICK_ACTIONS = [
-  { id: 'roof-space', label: 'Roof Space', Icon: Ruler },
-  { id: 'roi', label: 'ROI Calculator', Icon: TrendingUp },
-  { id: 'solar-size', label: 'Calculate Solar Size', Icon: Calculator },
-  { id: 'inverter-size', label: 'Calculate Inverter Size', Icon: Settings },
-  { id: 'battery-size', label: 'Calculate Battery Size', Icon: Calculator },
+  { id: 'roof-space', labelKey: 'tools.roofSpace', Icon: Ruler },
+  { id: 'roi', labelKey: 'tools.roi', Icon: TrendingUp },
+  { id: 'solar-size', labelKey: 'tools.solarSize', Icon: Calculator },
+  { id: 'inverter-size', labelKey: 'tools.loadCalculator', Icon: Settings },
+  { id: 'battery-size', labelKey: 'tools.batterySize', Icon: Calculator },
 ];
 
 const MARKETPLACE_CATEGORIES = [
-  { id: 'inverters', label: 'Inverter', subtitle: 'Pick the inverter that fits your budget', image: inverterImage },
-  { id: 'panels', label: 'Solar Panel', subtitle: 'From monocrystalline to bifacial', image: solarPanelImage },
-  { id: 'batteries', label: 'Batteries', subtitle: 'Backup power when the grid goes out', image: batteryImage },
-  { id: 'accessories', label: 'Solar Accessories', subtitle: 'Structure and accessories', image: accessoriesImage },
+  { id: 'inverters', labelKey: 'products.inverter', subtitleKey: 'products.inverterSubtitle', image: inverterImage },
+  { id: 'panels', labelKey: 'products.panel', subtitleKey: 'products.panelSubtitle', image: solarPanelImage },
+  { id: 'batteries', labelKey: 'products.batteries', subtitleKey: 'products.batterySubtitle', image: batteryImage },
+  { id: 'accessories', labelKey: 'products.accessories', subtitleKey: 'products.accessoriesSubtitle', image: accessoriesImage },
 ];
 
 const SERVICES = [
-  { id: 'care', label: 'Solar Care', subtitle: 'Maintenance & repairs', image: maintenanceImage },
-  { id: 'install', label: 'Installation', subtitle: 'Expert setup, no guesswork', image: installationImage },
-  { id: 'aftersale', label: 'After-Sales Services', subtitle: 'Here when things need fixing', image: afterSalesImage },
-  { id: 'billing', label: 'Net Billing', subtitle: 'Sell surplus power to the grid', image: greenMeterImage },
+  { id: 'care', labelKey: 'services.solarCare', subtitleKey: 'services.maintenancePackages', image: maintenanceImage },
+  { id: 'install', labelKey: 'services.installation', subtitleKey: 'services.installationSubtitle', image: installationImage },
+  { id: 'aftersale', labelKey: 'services.afterSales', subtitleKey: 'services.afterSalesSubtitle', image: afterSalesImage },
+  { id: 'billing', labelKey: 'services.netBilling', subtitleKey: 'services.netBillingSubtitle', image: greenMeterImage },
 ];
 
-const WHY_ITEMS = ['Accurate system sizing', 'Transparent pricing', 'Real expert support'];
+const WHY_ITEMS = ['home.whyAccurate', 'home.whyPricing', 'home.whySupport'];
 const CTA_CURRENT_DURATION = 2800;
 const CTA_BORDER_PERIMETER = 358;
+const CONTINUE_PLAN_DISMISS_KEY = 'kaamasaan.home.continue-plan.dismissed';
 const AnimatedRect = Reanimated.createAnimatedComponent(Rect);
 
 /* ─── Helpers ─── */
@@ -131,6 +137,7 @@ const HeroImageFade = () => (
 /* ─── Sub-components ─── */
 
 const ElectricHeroCta = ({ onPress }: { onPress: () => void }) => {
+  const { t } = useTranslation();
   const orbit = useSharedValue(0);
   const transfer = useSharedValue(0);
   const pulse = useSharedValue(0);
@@ -199,7 +206,7 @@ const ElectricHeroCta = ({ onPress }: { onPress: () => void }) => {
         />
       </Svg>
       <View style={s.heroCtaContent}>
-        <Text style={s.heroCtaText}>Design your system</Text>
+        <Text style={s.heroCtaText}>{t('home.designSystem')}</Text>
         <View style={s.heroCtaIconWrap}>
           <Reanimated.View pointerEvents="none" style={[s.heroCtaTransfer, transferStyle]} />
           <Reanimated.View pointerEvents="none" style={[s.heroCtaIconHalo, iconPulseStyle]} />
@@ -223,23 +230,26 @@ const SectionHeader = ({ title, action, onPress }: { title: string; action?: str
   </View>
 );
 
-const CategoryCard = ({ item, onPress }: { item: typeof MARKETPLACE_CATEGORIES[0]; onPress: () => void }) => (
-  <Pressable style={s.catCard} onPress={onPress}>
-    <View style={s.catImgWrap}>
-      <Image source={item.image} style={s.catImg} resizeMode="cover" />
-      <View style={s.catImgShade} />
-    </View>
-    <View style={s.catFoot}>
-      <View style={s.catCopy}>
-        <Text style={s.catLabel} numberOfLines={1}>{item.label}</Text>
-        <Text style={s.catMeta} numberOfLines={1}>{item.subtitle}</Text>
+const CategoryCard = ({ item, onPress }: { item: typeof MARKETPLACE_CATEGORIES[0] | typeof SERVICES[0]; onPress: () => void }) => {
+  const { t } = useTranslation();
+  return (
+    <Pressable style={s.catCard} onPress={onPress}>
+      <View style={s.catImgWrap}>
+        <Image source={item.image} style={s.catImg} resizeMode="cover" />
+        <View style={s.catImgShade} />
       </View>
-      <View style={s.catArrow}>
-        <ChevronRight color="#B07800" size={15} strokeWidth={2.4} />
+      <View style={s.catFoot}>
+        <View style={s.catCopy}>
+          <Text style={s.catLabel} numberOfLines={1}>{t(item.labelKey)}</Text>
+          <Text style={s.catMeta} numberOfLines={1}>{t(item.subtitleKey)}</Text>
+        </View>
+        <View style={s.catArrow}>
+          <ChevronRight color="#B07800" size={15} strokeWidth={2.4} />
+        </View>
       </View>
-    </View>
-  </Pressable>
-);
+    </Pressable>
+  );
+};
 
 /* ─── Continue Plan Bar ─── */
 const BrandLogoCard = ({ brand }: { brand: typeof BRAND_LOGOS[0] }) => (
@@ -304,30 +314,47 @@ const BrandMarquee = () => {
   );
 };
 
-const ContinuePlanBar = ({ navigation }: { navigation: any }) => {
+type ContinuePlanProgress = {
+  completionPercent: number;
+  systemKw: number;
+  monthlySavings: number;
+};
+
+const ContinuePlanBar = ({
+  navigation,
+  progress,
+  onDismiss,
+  bottomOffset
+}: {
+  navigation: any;
+  progress: ContinuePlanProgress;
+  onDismiss: () => void;
+  bottomOffset: number;
+}) => {
+  const { t } = useTranslation();
   const [visible, setVisible] = useState(true);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
-  // Demo progress data (matches web app pattern)
-  const progress = { started: true, completionPercent: 33, systemKw: 3, monthlySavings: 14508 };
-
   const dismiss = () => {
-    Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => setVisible(false));
+    Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => {
+      setVisible(false);
+      onDismiss();
+    });
   };
 
   if (!visible) return null;
 
   return (
-    <Animated.View style={[s.planBar, { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }]}>
+    <Animated.View style={[s.planBar, { bottom: bottomOffset, opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }]}>
       <View style={s.planCopy}>
-        <Text style={s.planEyebrow}>Continue your plan • {progress.completionPercent}% complete</Text>
-        <Text style={s.planSummary} numberOfLines={1}>{progress.systemKw} kW system • Save Rs. {progress.monthlySavings.toLocaleString()}/month</Text>
+        <Text style={s.planEyebrow}>{t('home.continuePlan', { percent: progress.completionPercent })}</Text>
+        <Text style={s.planSummary} numberOfLines={1}>{t('home.systemSavings', { kw: progress.systemKw, amount: progress.monthlySavings.toLocaleString() })}</Text>
         <View style={s.planProgress}>
           <View style={[s.planProgressFill, { width: `${progress.completionPercent}%` }]} />
         </View>
       </View>
       <Pressable style={s.planCta} onPress={() => navigation.navigate('DesignFlow')}>
-        <Text style={s.planCtaText}>Continue</Text>
+        <Text style={s.planCtaText}>{t('common.continue')}</Text>
         <ArrowRight color="#3f2a00" size={14} strokeWidth={2.5} />
       </Pressable>
       <Pressable style={s.planDismiss} onPress={dismiss} hitSlop={8}>
@@ -338,16 +365,17 @@ const ContinuePlanBar = ({ navigation }: { navigation: any }) => {
 };
 
 const journeyStatusCopy = {
-  pending: { subtitle: 'Survey request received', label: 'Pending confirmation', progress: 12, tone: '#F5A623' },
-  confirmed: { subtitle: 'Representative call confirmed', label: 'Confirmed', progress: 24, tone: '#2563EB' },
-  survey_scheduled: { subtitle: 'Site survey scheduled', label: 'Survey scheduled', progress: 36, tone: '#2563EB' },
-  survey_completed: { subtitle: 'Site survey completed', label: 'Survey completed', progress: 50, tone: '#168A4A' },
-  proposal_preparation: { subtitle: 'Proposal is being prepared', label: 'Proposal preparation', progress: 62, tone: '#E87916' },
-  quotation_shared: { subtitle: 'Quotation shared for review', label: 'Quotation shared', progress: 74, tone: '#7C3AED' },
-  installation_planning: { subtitle: 'Installation plan in progress', label: 'Installation planning', progress: 88, tone: '#0F8B8D' }
+  pending: { subtitleKey: 'home.surveyPending', labelKey: 'home.pendingConfirmation', progress: 12, tone: '#F5A623' },
+  confirmed: { subtitleKey: 'home.surveyConfirmedShort', labelKey: 'home.confirmed', progress: 24, tone: '#2563EB' },
+  survey_scheduled: { subtitleKey: 'home.surveyScheduled', labelKey: 'home.surveyScheduledLabel', progress: 36, tone: '#2563EB' },
+  survey_completed: { subtitleKey: 'home.surveyCompleted', labelKey: 'home.surveyCompletedLabel', progress: 50, tone: '#168A4A' },
+  proposal_preparation: { subtitleKey: 'home.proposalPreparing', labelKey: 'home.proposalPreparation', progress: 62, tone: '#E87916' },
+  quotation_shared: { subtitleKey: 'home.quotationShared', labelKey: 'home.quotationSharedLabel', progress: 74, tone: '#7C3AED' },
+  installation_planning: { subtitleKey: 'home.installationPlanning', labelKey: 'home.installationPlanningLabel', progress: 88, tone: '#0F8B8D' }
 } as const;
 
-const ActiveJourneyBar = ({ booking, navigation }: { booking: SurveyJourneyBooking; navigation: any }) => {
+const ActiveJourneyBar = ({ booking, navigation, bottomOffset }: { booking: SurveyJourneyBooking; navigation: any; bottomOffset: number }) => {
+  const { t } = useTranslation();
   const entrance = useRef(new Animated.Value(0)).current;
   const status = journeyStatusCopy[booking.status as keyof typeof journeyStatusCopy] ?? journeyStatusCopy.pending;
 
@@ -356,48 +384,190 @@ const ActiveJourneyBar = ({ booking, navigation }: { booking: SurveyJourneyBooki
   }, [entrance]);
 
   return (
-    <Animated.View style={[s.journeyBar, { opacity: entrance, transform: [{ translateY: entrance.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] }]}>
+    <Animated.View style={[s.journeyBar, { bottom: bottomOffset, opacity: entrance, transform: [{ translateY: entrance.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] }]}>
       <View style={s.journeyIcon}>
         <ClipboardCheck color="#128A3E" size={21} strokeWidth={2.3} />
       </View>
       <View style={s.journeyCopy}>
-        <Text style={s.journeyTitle}>My Solar Journey</Text>
-        <Text style={s.journeySubtitle}>{status.subtitle}</Text>
+        <Text style={s.journeyTitle}>{t('survey.mySolarJourney')}</Text>
+        <Text style={s.journeySubtitle}>{t(status.subtitleKey)}</Text>
         <View style={s.journeyMeta}>
           <Text style={s.journeyReference}>{formatSurveyReference(booking)}</Text>
           <View style={s.journeyMetaDot} />
-          <Text style={[s.journeyStatus, { color: status.tone }]}>{status.label}</Text>
+          <Text style={[s.journeyStatus, { color: status.tone }]}>{t(status.labelKey)}</Text>
         </View>
         <View style={s.journeyProgress}>
           <View style={[s.journeyProgressFill, { width: `${status.progress}%`, backgroundColor: status.tone }]} />
         </View>
       </View>
-      <Pressable style={s.journeyCta} onPress={() => navigation.navigate('MySolarJourney', { bookingId: booking.id })}>
-        <Text style={s.journeyCtaText}>View Progress</Text>
+      <Pressable style={s.journeyCta} onPress={() => navigation.navigate('MyProject')}>
+        <Text style={s.journeyCtaText}>{t('home.viewProgress')}</Text>
         <ArrowRight color="#493000" size={13} strokeWidth={2.7} />
       </Pressable>
     </Animated.View>
   );
 };
 
+const HomeMenuModal = ({
+  visible,
+  onClose,
+  navigation
+}: {
+  visible: boolean;
+  onClose: () => void;
+  navigation: any;
+}) => {
+  const { t } = useTranslation();
+  const items = [
+    { label: t('menu.home'), Icon: HomeIcon, action: () => navigation.navigate('Home') },
+    { label: t('menu.marketplace'), Icon: ShoppingBag, action: () => navigation.navigate('Marketplace') },
+    { label: t('menu.mySystem'), Icon: Zap, action: () => navigation.navigate('MySystem') },
+    { label: t('menu.myProject'), Icon: ClipboardCheck, action: () => navigation.navigate('MyProject') },
+    { label: t('menu.profile'), Icon: User, action: () => navigation.navigate('Profile') },
+    { label: t('menu.language'), Icon: Settings, action: () => navigation.navigate('Profile') },
+    { label: t('menu.solarCare'), Icon: Sun, action: () => navigation.navigate('PreventiveMaintenance') }
+  ];
+
+  const selectItem = (action: () => void) => {
+    onClose();
+    action();
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={s.menuBackdrop} onPress={onClose}>
+        <Pressable style={s.menuSheet}>
+          <View style={s.menuHeader}>
+            <View>
+              <Text style={s.menuTitle}>{t('menu.title')}</Text>
+              <Text style={s.menuSubtitle}>{t('menu.subtitle')}</Text>
+            </View>
+            <Pressable
+              style={({ pressed }) => [s.menuClose, pressed && s.headerPressed]}
+              onPress={onClose}
+              hitSlop={10}
+              accessibilityLabel={t('common.close')}
+              accessibilityRole="button"
+            >
+              <X color="#526174" size={18} strokeWidth={2.4} />
+            </Pressable>
+          </View>
+          <View style={s.menuList}>
+            {items.map(({ label, Icon, action }) => (
+              <Pressable
+                key={label}
+                style={({ pressed }) => [s.menuItem, pressed && s.menuItemPressed]}
+                onPress={() => selectItem(action)}
+                accessibilityRole="button"
+              >
+                <View style={s.menuItemIcon}>
+                  <Icon color="#B07800" size={17} strokeWidth={2.2} />
+                </View>
+                <Text style={s.menuItemText}>{label}</Text>
+                <ChevronRight color="#B8A071" size={16} strokeWidth={2.2} />
+              </Pressable>
+            ))}
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+};
+
 /* ─── Main HomeScreen ─── */
 export const HomeScreen = ({ navigation }: any) => {
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const userId = useAuthStore((state) => state.session?.user.id);
+  const { locationLabel } = useHomeLocation();
   const isFocused = useIsFocused();
   const journeyQuery = useActiveSurveyJourney(userId);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [continuePlanDismissed, setContinuePlanDismissed] = useState(false);
+  const unreadNotifications = 0;
+  const appliances = useSystemStore((state) => state.appliances);
+  const backupAppliances = useSystemStore((state) => state.backupAppliances);
+  const recommendedSolarKw = useSystemStore((state) => state.recommendedSolarKw);
+  const selectedBatteryKwh = useSystemStore((state) => state.selectedBatteryKwh);
+  const selectedPanelBrand = useSystemStore((state) => state.selectedPanelBrand);
+  const backupDecision = useSystemStore((state) => state.backupDecision);
+  const selectedPanels = useSystemStore((state) => state.selectedPanels);
+  const selectedInverter = useSystemStore((state) => state.selectedInverter);
+  const selectedBattery = useSystemStore((state) => state.selectedBattery);
 
   useEffect(() => {
     if (isFocused && userId) void journeyQuery.refetch();
   }, [isFocused, journeyQuery.refetch, userId]);
 
+  useEffect(() => {
+    void AsyncStorage.getItem(CONTINUE_PLAN_DISMISS_KEY).then((value) => {
+      setContinuePlanDismissed(value === 'true');
+    });
+  }, []);
+
   const activeJourney = journeyQuery.data;
+  const designProgress = useMemo(() => {
+    const hasLoad = appliances.some((item) => item.quantity > 0);
+    const hasBackupLoad = backupAppliances.some((item) => item.quantity > 0);
+    const hasPanelChoice = Boolean(selectedPanelBrand || selectedPanels);
+    const hasInverterChoice = Boolean(selectedInverter);
+    const hasBackupChoice = Boolean(
+      backupDecision === 'no' ||
+      selectedBattery ||
+      selectedBatteryKwh > 0
+    );
+    const started = hasLoad || hasBackupLoad || hasPanelChoice || hasInverterChoice || hasBackupChoice || backupDecision !== null;
+    const completedSteps = [hasLoad, hasPanelChoice, hasInverterChoice, backupDecision !== null, hasBackupChoice].filter(Boolean).length;
+    const completionPercent = started ? Math.max(20, Math.min(95, Math.round((completedSteps / 5) * 100))) : 0;
+    const completed = hasPanelChoice && hasInverterChoice && hasBackupChoice;
+
+    return {
+      started,
+      completed,
+      completionPercent,
+      systemKw: recommendedSolarKw,
+      monthlySavings: Math.round(recommendedSolarKw * 4836)
+    };
+  }, [
+    appliances,
+    backupAppliances,
+    backupDecision,
+    recommendedSolarKw,
+    selectedBattery,
+    selectedBatteryKwh,
+    selectedInverter,
+    selectedPanelBrand,
+    selectedPanels
+  ]);
+  const showContinuePlan = !activeJourney && designProgress.started && !designProgress.completed && !continuePlanDismissed;
+  const floatingBottom = Math.max(10, insets.bottom + 10);
+  const scrollBottomPadding = (activeJourney ? 154 : showContinuePlan ? 126 : 34) + insets.bottom;
+
+  const dismissContinuePlan = () => {
+    setContinuePlanDismissed(true);
+    void AsyncStorage.setItem(CONTINUE_PLAN_DISMISS_KEY, 'true');
+  };
+
+  const openMenu = () => {
+    if (typeof navigation.openDrawer === 'function') {
+      navigation.openDrawer();
+      return;
+    }
+    setMenuOpen(true);
+  };
 
   return (
   <SafeAreaView style={s.shell} edges={['top']}>
     {/* ══ Header ══ */}
     <View style={s.header}>
       <View style={s.headerBar}>
-        <Pressable style={s.iconBtn} accessibilityLabel="Open menu" hitSlop={8}>
+        <Pressable
+          style={({ pressed }) => [s.iconBtn, pressed && s.headerPressed]}
+          onPress={openMenu}
+          accessibilityLabel="Open menu"
+          accessibilityRole="button"
+          hitSlop={12}
+        >
           <Menu color="#111827" size={22} strokeWidth={2} />
         </Pressable>
         <View style={s.logoWrap}>
@@ -409,20 +579,32 @@ export const HomeScreen = ({ navigation }: any) => {
             <Text style={s.logoTextAsaan}>Asaan</Text>
           </Text>
         </View>
-        <Pressable style={[s.iconBtn, { position: 'relative' as const }]} accessibilityLabel="Notifications" hitSlop={8}>
+        <Pressable
+          style={({ pressed }) => [s.iconBtn, s.notificationButton, pressed && s.headerPressed]}
+          onPress={() => navigation.navigate('Notifications')}
+          accessibilityLabel="Open notifications"
+          accessibilityRole="button"
+          hitSlop={12}
+        >
           <Bell color="#111827" size={20} strokeWidth={2} />
-          <View style={s.notifDot} />
+          {unreadNotifications > 0 ? <View style={s.notifDot} /> : null}
         </Pressable>
       </View>
-      <Pressable style={s.locationRow} hitSlop={4}>
+      <Pressable
+        style={({ pressed }) => [s.locationRow, pressed && s.locationRowPressed]}
+        onPress={() => navigation.navigate('Profile')}
+        hitSlop={10}
+        accessibilityRole="button"
+        accessibilityLabel={`Current location ${locationLabel}`}
+      >
         <MapPin color="#111827" size={14} strokeWidth={2.2} />
-        <Text style={s.locationText}>Lahore, Pakistan</Text>
+        <Text style={s.locationText}>{locationLabel}</Text>
         <ChevronDown color="#6B7280" size={14} strokeWidth={2.2} />
       </Pressable>
     </View>
 
     {/* ══ Scrollable Content ══ */}
-    <ScrollView style={s.scroll} contentContainerStyle={[s.scrollInner, activeJourney && s.scrollInnerWithJourney]} showsVerticalScrollIndicator={false}>
+    <ScrollView style={s.scroll} contentContainerStyle={[s.scrollInner, { paddingBottom: scrollBottomPadding }]} showsVerticalScrollIndicator={false}>
 
       {/* 1 ── Hero */}
       <View style={s.hero}>
@@ -431,13 +613,13 @@ export const HomeScreen = ({ navigation }: any) => {
             <View style={s.bulletBadge}>
               <Zap color="#B07800" size={11} fill="#B07800" />
             </View>
-            <Text style={s.bulletText}>Estimate your load</Text>
+            <Text style={s.bulletText}>{t('home.estimateLoad')}</Text>
           </View>
           <View style={s.heroBullet}>
             <View style={[s.bulletBadge, s.bulletBadgeGreen]}>
               <HomeIcon color="#128A3E" size={11} strokeWidth={2.4} />
             </View>
-            <Text style={s.bulletText}>Design your system</Text>
+            <Text style={s.bulletText}>{t('home.designSystem')}</Text>
           </View>
           <ElectricHeroCta onPress={() => navigation.navigate('DesignFlow')} />
         </View>
@@ -449,7 +631,7 @@ export const HomeScreen = ({ navigation }: any) => {
       <BrandMarquee />
 
       {/* 3 ── Smart Tools */}
-      <SectionHeader title="Smart Tools" />
+      <SectionHeader title={t('home.smartTools')} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.qaTrack}>
         {QUICK_ACTIONS.map((a) => (
           <Pressable
@@ -460,7 +642,7 @@ export const HomeScreen = ({ navigation }: any) => {
             <View style={s.qaIcon}>
               <a.Icon color="#B07800" size={19} strokeWidth={1.9} />
             </View>
-            <Text style={s.qaLabel} numberOfLines={2}>{a.label}</Text>
+            <Text style={s.qaLabel} numberOfLines={2}>{t(a.labelKey)}</Text>
           </Pressable>
         ))}
       </ScrollView>
@@ -470,10 +652,10 @@ export const HomeScreen = ({ navigation }: any) => {
         <ImageBackground source={maintenanceImage} style={s.maintBg} imageStyle={s.maintBgImg} resizeMode="cover">
           <View style={s.maintOverlay} />
           <View style={s.maintContent}>
-            <Text style={s.maintBadge}>SOLAR CARE</Text>
-            <Text style={s.maintTitle}>{'Preventive\nMaintenance'}</Text>
+            <Text style={s.maintBadge}>{t('services.solarCare').toUpperCase()}</Text>
+            <Text style={s.maintTitle}>{t('services.preventiveMaintenance')}</Text>
             <View style={s.maintCta}>
-              <Text style={s.maintCtaText}>Check Solar Health</Text>
+              <Text style={s.maintCtaText}>{t('tools.checkSolarHealth')}</Text>
               <ChevronRight color="#201503" size={11} strokeWidth={2.8} />
             </View>
           </View>
@@ -481,7 +663,7 @@ export const HomeScreen = ({ navigation }: any) => {
       </Pressable>
 
       {/* 5 ── Explore Products */}
-      <SectionHeader title="Explore Products" action="View all" onPress={() => navigation.navigate('Marketplace')} />
+      <SectionHeader title={t('home.exploreProducts')} action={t('common.viewAll')} onPress={() => navigation.navigate('Marketplace')} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.catTrack}>
         {MARKETPLACE_CATEGORIES.map((item) => (
           <CategoryCard key={item.id} item={item} onPress={() => navigateToCategory(navigation, item.id)} />
@@ -489,7 +671,7 @@ export const HomeScreen = ({ navigation }: any) => {
       </ScrollView>
 
       {/* 6 ── Services */}
-      <SectionHeader title="Services" action="View all" onPress={() => navigation.navigate('BookSurvey')} />
+      <SectionHeader title={t('home.services')} action={t('common.viewAll')} onPress={() => navigation.navigate('BookSurvey')} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.catTrack}>
         {SERVICES.map((item) => (
           <CategoryCard key={item.id} item={item} onPress={() => navigation.navigate('BookSurvey')} />
@@ -498,26 +680,31 @@ export const HomeScreen = ({ navigation }: any) => {
 
       {/* 7 ── Why KaamAsaan */}
       <View style={s.whyCard}>
-        <Text style={s.whyTitle}>Not sure what's right for your home?</Text>
-        <Text style={s.whyCopy}>Get a personalized solar recommendation from our expert.</Text>
+        <Text style={s.whyTitle}>{t('home.whyTitle')}</Text>
+        <Text style={s.whyCopy}>{t('home.whyCopy')}</Text>
         <View style={s.whyList}>
           {WHY_ITEMS.map((item) => (
             <View key={item} style={s.whyItem}>
               <View style={s.whyCheck}>
                 <Text style={s.whyCheckMark}>✓</Text>
               </View>
-              <Text style={s.whyItemText}>{item}</Text>
+              <Text style={s.whyItemText}>{t(item)}</Text>
             </View>
           ))}
         </View>
         <Pressable style={s.whyBtn} onPress={() => navigation.navigate('DesignFlow')}>
-          <Text style={s.whyBtnText}>Get Expert Opinion →</Text>
+          <Text style={s.whyBtnText}>{t('home.getExpertOpinion')}</Text>
         </Pressable>
       </View>
     </ScrollView>
 
     {/* ══ Continue Plan Floating Bar ══ */}
-    {activeJourney ? <ActiveJourneyBar booking={activeJourney} navigation={navigation} /> : <ContinuePlanBar navigation={navigation} />}
+    {activeJourney ? (
+      <ActiveJourneyBar booking={activeJourney} navigation={navigation} bottomOffset={floatingBottom} />
+    ) : showContinuePlan ? (
+      <ContinuePlanBar navigation={navigation} progress={designProgress} onDismiss={dismissContinuePlan} bottomOffset={floatingBottom} />
+    ) : null}
+    <HomeMenuModal visible={menuOpen} onClose={() => setMenuOpen(false)} navigation={navigation} />
   </SafeAreaView>
   );
 };
@@ -545,7 +732,9 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  iconBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  iconBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderRadius: 999 },
+  notificationButton: { position: 'relative' },
+  headerPressed: { opacity: 0.86, backgroundColor: 'rgba(17,24,39,0.05)' },
   notifDot: {
     position: 'absolute',
     right: 5,
@@ -570,8 +759,66 @@ const s = StyleSheet.create({
   logoText: { fontSize: 19, fontWeight: '900', lineHeight: 20, letterSpacing: -0.4 },
   logoTextKaam: { color: '#111827' },
   logoTextAsaan: { color: '#B07800' },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 18 },
+  locationRow: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 4, minHeight: 22, borderRadius: 999 },
+  locationRowPressed: { opacity: 0.86 },
   locationText: { color: '#111827', fontSize: 13, fontWeight: '600' },
+  menuBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15,23,42,0.34)',
+    justifyContent: 'flex-start',
+  },
+  menuSheet: {
+    width: 282,
+    minHeight: '100%',
+    backgroundColor: '#FFFDF8',
+    paddingTop: 18,
+    paddingHorizontal: 14,
+    borderTopRightRadius: 18,
+    borderBottomRightRadius: 18,
+    shadowColor: '#111827',
+    shadowOffset: { width: 8, height: 0 },
+    shadowOpacity: 0.16,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  menuHeader: {
+    minHeight: 58,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E7DFD1',
+    paddingBottom: 12,
+  },
+  menuTitle: { color: '#10213A', fontSize: 20, fontWeight: '900' },
+  menuSubtitle: { marginTop: 3, color: '#738094', fontSize: 11.5, fontWeight: '700' },
+  menuClose: {
+    width: 34,
+    height: 34,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F7F3EB',
+  },
+  menuList: { paddingTop: 12, gap: 4 },
+  menuItem: {
+    minHeight: 48,
+    borderRadius: 13,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 10,
+  },
+  menuItemPressed: { opacity: 0.88, backgroundColor: '#FFF7E6' },
+  menuItemIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(245,166,35,0.12)',
+  },
+  menuItemText: { flex: 1, color: '#172031', fontSize: 13.5, fontWeight: '800' },
 
   /* Scroll */
   scroll: { flex: 1 },

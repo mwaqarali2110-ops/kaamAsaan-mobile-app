@@ -62,6 +62,7 @@ const formatDate = (value?: string | null) =>
 export const MySolarJourneyScreen = ({ navigation, route }: any) => {
   const query = useSurveyJourney(route.params?.bookingId);
   const booking = query.data;
+  const openedFromTab = Boolean(route.params?.fromTab);
 
   if (query.isLoading) {
     return (
@@ -89,7 +90,7 @@ export const MySolarJourneyScreen = ({ navigation, route }: any) => {
   return (
     <SafeAreaView style={styles.shell} edges={['top']}>
       <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="Back">
+        <Pressable style={styles.backButton} onPress={() => openedFromTab ? navigation.navigate('Home') : navigation.goBack()} accessibilityLabel="Back">
           <ArrowLeft color="#10213A" size={22} strokeWidth={2.5} />
         </Pressable>
         <View style={styles.headerCopy}>

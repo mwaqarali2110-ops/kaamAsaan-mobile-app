@@ -1,24 +1,25 @@
 import { z } from 'zod';
+import i18n from '@/i18n';
 
 export const loginSchema = z.object({
-  email: z.string().email('Enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters')
+  email: z.string().email({ message: i18n.t('auth.errors.validEmail') }),
+  password: z.string().min(6, { message: i18n.t('auth.errors.passwordMin') })
 });
 
 export const signupSchema = z.object({
-  full_name: z.string().min(2, 'Enter your full name'),
-  phone: z.string().min(10, 'Enter a valid phone number'),
-  city: z.string().min(2, 'Enter your city'),
-  email: z.string().email('Enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  confirm_password: z.string().min(6, 'Confirm your password')
+  full_name: z.string().min(2, { message: i18n.t('auth.errors.fullName') }),
+  phone: z.string().min(10, { message: i18n.t('auth.errors.phone') }),
+  city: z.string().min(2, { message: i18n.t('auth.errors.city') }),
+  email: z.string().email({ message: i18n.t('auth.errors.validEmail') }),
+  password: z.string().min(6, { message: i18n.t('auth.errors.passwordMin') }),
+  confirm_password: z.string().min(6, { message: i18n.t('auth.errors.confirmPassword') })
 }).refine((values) => values.password === values.confirm_password, {
-  message: 'Passwords do not match',
+  message: i18n.t('auth.errors.passwordsMatch'),
   path: ['confirm_password']
 });
 
 export const forgotPasswordSchema = z.object({
-  email: z.string().email('Enter a valid email address')
+  email: z.string().email({ message: i18n.t('auth.errors.validEmail') })
 });
 
 export type LoginForm = z.infer<typeof loginSchema>;
