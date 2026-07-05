@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { AirVent, ArrowLeft, BatteryCharging, Home, Lightbulb, Refrigerator, Shirt, Sun, Zap } from 'lucide-react-native';
+import { Alert, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AirVent, ArrowLeft, BatteryCharging, Camera, Droplets, Home, Laptop, Lightbulb, Microwave, Monitor, PlugZap, Refrigerator, Shirt, Sun, Wifi, Zap } from 'lucide-react-native';
 import type { Appliance } from '@/types/system.types';
 import { calculateBackupKwh, calculateLoadKw } from '@/utils/calculations';
 
@@ -14,6 +14,17 @@ const starterAppliances: Appliance[] = [
   { id: 'ac2TonInverter', name: 'AC 2 Ton (Inverter)', watts: 1800, quantity: 0, hours: 1 }
 ];
 
+const extraAppliances: Appliance[] = [
+  { id: 'tv', name: 'TV / LED TV', watts: 120, quantity: 0, hours: 1 },
+  { id: 'waterPump', name: 'Water Pump', watts: 750, quantity: 0, hours: 1 },
+  { id: 'microwave', name: 'Microwave', watts: 1000, quantity: 0, hours: 1 },
+  { id: 'iron', name: 'Iron', watts: 1200, quantity: 0, hours: 1 },
+  { id: 'laptop', name: 'Laptop / Computer', watts: 90, quantity: 0, hours: 1 },
+  { id: 'router', name: 'WiFi Router', watts: 15, quantity: 0, hours: 1 },
+  { id: 'cctv', name: 'CCTV / Security System', watts: 60, quantity: 0, hours: 1 },
+  { id: 'other', name: 'Other Appliance', watts: 300, quantity: 0, hours: 1 }
+];
+
 const essentials = ['lights', 'fans', 'fridge', 'washing'];
 const airConditioners = ['ac1TonInverter', 'ac15TonInverter', 'ac2TonInverter'];
 
@@ -24,17 +35,49 @@ const iconMap: Record<string, any> = {
   washing: Shirt,
   ac1TonInverter: AirVent,
   ac15TonInverter: AirVent,
-  ac2TonInverter: AirVent
+  ac2TonInverter: AirVent,
+  tv: Monitor,
+  waterPump: Droplets,
+  microwave: Microwave,
+  iron: PlugZap,
+  laptop: Laptop,
+  router: Wifi,
+  cctv: Camera,
+  other: Home
 };
 
 export const BatterySizeToolScreen = ({ navigation }: any) => {
-  const [appliances, setAppliances] = useState(starterAppliances);
-
+  const [appliances, setAppliances] = useState([...starterAppliances, ...extraAppliances]);
+  const [showMoreAppliances, setShowMoreAppliances] = useState(false);
   const loadKw = useMemo(() => calculateLoadKw(appliances), [appliances]);
   const backupKwh = useMemo(() => calculateBackupKwh(appliances), [appliances]);
 
   const updateQuantity = (id: string, delta: number) => {
     setAppliances((items) => items.map((item) => item.id === id ? { ...item, quantity: Math.max(0, item.quantity + delta) } : item));
+  };
+
+  const handleMoreAppliances = () => {
+    console.log('More appliances pressed');
+    setShowMoreAppliances(true);
+  };
+
+  const handleCalculateBatterySize = () => {
+    console.log('Calculate Battery Size pressed');
+    const selectedAppliances = appliances.filter((item) => item.quantity > 0);
+    const totalBackupWatts = selectedAppliances.reduce((sum, item) => sum + item.quantity * item.watts, 0);
+    console.log('Total backup watts:', totalBackupWatts);
+
+    if (totalBackupWatts <= 0) {
+      Alert.alert('Please select at least one appliance.');
+      return;
+    }
+
+    const backupHours = 1;
+    navigation.navigate('BatteryRunningLoad', {
+      selectedAppliances,
+      totalBackupWatts,
+      backupHours
+    });
   };
 
   return (
@@ -67,7 +110,7 @@ export const BatterySizeToolScreen = ({ navigation }: any) => {
           onChange={updateQuantity}
         />
 
-        <Pressable style={styles.moreButton}>
+        <Pressable style={styles.moreButton} onPress={handleMoreAppliances}>
           <Text style={styles.moreText}>+  More appliances</Text>
         </Pressable>
 
@@ -82,10 +125,37 @@ export const BatterySizeToolScreen = ({ navigation }: any) => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Pressable style={styles.calculateButton}>
+        <Pressable style={styles.calculateButton} onPress={handleCalculateBatterySize}>
           <Text style={styles.calculateText}>Calculate Battery Size</Text>
         </Pressable>
       </View>
+
+      <Modal visible={showMoreAppliances} transparent animationType="slide" onRequestClose={() => setShowMoreAppliances(false)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setShowMoreAppliances(false)}>
+          <Pressable style={styles.bottomSheet}>
+            <View style={styles.sheetHandle} />
+            <View style={styles.sheetHeader}>
+              <View>
+                <Text style={styles.sheetTitle}>Add more appliances</Text>
+                <Text style={styles.sheetSubtitle}>Add backup items to refine your estimate</Text>
+              </View>
+              <Pressable style={styles.sheetClose} onPress={() => setShowMoreAppliances(false)}>
+                <Text style={styles.sheetCloseText}>x</Text>
+              </Pressable>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetContent}>
+              <ApplianceSection
+                title="MORE APPLIANCES"
+                appliances={appliances.filter((item) => extraAppliances.some((extra) => extra.id === item.id))}
+                onChange={updateQuantity}
+              />
+            </ScrollView>
+            <Pressable style={styles.doneButton} onPress={() => setShowMoreAppliances(false)}>
+              <Text style={styles.doneButtonText}>Done</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -122,9 +192,9 @@ const Counter = ({ value, onMinus, onPlus }: { value: number; onMinus: () => voi
 
 const SystemMetric = ({ Icon, value, label }: { Icon: any; value: string; label: string }) => (
   <View style={styles.systemMetric}>
-    <Icon color="#B07800" size={14} strokeWidth={2.3} />
-    <Text style={styles.metricValue}>{value}</Text>
-    <Text style={styles.metricLabel}>{label}</Text>
+    <Icon color="#B07800" size={15} strokeWidth={2.3} />
+    <Text style={styles.systemValue}>{value}</Text>
+    <Text style={styles.systemLabel}>{label}</Text>
   </View>
 );
 
@@ -220,17 +290,18 @@ const styles = StyleSheet.create({
   moreText: { color: '#10213A', fontSize: 11, fontWeight: '800' },
   systemCard: {
     borderRadius: 17,
-    backgroundColor: '#FFF2C2',
+    backgroundColor: '#FFF2BF',
     borderWidth: 1,
-    borderColor: '#F5D482',
-    paddingHorizontal: 12,
-    paddingVertical: 12
+    borderColor: '#F3D27A',
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    marginBottom: 12
   },
-  systemEyebrow: { color: '#B07800', fontSize: 8.5, fontWeight: '900', marginBottom: 9 },
-  systemGrid: { flexDirection: 'row', justifyContent: 'space-between' },
-  systemMetric: { flex: 1, alignItems: 'center', gap: 3 },
-  metricValue: { color: '#10213A', fontSize: 11, fontWeight: '900' },
-  metricLabel: { color: '#64748B', fontSize: 8, fontWeight: '700', textAlign: 'center' },
+  systemEyebrow: { color: '#8A5D00', fontSize: 8.5, fontWeight: '900', letterSpacing: 0.5 },
+  systemGrid: { marginTop: 10, flexDirection: 'row', justifyContent: 'space-between' },
+  systemMetric: { flex: 1, alignItems: 'center', gap: 4 },
+  systemValue: { color: '#10213A', fontSize: 11, fontWeight: '900' },
+  systemLabel: { color: '#64748B', fontSize: 8.5, fontWeight: '800' },
   footer: {
     position: 'absolute',
     left: 0,
@@ -255,5 +326,56 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     elevation: 3
   },
-  calculateText: { color: '#111827', fontSize: 13, fontWeight: '900' }
+  calculateText: { color: '#111827', fontSize: 13, fontWeight: '900' },
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(15,23,42,0.28)'
+  },
+  bottomSheet: {
+    maxHeight: '78%',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    backgroundColor: '#FBF8F1',
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 16
+  },
+  sheetHandle: {
+    alignSelf: 'center',
+    width: 38,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: '#E8D9BE',
+    marginBottom: 12
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10
+  },
+  sheetTitle: { color: '#10213A', fontSize: 18, fontWeight: '900' },
+  sheetSubtitle: { marginTop: 4, color: '#64748B', fontSize: 11, fontWeight: '700' },
+  sheetClose: {
+    width: 32,
+    height: 32,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E8D9BE'
+  },
+  sheetCloseText: { color: '#10213A', fontSize: 16, fontWeight: '900' },
+  sheetContent: { paddingBottom: 4 },
+  doneButton: {
+    height: 47,
+    borderRadius: 14,
+    backgroundColor: '#FDB813',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2
+  },
+  doneButtonText: { color: '#111827', fontSize: 13, fontWeight: '900' }
 });

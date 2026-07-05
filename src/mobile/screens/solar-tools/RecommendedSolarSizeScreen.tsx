@@ -74,17 +74,6 @@ export const RecommendedSolarSizeScreen = ({ navigation, route }: any) => {
         </Pressable>
       </ScrollView>
 
-      <View style={styles.systemChip}>
-        <Text style={styles.systemEyebrow}>MY SYSTEM</Text>
-        <View style={styles.systemValues}>
-          <Text style={styles.systemValue}>Sun 3 kW</Text>
-          <Text style={styles.systemDivider}>|</Text>
-          <Text style={styles.systemValue}>Power 4 kW</Text>
-          <Text style={styles.systemDivider}>|</Text>
-          <Text style={styles.systemValue}>Battery 6 kWh</Text>
-        </View>
-      </View>
-
       <Pressable style={styles.chatButton} accessibilityLabel="Help">
         <MessageCircle color="#FFFFFF" size={19} strokeWidth={2.2} />
       </Pressable>
@@ -144,10 +133,5 @@ const styles = StyleSheet.create({
   primaryText: { color: '#111827', fontSize: 14, fontWeight: '900' },
   secondaryButton: { height: 46, borderRadius: 16, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#F5C542', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
   secondaryText: { color: '#10213A', fontSize: 13, fontWeight: '900' },
-  systemChip: { position: 'absolute', left: 16, bottom: 18, borderRadius: 16, backgroundColor: 'rgba(45,52,38,0.95)', paddingHorizontal: 12, paddingVertical: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.18, shadowRadius: 14, elevation: 5 },
-  systemEyebrow: { color: '#F5B700', fontSize: 8, fontWeight: '900', letterSpacing: 0.8 },
-  systemValues: { flexDirection: 'row', gap: 7, marginTop: 6 },
-  systemValue: { color: '#F8F5D9', fontSize: 10, fontWeight: '800' },
-  systemDivider: { color: 'rgba(248,245,217,0.35)', fontSize: 10, fontWeight: '800' },
   chatButton: { position: 'absolute', right: 18, bottom: 20, width: 48, height: 48, borderRadius: 24, backgroundColor: '#26331F', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.22, shadowRadius: 14, elevation: 5 }
 });

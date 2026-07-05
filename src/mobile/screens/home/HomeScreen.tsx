@@ -9,13 +9,13 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import Reanimated, {
   cancelAnimation,
   Easing as ReanimatedEasing,
   interpolate,
-  useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
@@ -23,7 +23,6 @@ import Reanimated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import Svg, { Defs, LinearGradient as SvgLinearGradient, Rect, Stop } from 'react-native-svg';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -32,37 +31,33 @@ import {
   ArrowRight,
   Bell,
   Calculator,
-  ChevronDown,
   ChevronRight,
   ClipboardCheck,
   Home as HomeIcon,
-  MapPin,
   Menu,
   Ruler,
   Settings,
-  ShoppingBag,
   Sun,
   TrendingUp,
-  User,
   X,
   Zap,
 } from 'lucide-react-native';
 import { useActiveSurveyJourney } from '@/hooks/useSurveyJourney';
-import { useHomeLocation } from '@/hooks/useHomeLocation';
 import { formatSurveyReference, SurveyJourneyBooking } from '@/services/journey.api';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useSystemStore } from '@/store/useSystemStore';
 
 /* ─── Assets ─── */
-const logo = require('../../../assets/home/kaamasaan-cart.png');
-const heroHouse = require('../../../assets/home/hero-house.png');
+const logo = require('../../../assets/onboarding/Splash-Screen-Cart-1-transparent.png');
+const heroHouse = require('../../../assets/home/transparent-solar-house-hero-section.png');
 const maintenanceImage = require('../../../assets/home/solar-care.png');
+const cleaningImage = require('../../../assets/home/solar-panel-cleaning.png');
 const inverterImage = require('../../../assets/home/inverter.jpg');
 const solarPanelImage = require('../../../assets/home/solar-panels.jpg');
 const batteryImage = require('../../../assets/home/pylontech.jpg');
 const accessoriesImage = require('../../../assets/home/mughal-steel.jpg');
 const installationImage = require('../../../assets/home/installation.png');
-const afterSalesImage = require('../../../assets/home/after-sales.png');
+const electricalWorkImage = require('../../../assets/home/electrical-work-card.png');
 const greenMeterImage = require('../../../assets/home/green-meter.jpg');
 
 /* ─── Data (matches web MobileHomeExperience.jsx) ─── */
@@ -95,17 +90,15 @@ const MARKETPLACE_CATEGORIES = [
 ];
 
 const SERVICES = [
-  { id: 'care', labelKey: 'services.solarCare', subtitleKey: 'services.maintenancePackages', image: maintenanceImage },
+  { id: 'aftersale', labelKey: 'services.electricalWork', subtitleKey: 'services.electricalWorkSubtitle', image: electricalWorkImage },
+  { id: 'care', labelKey: 'services.cleaning', subtitleKey: 'services.cleaningSubtitle', image: cleaningImage },
   { id: 'install', labelKey: 'services.installation', subtitleKey: 'services.installationSubtitle', image: installationImage },
-  { id: 'aftersale', labelKey: 'services.afterSales', subtitleKey: 'services.afterSalesSubtitle', image: afterSalesImage },
   { id: 'billing', labelKey: 'services.netBilling', subtitleKey: 'services.netBillingSubtitle', image: greenMeterImage },
 ];
 
 const WHY_ITEMS = ['home.whyAccurate', 'home.whyPricing', 'home.whySupport'];
 const CTA_CURRENT_DURATION = 2800;
-const CTA_BORDER_PERIMETER = 358;
 const CONTINUE_PLAN_DISMISS_KEY = 'kaamasaan.home.continue-plan.dismissed';
-const AnimatedRect = Reanimated.createAnimatedComponent(Rect);
 
 /* ─── Helpers ─── */
 const navigateToCategory = (navigation: any, id: string) => {
@@ -113,49 +106,14 @@ const navigateToCategory = (navigation: any, id: string) => {
   navigation.navigate('MarketplaceFlow', { category: map[id] || 'inverter' });
 };
 
-const HeroImageFade = () => (
-  <Svg pointerEvents="none" style={s.heroImageFade} width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-    <Defs>
-      <SvgLinearGradient id="hero-left-fade" x1="0" y1="0" x2="1" y2="0">
-        <Stop offset="0" stopColor="#FFF7E8" stopOpacity="0.88" />
-        <Stop offset="0.24" stopColor="#FFF7E8" stopOpacity="0.58" />
-        <Stop offset="0.52" stopColor="#FFF7E8" stopOpacity="0.22" />
-        <Stop offset="0.82" stopColor="#FFF7E8" stopOpacity="0.04" />
-        <Stop offset="1" stopColor="#FFF7E8" stopOpacity="0" />
-      </SvgLinearGradient>
-      <SvgLinearGradient id="hero-bottom-fade" x1="0" y1="0" x2="0" y2="1">
-        <Stop offset="0" stopColor="#FFF7E8" stopOpacity="0" />
-        <Stop offset="0.72" stopColor="#FFF7E8" stopOpacity="0.05" />
-        <Stop offset="1" stopColor="#FFF7E8" stopOpacity="0.42" />
-      </SvgLinearGradient>
-    </Defs>
-    <Rect x="0" y="0" width="50" height="100" fill="url(#hero-left-fade)" />
-    <Rect x="0" y="70" width="100" height="30" fill="url(#hero-bottom-fade)" />
-  </Svg>
-);
 
 /* ─── Sub-components ─── */
 
 const ElectricHeroCta = ({ onPress }: { onPress: () => void }) => {
   const { t } = useTranslation();
-  const orbit = useSharedValue(0);
-  const transfer = useSharedValue(0);
   const pulse = useSharedValue(0);
 
   useEffect(() => {
-    orbit.value = withRepeat(
-      withTiming(1, { duration: CTA_CURRENT_DURATION, easing: ReanimatedEasing.linear }),
-      -1,
-      false
-    );
-    transfer.value = withRepeat(
-      withSequence(
-        withDelay(CTA_CURRENT_DURATION - 460, withTiming(1, { duration: 190, easing: ReanimatedEasing.out(ReanimatedEasing.quad) })),
-        withTiming(0, { duration: 270, easing: ReanimatedEasing.in(ReanimatedEasing.quad) })
-      ),
-      -1,
-      false
-    );
     pulse.value = withRepeat(
       withSequence(
         withDelay(CTA_CURRENT_DURATION - 340, withTiming(1, { duration: 150, easing: ReanimatedEasing.out(ReanimatedEasing.quad) })),
@@ -166,19 +124,10 @@ const ElectricHeroCta = ({ onPress }: { onPress: () => void }) => {
     );
 
     return () => {
-      cancelAnimation(orbit);
-      cancelAnimation(transfer);
       cancelAnimation(pulse);
     };
-  }, [orbit, pulse, transfer]);
+  }, [pulse]);
 
-  const borderCurrentProps = useAnimatedProps(() => ({
-    strokeDashoffset: interpolate(orbit.value, [0, 1], [0, -CTA_BORDER_PERIMETER]),
-  }));
-  const transferStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(transfer.value, [0, 0.2, 1], [0, 0.9, 0]),
-    transform: [{ translateX: interpolate(transfer.value, [0, 1], [-5, 4]) }],
-  }));
   const iconPulseStyle = useAnimatedStyle(() => ({
     opacity: interpolate(pulse.value, [0, 1], [0.22, 0.68]),
     transform: [{ scale: interpolate(pulse.value, [0, 1], [0.72, 1.32]) }],
@@ -189,26 +138,9 @@ const ElectricHeroCta = ({ onPress }: { onPress: () => void }) => {
 
   return (
     <Pressable style={s.heroCta} onPress={onPress}>
-      <Svg pointerEvents="none" style={s.heroCtaCurrent} width="100%" height="100%" viewBox="0 0 135 38">
-        <Rect x="1.5" y="1.5" width="132" height="35" rx="12.5" fill="none" stroke="rgba(255,240,169,0.42)" strokeWidth="1" />
-        <AnimatedRect
-          animatedProps={borderCurrentProps}
-          x="2"
-          y="2"
-          width="131"
-          height="34"
-          rx="12"
-          fill="none"
-          stroke="rgba(255,247,196,0.96)"
-          strokeWidth="2.6"
-          strokeDasharray={`32 ${CTA_BORDER_PERIMETER - 32}`}
-          strokeLinecap="round"
-        />
-      </Svg>
       <View style={s.heroCtaContent}>
         <Text style={s.heroCtaText}>{t('home.designSystem')}</Text>
         <View style={s.heroCtaIconWrap}>
-          <Reanimated.View pointerEvents="none" style={[s.heroCtaTransfer, transferStyle]} />
           <Reanimated.View pointerEvents="none" style={[s.heroCtaIconHalo, iconPulseStyle]} />
           <Reanimated.View style={iconStyle}>
             <Zap color="#B07800" size={13} fill="#B07800" />
@@ -417,56 +349,93 @@ const HomeMenuModal = ({
   onClose: () => void;
   navigation: any;
 }) => {
-  const { t } = useTranslation();
-  const items = [
-    { label: t('menu.home'), Icon: HomeIcon, action: () => navigation.navigate('Home') },
-    { label: t('menu.marketplace'), Icon: ShoppingBag, action: () => navigation.navigate('Marketplace') },
-    { label: t('menu.mySystem'), Icon: Zap, action: () => navigation.navigate('MySystem') },
-    { label: t('menu.myProject'), Icon: ClipboardCheck, action: () => navigation.navigate('MyProject') },
-    { label: t('menu.profile'), Icon: User, action: () => navigation.navigate('Profile') },
-    { label: t('menu.language'), Icon: Settings, action: () => navigation.navigate('Profile') },
-    { label: t('menu.solarCare'), Icon: Sun, action: () => navigation.navigate('PreventiveMaintenance') }
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const drawerWidth = Math.round(width * 0.8);
+  const drawerItems = [
+    { label: 'Home', route: 'Home' },
+    { label: 'Marketplace', route: 'Marketplace' },
+    { label: 'Design System', route: 'DesignSystem' },
+    { label: 'My Project', route: 'MyProject' },
+    { label: 'Profile', route: 'Profile' },
+  ];
+  const secondaryItems = [
+    { label: 'Settings', route: 'Settings' },
+    { label: 'Solar Care', route: 'SolarCare' },
   ];
 
-  const selectItem = (action: () => void) => {
+  const navigateToCorrectRoute = (route: string) => {
+    const routeMap: Record<string, () => void> = {
+      Home: () => navigation.navigate('Home'),
+      Marketplace: () => navigation.navigate('Marketplace'),
+      DesignSystem: () => navigation.navigate('DesignFlow'),
+      MyProject: () => navigation.navigate('MyProject'),
+      Profile: () => navigation.navigate('Profile'),
+      Settings: () => navigation.navigate('Profile'),
+      SolarCare: () => navigation.navigate('PreventiveMaintenance'),
+    };
+
     onClose();
-    action();
+    routeMap[route]?.();
   };
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={s.menuBackdrop} onPress={onClose}>
-        <Pressable style={s.menuSheet}>
-          <View style={s.menuHeader}>
-            <View>
-              <Text style={s.menuTitle}>{t('menu.title')}</Text>
-              <Text style={s.menuSubtitle}>{t('menu.subtitle')}</Text>
+      <Pressable style={s.drawerBackdrop} onPress={onClose}>
+        <Pressable style={[s.drawer, { width: drawerWidth, paddingTop: insets.top + 14, paddingBottom: insets.bottom + 12 }]}>
+          <View style={s.drawerPanelHeader}>
+            <View style={s.drawerBrand}>
+              <Image source={logo} style={s.drawerBrandLogo} resizeMode="contain" />
+              <Text style={s.drawerBrandText} numberOfLines={1}>
+                <Text style={s.drawerBrandKaam}>Kaam</Text>
+                <Text style={s.drawerBrandAsaan}>Asaan</Text>
+              </Text>
             </View>
             <Pressable
-              style={({ pressed }) => [s.menuClose, pressed && s.headerPressed]}
+              style={({ pressed }) => [s.drawerClose, pressed && s.headerPressed]}
               onPress={onClose}
-              hitSlop={10}
-              accessibilityLabel={t('common.close')}
+              hitSlop={12}
+              accessibilityLabel="Close menu"
               accessibilityRole="button"
             >
-              <X color="#526174" size={18} strokeWidth={2.4} />
+              <X color="#334155" size={24} strokeWidth={2.4} />
             </Pressable>
           </View>
-          <View style={s.menuList}>
-            {items.map(({ label, Icon, action }) => (
+          <View style={s.divider} />
+          <View style={s.menuSection}>
+            {drawerItems.map((item) => {
+              const active = item.label === 'Home';
+              return (
+                <Pressable
+                  key={item.label}
+                  style={[s.drawerRow, active && s.activeDrawerRow]}
+                  onPress={() => navigateToCorrectRoute(item.route)}
+                  accessibilityRole="button"
+                >
+                  <Text style={[s.drawerLabel, active && s.activeDrawerLabel]}>{item.label}</Text>
+                  <Text style={[s.drawerChevron, active && s.activeDrawerChevron]}>›</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <View style={s.divider} />
+          <View style={s.menuSection}>
+            {secondaryItems.map((item) => (
               <Pressable
-                key={label}
-                style={({ pressed }) => [s.menuItem, pressed && s.menuItemPressed]}
-                onPress={() => selectItem(action)}
+                key={item.label}
+                style={s.drawerRow}
+                onPress={() => navigateToCorrectRoute(item.route)}
                 accessibilityRole="button"
               >
-                <View style={s.menuItemIcon}>
-                  <Icon color="#B07800" size={17} strokeWidth={2.2} />
-                </View>
-                <Text style={s.menuItemText}>{label}</Text>
-                <ChevronRight color="#B8A071" size={16} strokeWidth={2.2} />
+                <Text style={s.drawerLabel}>{item.label}</Text>
+                <Text style={s.drawerChevron}>›</Text>
               </Pressable>
             ))}
+          </View>
+          <View style={s.footer}>
+            <Text style={s.drawerFooterBrand}>KaamAsaan</Text>
+            <Text style={s.drawerFooterText}>Pakistan's Smart Solar Marketplace</Text>
+            <Text style={s.drawerFooterVersion}>v1.0</Text>
           </View>
         </Pressable>
       </Pressable>
@@ -479,7 +448,6 @@ export const HomeScreen = ({ navigation }: any) => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const userId = useAuthStore((state) => state.session?.user.id);
-  const { locationLabel } = useHomeLocation();
   const isFocused = useIsFocused();
   const journeyQuery = useActiveSurveyJourney(userId);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -549,10 +517,6 @@ export const HomeScreen = ({ navigation }: any) => {
   };
 
   const openMenu = () => {
-    if (typeof navigation.openDrawer === 'function') {
-      navigation.openDrawer();
-      return;
-    }
     setMenuOpen(true);
   };
 
@@ -570,10 +534,8 @@ export const HomeScreen = ({ navigation }: any) => {
         >
           <Menu color="#111827" size={22} strokeWidth={2} />
         </Pressable>
-        <View style={s.logoWrap}>
-          <View style={s.logoIconCrop}>
-            <Image source={logo} style={s.logoImg} resizeMode="contain" />
-          </View>
+        <View pointerEvents="none" style={s.logoWrap}>
+          <Image source={logo} style={s.logoImg} resizeMode="contain" />
           <Text style={s.logoText}>
             <Text style={s.logoTextKaam}>Kaam</Text>
             <Text style={s.logoTextAsaan}>Asaan</Text>
@@ -590,17 +552,6 @@ export const HomeScreen = ({ navigation }: any) => {
           {unreadNotifications > 0 ? <View style={s.notifDot} /> : null}
         </Pressable>
       </View>
-      <Pressable
-        style={({ pressed }) => [s.locationRow, pressed && s.locationRowPressed]}
-        onPress={() => navigation.navigate('Profile')}
-        hitSlop={10}
-        accessibilityRole="button"
-        accessibilityLabel={`Current location ${locationLabel}`}
-      >
-        <MapPin color="#111827" size={14} strokeWidth={2.2} />
-        <Text style={s.locationText}>{locationLabel}</Text>
-        <ChevronDown color="#6B7280" size={14} strokeWidth={2.2} />
-      </Pressable>
     </View>
 
     {/* ══ Scrollable Content ══ */}
@@ -623,8 +574,7 @@ export const HomeScreen = ({ navigation }: any) => {
           </View>
           <ElectricHeroCta onPress={() => navigation.navigate('DesignFlow')} />
         </View>
-        <Image source={heroHouse} style={s.heroImage} resizeMode="cover" />
-        <HeroImageFade />
+        <Image source={heroHouse} style={s.heroImage} resizeMode="contain" />
       </View>
 
       {/* 2 ── Trusted Brands */}
@@ -674,7 +624,11 @@ export const HomeScreen = ({ navigation }: any) => {
       <SectionHeader title={t('home.services')} action={t('common.viewAll')} onPress={() => navigation.navigate('BookSurvey')} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.catTrack}>
         {SERVICES.map((item) => (
-          <CategoryCard key={item.id} item={item} onPress={() => navigation.navigate('BookSurvey')} />
+          <CategoryCard
+            key={item.id}
+            item={item}
+            onPress={() => navigation.navigate(item.id === 'aftersale' ? 'ElectricalWorkServices' : 'BookSurvey')}
+          />
         ))}
       </ScrollView>
 
@@ -716,23 +670,21 @@ const s = StyleSheet.create({
 
   /* Header */
   header: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F4F2EE',
     paddingHorizontal: 16,
-    paddingTop: 9,
+    paddingTop: 4,
     paddingBottom: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(0,0,0,0.08)',
+    borderBottomWidth: 0,
     zIndex: 10,
   },
   headerBar: {
-    minHeight: 30,
-    marginBottom: 6,
+    height: 40,
     position: 'relative',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  iconBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderRadius: 999 },
+  iconBtn: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderRadius: 999 },
   notificationButton: { position: 'relative' },
   headerPressed: { opacity: 0.86, backgroundColor: 'rgba(17,24,39,0.05)' },
   notifDot: {
@@ -748,77 +700,136 @@ const s = StyleSheet.create({
   },
   logoWrap: {
     position: 'absolute',
-    left: '50%',
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    transform: [{ translateX: -67 }, { translateY: -1 }],
+    justifyContent: 'center',
+    gap: 4,
   },
-  logoIconCrop: { width: 20, height: 20, overflow: 'hidden' },
-  logoImg: { position: 'absolute', left: -6, top: -9, width: 33, height: 36, opacity: 0.94 },
-  logoText: { fontSize: 19, fontWeight: '900', lineHeight: 20, letterSpacing: -0.4 },
-  logoTextKaam: { color: '#111827' },
-  logoTextAsaan: { color: '#B07800' },
-  locationRow: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 4, minHeight: 22, borderRadius: 999 },
-  locationRowPressed: { opacity: 0.86 },
-  locationText: { color: '#111827', fontSize: 13, fontWeight: '600' },
-  menuBackdrop: {
+  logoImg: { width: 31, height: 30, opacity: 0.96 },
+  logoText: { fontSize: 21, fontWeight: '900', lineHeight: 24, letterSpacing: -0.6 },
+  logoTextKaam: { color: '#08213F' },
+  logoTextAsaan: { color: '#E8A000' },
+  drawerBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(15,23,42,0.34)',
+    backgroundColor: 'rgba(15,23,42,0.32)',
     justifyContent: 'flex-start',
   },
-  menuSheet: {
-    width: 282,
-    minHeight: '100%',
-    backgroundColor: '#FFFDF8',
-    paddingTop: 18,
-    paddingHorizontal: 14,
-    borderTopRightRadius: 18,
-    borderBottomRightRadius: 18,
+  drawer: {
+    height: '100%',
+    backgroundColor: '#FFFBF2',
+    paddingHorizontal: 22,
+    borderTopRightRadius: 24,
+    borderBottomRightRadius: 24,
     shadowColor: '#111827',
     shadowOffset: { width: 8, height: 0 },
-    shadowOpacity: 0.16,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowOpacity: 0.14,
+    shadowRadius: 18,
+    elevation: 8,
   },
-  menuHeader: {
-    minHeight: 58,
+  drawerPanelHeader: {
+    height: 64,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E7DFD1',
-    paddingBottom: 12,
   },
-  menuTitle: { color: '#10213A', fontSize: 20, fontWeight: '900' },
-  menuSubtitle: { marginTop: 3, color: '#738094', fontSize: 11.5, fontWeight: '700' },
-  menuClose: {
-    width: 34,
+  drawerBrand: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  drawerBrandLogo: {
+    width: 36,
     height: 34,
+  },
+  drawerBrandText: {
+    flexShrink: 1,
+    fontSize: 23,
+    lineHeight: 28,
+    fontWeight: '900',
+    letterSpacing: -0.4,
+  },
+  drawerBrandKaam: { color: '#08213F' },
+  drawerBrandAsaan: { color: '#E8A000' },
+  drawerClose: {
+    width: 36,
+    height: 36,
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F7F3EB',
+    backgroundColor: 'transparent',
   },
-  menuList: { paddingTop: 12, gap: 4 },
-  menuItem: {
-    minHeight: 48,
-    borderRadius: 13,
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(16, 24, 40, 0.12)',
+    marginVertical: 10,
+  },
+  menuSection: {
+    width: '100%',
+  },
+  drawerRow: {
+    width: '100%',
+    height: 44,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 10,
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    marginBottom: 2,
+    backgroundColor: 'transparent',
   },
-  menuItemPressed: { opacity: 0.88, backgroundColor: '#FFF7E6' },
-  menuItemIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(245,166,35,0.12)',
+  activeDrawerRow: {
+    backgroundColor: '#FFF2C7',
+    borderLeftWidth: 4,
+    borderLeftColor: '#F5B400',
+    paddingLeft: 10,
   },
-  menuItemText: { flex: 1, color: '#172031', fontSize: 13.5, fontWeight: '800' },
+  drawerLabel: {
+    flex: 1,
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '600',
+    color: '#101828',
+  },
+  activeDrawerLabel: {
+    color: '#D99A00',
+  },
+  drawerChevron: {
+    fontSize: 24,
+    lineHeight: 24,
+    color: '#344054',
+    marginLeft: 12,
+  },
+  activeDrawerChevron: {
+    color: '#D99A00',
+  },
+  footer: {
+    marginTop: 'auto',
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(16, 24, 40, 0.12)',
+  },
+  drawerFooterBrand: {
+    color: '#0F172A',
+    fontSize: 14.5,
+    fontWeight: '800',
+  },
+  drawerFooterText: {
+    marginTop: 5,
+    color: '#64748B',
+    fontSize: 12,
+    lineHeight: 15,
+    fontWeight: '600',
+  },
+  drawerFooterVersion: {
+    marginTop: 10,
+    color: '#D99A00',
+    fontSize: 12,
+    fontWeight: '800',
+  },
 
   /* Scroll */
   scroll: { flex: 1 },
@@ -830,7 +841,7 @@ const s = StyleSheet.create({
     width: '100%',
     height: 168,
     overflow: 'hidden',
-    backgroundColor: '#FFF7E8',
+    backgroundColor: '#F4F2EE',
     borderRadius: 0,
     position: 'relative',
     paddingHorizontal: 16,
@@ -845,15 +856,6 @@ const s = StyleSheet.create({
     zIndex: 1,
     transform: [{ translateX: -10 }],
     filter: 'brightness(1.05) contrast(1.02)',
-  },
-  heroImageFade: {
-    position: 'absolute',
-    right: 0,
-    bottom: 4,
-    width: '84%',
-    height: '145%',
-    overflow: 'hidden',
-    zIndex: 1
   },
   heroContent: {
     width: '46%',
@@ -887,7 +889,6 @@ const s = StyleSheet.create({
     shadowRadius: 16,
     elevation: 4,
   },
-  heroCtaCurrent: { ...StyleSheet.absoluteFill, zIndex: 1 },
   heroCtaContent: {
     ...StyleSheet.absoluteFill,
     zIndex: 2,
@@ -902,20 +903,6 @@ const s = StyleSheet.create({
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  heroCtaTransfer: {
-    position: 'absolute',
-    left: -9,
-    top: 6,
-    width: 11,
-    height: 3,
-    borderRadius: 999,
-    backgroundColor: '#FFF4B8',
-    shadowColor: '#FFF4B8',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.72,
-    shadowRadius: 5,
-    elevation: 2,
   },
   heroCtaIconHalo: {
     position: 'absolute',

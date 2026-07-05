@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   cancelAnimation,
@@ -19,6 +19,8 @@ import {
   ChevronRight,
   CircleAlert,
   Headphones,
+  Home,
+  MessageCircle,
   ShieldCheck,
   TrendingUp,
   UserCheck,
@@ -26,6 +28,8 @@ import {
 } from 'lucide-react-native';
 import { getMaintenancePlan } from '@/data/maintenancePlans';
 import { useMaintenanceBookingStore } from '@/store/useMaintenanceBookingStore';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useActiveSurveyJourney } from '@/hooks/useSurveyJourney';
 
 const includedServices = [
   'Quarterly panel cleaning',
@@ -96,10 +100,13 @@ const AnimatedChecklistRow = React.memo(
   }
 );
 
-export const PreventiveMaintenanceScreen = ({ navigation }: any) => {
+export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
   const insets = useSafeAreaInsets();
+  const userId = useAuthStore((state) => state.session?.user.id);
   const setSelectedPlan = useMaintenanceBookingStore((state) => state.setSelectedPlan);
   const isNavigatingRef = useRef(false);
+  const activeJourneyQuery = useActiveSurveyJourney(userId);
+  const [showBlockedInfo, setShowBlockedInfo] = useState(Boolean(route.params?.showActiveInstallationBlocked));
   const [checklistSize, setChecklistSize] = useState({ width: 0, height: 0 });
   const checklistProgress = useSharedValue(0);
   const borderProgress = useSharedValue(0);
@@ -137,11 +144,29 @@ export const PreventiveMaintenanceScreen = ({ navigation }: any) => {
     strokeDashoffset: -borderProgress.value * checklistPerimeter
   }));
 
-  const bookPremium = () => {
+  useEffect(() => {
+    if (route.params?.showActiveInstallationBlocked) {
+      setShowBlockedInfo(true);
+    }
+  }, [route.params?.showActiveInstallationBlocked]);
+
+  const talkToRepresentative = () => {
+    const message = encodeURIComponent('Hi KaamAsaan, I need help with my solar installation survey.');
+    void Linking.openURL(`https://wa.me/?text=${message}`);
+  };
+
+  const bookPremium = async () => {
     if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
+
+    const activeJourney = activeJourneyQuery.data ?? (userId ? (await activeJourneyQuery.refetch()).data : null);
+    if (activeJourney) {
+      setShowBlockedInfo(true);
+      isNavigatingRef.current = false;
+      return;
+    }
 
     const plan = getMaintenancePlan('premium');
-    isNavigatingRef.current = true;
     setSelectedPlan(plan);
     navigation.navigate('MaintenanceBooking', {
       plan,
@@ -154,6 +179,54 @@ export const PreventiveMaintenanceScreen = ({ navigation }: any) => {
       isNavigatingRef.current = false;
     }, 650);
   };
+
+  if (showBlockedInfo) {
+    return (
+      <SafeAreaView style={styles.root} edges={['top']}>
+        <View style={styles.infoShell}>
+          <View style={styles.header}>
+            <Pressable
+              style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+              onPress={() => navigation.goBack()}
+              hitSlop={12}
+              accessibilityLabel="Back"
+              accessibilityRole="button"
+            >
+              <ArrowLeft size={28} color="#0B1528" strokeWidth={2.5} />
+            </Pressable>
+            <View style={styles.headerText}>
+              <Text style={styles.title}>Solar Care</Text>
+              <Text style={styles.subtitle}>Annual maintenance</Text>
+            </View>
+          </View>
+
+          <View style={styles.infoCard}>
+            <View style={styles.infoIcon}>
+              <CalendarCheck size={30} color="#0F172A" strokeWidth={2.4} />
+            </View>
+            <Text style={styles.infoTitle}>Your solar installation survey is already booked</Text>
+            <Text style={styles.infoText}>
+              Our agent will contact you soon regarding the site survey for your solar system installation. Once your system is installed, you can activate KaamAsaan Solar Care for annual preventive maintenance.
+            </Text>
+            <Text style={styles.supportText}>For further help, please talk to our representative.</Text>
+
+            <Pressable style={styles.infoPrimaryButton} onPress={() => navigation.navigate('MainTabs', { screen: 'MyProject' })} accessibilityRole="button">
+              <ShieldCheck size={20} color="#0F172A" strokeWidth={2.4} />
+              <Text style={styles.infoPrimaryText}>Track My Project</Text>
+            </Pressable>
+            <Pressable style={styles.infoSecondaryButton} onPress={talkToRepresentative} accessibilityRole="button">
+              <MessageCircle size={20} color="#D99A00" strokeWidth={2.4} />
+              <Text style={styles.infoSecondaryText}>Talk to Representative</Text>
+            </Pressable>
+            <Pressable style={styles.infoTertiaryButton} onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })} accessibilityRole="button">
+              <Home size={18} color="#64748B" strokeWidth={2.4} />
+              <Text style={styles.infoTertiaryText}>Back to Home</Text>
+            </Pressable>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
@@ -344,6 +417,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 10,
     gap: 0
+  },
+  infoShell: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 24,
+    justifyContent: 'center'
   },
   header: {
     minHeight: 64,
@@ -596,5 +676,96 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.9,
     transform: [{ scale: 0.99 }]
+  },
+  infoCard: {
+    width: '100%',
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F0E3CF',
+    padding: 20,
+    shadowColor: '#7A6A52',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    elevation: 3
+  },
+  infoIcon: {
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    backgroundColor: '#F5B400',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16
+  },
+  infoTitle: {
+    color: '#0F172A',
+    fontSize: 23,
+    lineHeight: 29,
+    fontWeight: '900'
+  },
+  infoText: {
+    marginTop: 10,
+    color: '#64748B',
+    fontSize: 14,
+    lineHeight: 21,
+    fontWeight: '600'
+  },
+  supportText: {
+    marginTop: 12,
+    color: '#263247',
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '800'
+  },
+  infoPrimaryButton: {
+    width: '100%',
+    height: 54,
+    borderRadius: 17,
+    backgroundColor: '#F5B400',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 9,
+    marginTop: 20
+  },
+  infoPrimaryText: {
+    color: '#0F172A',
+    fontSize: 15,
+    fontWeight: '900'
+  },
+  infoSecondaryButton: {
+    width: '100%',
+    height: 52,
+    borderRadius: 17,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.4,
+    borderColor: '#EAB308',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 9,
+    marginTop: 12
+  },
+  infoSecondaryText: {
+    color: '#B07800',
+    fontSize: 14.5,
+    fontWeight: '900'
+  },
+  infoTertiaryButton: {
+    height: 42,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    paddingHorizontal: 10,
+    marginTop: 12
+  },
+  infoTertiaryText: {
+    color: '#64748B',
+    fontSize: 13,
+    fontWeight: '800'
   }
 });

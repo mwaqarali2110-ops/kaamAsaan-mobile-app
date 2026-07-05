@@ -26,7 +26,7 @@ const createUpcomingDates = () => Array.from({ length: 7 }, (_, offset) => {
   };
 });
 
-const timeSlots = ['8:00 AM', '10:00 AM', '12:00 PM', '2:00 PM', '4:00 PM', '6:00 PM', '8:00 PM'];
+const TEAM_CONFIRMED_TIME_SLOT = 'To be confirmed by team';
 
 const bottomTabs = [
   { title: 'Home', Icon: Home, route: 'MainTabs', params: { screen: 'Home' } },
@@ -76,7 +76,6 @@ const AddressField = ({
 export const BookSurveyScreen = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();
   const [selectedDate, setSelectedDate] = useState(1);
-  const [selectedTime, setSelectedTime] = useState('10:00 AM');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const queryClient = useQueryClient();
   const getSummary = useSystemStore((state) => state.getSummary);
@@ -119,7 +118,7 @@ export const BookSurveyScreen = ({ navigation }: any) => {
         city: values.city,
         address: values.address,
         preferredDate: dates[selectedDate].iso,
-        preferredTimeSlot: selectedTime,
+        preferredTimeSlot: TEAM_CONFIRMED_TIME_SLOT,
         notes: JSON.stringify({ source: 'mobile-app', systemSummary: getSummary() })
       });
       if (result.booking) {
@@ -152,7 +151,7 @@ export const BookSurveyScreen = ({ navigation }: any) => {
           </View>
           <View style={styles.heroCopy}>
             <Text style={styles.heroTitle}>Let's schedule your survey</Text>
-            <Text style={styles.heroText}>Choose a convenient date, time and provide your site address.</Text>
+            <Text style={styles.heroText}>Choose a date and provide your contact details. Our team will call to confirm the visit time.</Text>
           </View>
           <View style={styles.heroArt}>
             <CalendarDays color="#F5A400" size={58} strokeWidth={1.6} />
@@ -183,21 +182,6 @@ export const BookSurveyScreen = ({ navigation }: any) => {
           <View style={styles.dot} />
           <View style={styles.dot} />
           <View style={styles.dot} />
-        </View>
-
-        <View style={styles.sectionTitleRow}>
-          <Clock3 color="#0F1E33" size={24} strokeWidth={2.1} />
-          <Text style={styles.sectionTitle}>Select Time Slot</Text>
-        </View>
-        <View style={styles.timeGrid}>
-          {timeSlots.map((slot) => {
-            const active = selectedTime === slot;
-            return (
-              <Pressable key={slot} style={[styles.timePill, active && styles.timePillActive]} onPress={() => setSelectedTime(slot)}>
-                <Text style={[styles.timeText, active && styles.timeTextActive]}>{slot}</Text>
-              </Pressable>
-            );
-          })}
         </View>
 
         <View style={styles.sectionTitleRow}>
@@ -347,20 +331,6 @@ const styles = StyleSheet.create({
   dots: { flexDirection: 'row', alignSelf: 'center', gap: 12, marginBottom: 13 },
   dotActive: { width: 23, height: 6, borderRadius: 999, backgroundColor: '#F5A400' },
   dot: { width: 6, height: 6, borderRadius: 999, backgroundColor: '#E2DDD4' },
-  timeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 13 },
-  timePill: {
-    width: '31.5%',
-    height: 34,
-    borderRadius: 13,
-    borderWidth: 1,
-    borderColor: '#E8DED2',
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  timePillActive: { borderColor: '#F5A400', backgroundColor: '#FFF9EA' },
-  timeText: { color: '#0F172A', fontSize: 12.5, fontWeight: '900' },
-  timeTextActive: { color: '#F5A400' },
   fields: { gap: 8, marginBottom: 12 },
   inputWrap: {
     height: 48,

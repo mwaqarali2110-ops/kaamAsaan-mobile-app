@@ -3,6 +3,8 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleShee
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, ArrowRight, Building2, CalendarDays, Clock3, Home, Phone, User } from 'lucide-react-native';
 import { useMaintenanceBookingStore } from '@/store/useMaintenanceBookingStore';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useActiveSurveyJourney } from '@/hooks/useSurveyJourney';
 import type { MaintenancePlanSelection } from '@/types/maintenance.types';
 
 const Field = ({
@@ -36,8 +38,10 @@ const Field = ({
 );
 
 export const MaintenanceBookingScreen = ({ navigation, route }: any) => {
+  const userId = useAuthStore((state) => state.session?.user.id);
   const storedPlan = useMaintenanceBookingStore((state) => state.selectedPlan);
   const createBooking = useMaintenanceBookingStore((state) => state.createBooking);
+  const activeJourneyQuery = useActiveSurveyJourney(userId);
   const plan = (route.params?.plan ?? storedPlan) as MaintenancePlanSelection | undefined;
   const [submitting, setSubmitting] = useState(false);
   const [name, setName] = useState('');
@@ -52,6 +56,14 @@ export const MaintenanceBookingScreen = ({ navigation, route }: any) => {
     if (submitting) return;
     if (!plan) {
       navigation.replace('PreventiveMaintenance');
+      return;
+    }
+    if (activeJourneyQuery.isLoading) {
+      Alert.alert('Checking eligibility', 'Please wait while we check your current solar project status.');
+      return;
+    }
+    if (activeJourneyQuery.data) {
+      navigation.replace('PreventiveMaintenance', { showActiveInstallationBlocked: true });
       return;
     }
     if (!name.trim() || !phone.trim() || !address.trim() || !city.trim() || !preferredDate.trim() || !preferredTimeSlot.trim()) {

@@ -7,7 +7,6 @@ import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
 import { AppText } from '@/components/ui/AppText';
 import { AppButton } from '@/components/ui/AppButton';
-import { MySystemCard } from '@/components/ui/MySystemCard';
 import { InfoCard } from '@/components/cards/InfoCard';
 import { PanelLayoutPreview } from '@/components/solar-tools/PanelLayoutPreview';
 import { useProducts } from '@/hooks/useProducts';
@@ -272,8 +271,6 @@ const RecommendedPackagesStepScreen = ({
     const extras = recommendedPackages.filter((pkg) => !order.includes(pkg.packageBrand));
     return [...byBrand, ...extras].slice(0, 3);
   }, [recommendedPackages]);
-  const selectedSystemLabel = `${formatKw(requiredSolarKw)} | ${formatKw(requiredInverterKw)} | ${requiredBatteryKwh || 0} kWh`;
-
   useEffect(() => {
     if (compactPackages[0] && (!selectedPackage || selectedPackage === 'Balanced')) {
       onSelectPackage(compactPackages[0].id);
@@ -341,11 +338,6 @@ const RecommendedPackagesStepScreen = ({
           <ChevronDown color="#007C52" size={20} strokeWidth={2.3} style={packagesStyles.trustArrow} />
         </View>
       </ScrollView>
-
-      <View style={packagesStyles.systemPill}>
-        <Text style={packagesStyles.systemPillLabel}>MY SYSTEM</Text>
-        <Text style={packagesStyles.systemPillValue}>{selectedSystemLabel}</Text>
-      </View>
 
       <View style={[packagesStyles.footer, { paddingBottom: Math.max(8, insets.bottom + 8) }]}>
         <Pressable style={packagesStyles.reviewButton} onPress={onReviewSystem}>
@@ -1184,35 +1176,6 @@ const packagesStyles = StyleSheet.create({
     fontSize: 11.5,
     fontWeight: '900'
   },
-  systemPill: {
-    position: 'absolute',
-    left: 14,
-    bottom: 74,
-    minHeight: 32,
-    borderRadius: 14,
-    backgroundColor: '#38411F',
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    shadowColor: '#10213A',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.18,
-    shadowRadius: 14,
-    elevation: 4
-  },
-  systemPillLabel: {
-    color: '#F5B700',
-    fontSize: 7,
-    lineHeight: 8,
-    fontWeight: '900',
-    letterSpacing: 1
-  },
-  systemPillValue: {
-    marginTop: 1,
-    color: '#FFF8E8',
-    fontSize: 9.5,
-    lineHeight: 11,
-    fontWeight: '900'
-  },
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -1342,7 +1305,6 @@ const ApplianceStepScreen = ({ store, onPrevious, onContinue }: { store: any; on
         <Pressable style={applianceStyles.primaryButton} onPress={onContinue}>
           <Text style={applianceStyles.primaryButtonText}>Calculate Load</Text>
         </Pressable>
-        <MySystemCard solarKw={0} inverterKw={0} batteryKwh={0} />
       </View>
       <Modal visible={addOtherOpen} transparent animationType="slide" onRequestClose={() => setAddOtherOpen(false)}>
         <Pressable style={applianceStyles.modalBackdrop} onPress={() => setAddOtherOpen(false)}>
@@ -1566,7 +1528,6 @@ const SolarRecommendationStepScreen = ({ navigation, store, onPrevious, onContin
           <Text style={solarStyles.primaryButtonText}>Continue</Text>
           <ArrowRight color="#18202D" size={18} strokeWidth={2.4} />
         </Pressable>
-        <MySystemCard solarKw={systemKw} inverterKw={inverterKw} batteryKwh={batteryKwh} />
       </View>
     </SafeAreaView>
   );
@@ -1726,7 +1687,6 @@ const RecommendedSystemStepScreen = ({
           <Text style={recommendedStyles.primaryButtonText}>Next</Text>
           <ArrowRight color="#18202D" size={18} strokeWidth={2.4} />
         </Pressable>
-        <MySystemCard solarKw={solarSize} inverterKw={inverterSize} batteryKwh={batterySize} />
       </View>
     </SafeAreaView>
   );
@@ -1935,7 +1895,6 @@ const RoofSpaceStepScreen = ({
           <Text style={roofStyles.primaryButtonText}>Next</Text>
           <ArrowRight color="#18202D" size={18} strokeWidth={2.4} />
         </Pressable>
-        <MySystemCard solarKw={actualSolarKw} inverterKw={inverterSize} batteryKwh={batterySize} />
       </View>
     </SafeAreaView>
   );
@@ -1994,9 +1953,6 @@ const BatteryChoiceStepScreen = ({
         <Text style={batteryChoiceStyles.laterText}>You can always add battery later.</Text>
       </View>
       <ChatButton />
-      <View style={flowStyles.systemFooter}>
-        <MySystemCard solarKw={solarKw} inverterKw={inverterKw} batteryKwh={batteryKwh} />
-      </View>
     </SafeAreaView>
   );
 };
@@ -2286,7 +2242,6 @@ const BackupAppliancesStepScreen = ({ store, onPrevious, onContinue }: { store: 
         <Pressable style={applianceStyles.primaryButton} onPress={onContinue}>
           <Text style={applianceStyles.primaryButtonText}>Calculate Battery Size</Text>
         </Pressable>
-        <MySystemCard solarKw={solarKw} inverterKw={inverterKw} batteryKwh={batteryKwh} />
       </View>
 
       <Modal visible={addOtherOpen} transparent animationType="slide" onRequestClose={() => setAddOtherOpen(false)}>
@@ -2445,7 +2400,6 @@ const BackupPlanStepScreen = ({
         <Pressable style={backupPlanStyles.recalculateButton} onPress={onPrevious}>
           <Text style={backupPlanStyles.recalculateText}>Recalculate</Text>
         </Pressable>
-        <MySystemCard solarKw={solarKw} inverterKw={inverterKw} batteryKwh={selectedBatteryKwh} />
       </View>
       <ChatButton />
     </SafeAreaView>

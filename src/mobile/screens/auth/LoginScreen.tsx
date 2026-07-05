@@ -6,7 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { loginSchema, type LoginForm } from '@/schemas/auth.schema';
 import { useAuthStore } from '@/store/useAuthStore';
 
-const logoImage = require('../../../assets/home/kaamasaan-cart.png');
+const googleIcon = require('../../../assets/auth/google-logo.png');
+const facebookIcon = require('../../../assets/auth/facebook-logo.png');
 
 type LoginFieldProps = TextInputProps & {
   label: string;
@@ -32,19 +33,19 @@ const LoginField = ({
       <Text style={styles.label}>{label}</Text>
       <View style={[styles.inputWrap, error && styles.inputWrapError]}>
         <View style={styles.inputIcon}>
-          <Icon size={16} color="#C28B00" strokeWidth={2.2} />
+          <Icon size={19} color="#D99A00" strokeWidth={2.2} />
         </View>
         <TextInput
           {...props}
           ref={inputRef}
           defaultValue=""
           secureTextEntry={isSecure}
-          placeholderTextColor="#A7B0BE"
+          placeholderTextColor="#94A3B8"
           style={styles.input}
         />
         {secure ? (
           <Pressable style={styles.eyeButton} onPress={() => setVisible((next) => !next)} accessibilityLabel={visible ? 'Hide password' : 'Show password'}>
-            {visible ? <EyeOff size={17} color="#8B97A8" strokeWidth={2.1} /> : <Eye size={17} color="#8B97A8" strokeWidth={2.1} />}
+            {visible ? <EyeOff size={20} color="#8B97A8" strokeWidth={2.1} /> : <Eye size={20} color="#8B97A8" strokeWidth={2.1} />}
           </Pressable>
         ) : null}
       </View>
@@ -79,23 +80,10 @@ const AnimatedSignInButton = ({ loading, onPress }: { loading?: boolean; onPress
         onPressOut={() => animateTo(1)}
         style={[styles.primaryButton, loading && styles.primaryButtonDisabled]}
       >
-        <View style={styles.buttonGlow} />
         <Text style={styles.primaryButtonText}>{loading ? t('auth.login.signingIn') : t('auth.login.signIn')}</Text>
-        <ArrowRight color="#172031" size={20} strokeWidth={2.6} style={styles.primaryButtonIcon} />
+        <ArrowRight color="#0F172A" size={22} strokeWidth={2.6} style={styles.primaryButtonIcon} />
       </Pressable>
     </Animated.View>
-  );
-};
-
-const SocialButton = ({ provider, icon, color }: { provider: string; icon: string; color: string }) => {
-  const { t } = useTranslation();
-  return (
-    <Pressable style={({ pressed }) => [styles.socialButton, pressed && styles.socialButtonPressed]}>
-      <View style={[styles.socialIcon, { backgroundColor: `${color}12` }]}>
-        <Text style={[styles.socialIconText, { color }]}>{icon}</Text>
-      </View>
-      <Text style={styles.socialText}>{t('auth.login.continueWith', { provider })}</Text>
-    </Pressable>
   );
 };
 
@@ -112,6 +100,14 @@ export const LoginScreen = ({ navigation, route }: any) => {
   const heroOpacity = useRef(new Animated.Value(0)).current;
   const cardOpacity = useRef(new Animated.Value(0)).current;
   const cardTranslate = useRef(new Animated.Value(24)).current;
+
+  const handleGoogleLogin = () => {
+    // TODO: connect Google login
+  };
+
+  const handleFacebookLogin = () => {
+    // TODO: connect Facebook login
+  };
 
   useEffect(() => {
     Animated.parallel([
@@ -160,11 +156,11 @@ export const LoginScreen = ({ navigation, route }: any) => {
           showsVerticalScrollIndicator={false}
         >
           <Animated.View style={[styles.hero, { opacity: heroOpacity }]}>
-            <View style={styles.logoCircle}>
-              <Image source={logoImage} style={styles.logo} resizeMode="contain" />
-            </View>
-            <Text style={styles.appName}>{t('auth.login.title')}</Text>
-            <Text style={styles.tagline}>{t('auth.login.tagline')}</Text>
+            <Text style={styles.loginHeading} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.78}>
+              <Text style={styles.headingDark}>Start your </Text>
+              <Text style={styles.headingGold}>solar journey!</Text>
+            </Text>
+            <Text style={styles.tagline}>Sign in or create your account to continue</Text>
             <View style={styles.goldDivider} />
           </Animated.View>
 
@@ -209,8 +205,8 @@ export const LoginScreen = ({ navigation, route }: any) => {
             <AnimatedSignInButton loading={loading} onPress={submit} />
 
             <View style={styles.securityNote}>
-              <ShieldCheck color="#7C8797" size={13} strokeWidth={2.2} />
-              <Text style={styles.securityText}>{t('auth.login.secureNote')}</Text>
+              <ShieldCheck color="#64748B" size={14} strokeWidth={2.2} />
+              <Text style={styles.securityText}>Secure login • Your data is protected</Text>
             </View>
 
             <View style={styles.dividerRow}>
@@ -219,9 +215,16 @@ export const LoginScreen = ({ navigation, route }: any) => {
               <View style={styles.dividerLine} />
             </View>
 
-            <View style={styles.socialStack}>
-              <SocialButton provider="Google" icon="G" color="#4285F4" />
-              <SocialButton provider="Facebook" icon="f" color="#1877F2" />
+            <View style={styles.socialButtonsContainer}>
+              <Pressable style={styles.socialLoginButton} onPress={handleGoogleLogin}>
+                <Image source={googleIcon} style={styles.socialIcon} resizeMode="contain" />
+                <Text style={styles.socialLoginText}>Continue with Google</Text>
+              </Pressable>
+
+              <Pressable style={styles.socialLoginButton} onPress={handleFacebookLogin}>
+                <Image source={facebookIcon} style={styles.socialIcon} resizeMode="contain" />
+                <Text style={styles.socialLoginText}>Continue with Facebook</Text>
+              </Pressable>
             </View>
 
             <Pressable style={styles.forgotButton} onPress={() => navigation.navigate('ForgotPassword')}>
@@ -236,7 +239,7 @@ export const LoginScreen = ({ navigation, route }: any) => {
             </View>
           </Animated.View>
 
-          <Text style={styles.footer}>{t('home.heroSubtitle')}</Text>
+          <Text style={styles.footer}>Compare panels, inverters, batteries and book trusted services.</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -246,7 +249,7 @@ export const LoginScreen = ({ navigation, route }: any) => {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#F8F3E8'
+    backgroundColor: '#FFFBF2'
   },
   fill: {
     flex: 1
@@ -255,82 +258,75 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingTop: 12,
-    paddingBottom: 14
+    paddingHorizontal: 20,
+    paddingTop: 26,
+    paddingBottom: 90
   },
   hero: {
-    alignItems: 'center',
-    marginBottom: 14
+    width: '100%',
+    alignItems: 'flex-start'
   },
-  logoCircle: {
-    width: 62,
-    height: 62,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFF7E2',
-    borderWidth: 1,
-    borderColor: '#F4D67E',
-    shadowColor: '#8C6A16',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.12,
-    shadowRadius: 18,
-    elevation: 5
+  loginHeading: {
+    color: '#0F172A',
+    fontSize: 29,
+    lineHeight: 35,
+    fontWeight: '900',
+    marginTop: 6
   },
-  logo: {
-    width: 42,
-    height: 42
+  headingDark: {
+    color: '#0F172A'
   },
-  appName: {
-    marginTop: 10,
-    color: '#172031',
-    fontSize: 30,
-    fontWeight: '900'
+  headingGold: {
+    color: '#EAB308'
   },
   tagline: {
-    marginTop: 5,
-    color: '#7A8596',
-    fontSize: 12.5,
-    fontWeight: '800'
+    marginTop: 6,
+    color: '#64748B',
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600'
   },
   goldDivider: {
-    width: 24,
-    height: 3,
+    width: 42,
+    height: 4,
     borderRadius: 99,
-    backgroundColor: '#F5C542',
-    marginTop: 10
+    backgroundColor: '#F5B400',
+    marginTop: 12,
+    marginBottom: 18
   },
   card: {
-    width: '91%',
-    borderRadius: 22,
+    width: '100%',
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: '#EFE3CF',
     backgroundColor: '#FFFFFF',
-    padding: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    marginTop: 0,
     shadowColor: '#403622',
     shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.14,
-    shadowRadius: 24,
-    elevation: 9
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4
   },
   fieldBlock: {
-    marginBottom: 12
+    marginBottom: 10
   },
   label: {
-    color: '#172031',
+    color: '#0F172A',
     fontSize: 13,
-    fontWeight: '900',
-    marginBottom: 8
+    lineHeight: 17,
+    fontWeight: '800',
+    marginBottom: 7
   },
   inputWrap: {
-    height: 52,
+    height: 50,
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 15,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E4DDD2',
-    backgroundColor: '#FFFDF8',
+    borderColor: '#E8DED0',
+    backgroundColor: '#FFFCF5',
     paddingHorizontal: 12
   },
   inputWrapFocused: {
@@ -346,9 +342,9 @@ const styles = StyleSheet.create({
     borderColor: '#E46B61'
   },
   inputIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 10,
+    width: 34,
+    height: 34,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FFF4CE'
@@ -357,9 +353,9 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 50,
     paddingHorizontal: 10,
-    color: '#172031',
-    fontSize: 14.5,
-    fontWeight: '800'
+    color: '#0F172A',
+    fontSize: 14,
+    fontWeight: '600'
   },
   eyeButton: {
     width: 32,
@@ -389,7 +385,7 @@ const styles = StyleSheet.create({
     color: '#027A48'
   },
   buttonShadow: {
-    marginTop: 4,
+    marginTop: 18,
     shadowColor: '#9A6C00',
     shadowOffset: { width: 0, height: 11 },
     shadowOpacity: 0.22,
@@ -397,137 +393,126 @@ const styles = StyleSheet.create({
     elevation: 6
   },
   primaryButton: {
-    height: 54,
+    width: '100%',
+    height: 50,
     borderRadius: 16,
-    overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F4BF22'
+    gap: 10,
+    backgroundColor: '#F5B400'
   },
   primaryButtonDisabled: {
     opacity: 0.65
   },
-  buttonGlow: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 27,
-    backgroundColor: '#FFD95A'
-  },
   primaryButtonText: {
-    color: '#172031',
-    fontSize: 15.5,
-    fontWeight: '900'
+    color: '#0F172A',
+    fontSize: 16,
+    fontWeight: '800'
   },
   primaryButtonIcon: {
-    position: 'absolute',
-    right: 18
+    marginLeft: 0
   },
   securityNote: {
-    marginTop: 11,
+    marginTop: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 5
   },
   securityText: {
-    color: '#7C8797',
-    fontSize: 10.5,
-    fontWeight: '800'
+    color: '#64748B',
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: '600'
   },
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginTop: 17,
+    marginTop: 12,
     marginBottom: 12
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#EFE7DA'
+    backgroundColor: '#E8DED0'
   },
   dividerText: {
     color: '#99A2AF',
-    fontSize: 10.5,
-    fontWeight: '900'
+    fontSize: 11,
+    fontWeight: '600'
   },
-  socialStack: {
-    gap: 9
+  socialButtonsContainer: {
+    width: '100%',
+    gap: 9,
+    marginTop: 0,
+    marginBottom: 12
   },
-  socialButton: {
-    height: 48,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E8DFD2',
+  socialLoginButton: {
+    width: '100%',
+    height: 46,
+    borderRadius: 15,
     backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E8DED0',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#6A5A3B',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3
-  },
-  socialButtonPressed: {
-    transform: [{ scale: 0.99 }],
-    backgroundColor: '#FFFCF5'
+    gap: 12,
+    paddingHorizontal: 16
   },
   socialIcon: {
-    position: 'absolute',
-    left: 15,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center'
+    width: 22,
+    height: 22
   },
-  socialIconText: {
-    fontSize: 16,
-    fontWeight: '900'
-  },
-  socialText: {
-    color: '#273449',
-    fontSize: 13.5,
-    fontWeight: '900'
+  socialLoginText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0F172A'
   },
   forgotButton: {
     alignSelf: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 11
+    marginTop: 10,
+    marginBottom: 12,
+    paddingVertical: 0
   },
   forgotText: {
-    color: '#7D8796',
-    fontSize: 12,
-    fontWeight: '900'
+    color: '#64748B',
+    fontSize: 13,
+    fontWeight: '700'
   },
   signupRow: {
     borderTopWidth: 1,
     borderTopColor: '#EFE7DA',
-    paddingTop: 11,
+    marginTop: 10,
+    paddingTop: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4
   },
   signupMuted: {
-    color: '#3C475A',
-    fontSize: 12,
-    fontWeight: '800'
+    color: '#0F172A',
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: '700'
   },
   signupLink: {
-    color: '#0F70D7',
-    fontSize: 12,
-    fontWeight: '900'
+    color: '#0F79B2',
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: '800'
   },
   footer: {
     marginTop: 12,
+    marginBottom: 45,
+    paddingHorizontal: 12,
     textAlign: 'center',
-    color: '#7D735F',
+    color: '#64748B',
     fontSize: 11,
-    fontWeight: '900'
+    lineHeight: 15,
+    fontWeight: '600'
   }
 });

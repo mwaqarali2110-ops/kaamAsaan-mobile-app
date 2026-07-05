@@ -778,14 +778,6 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
         </View>
       </ScrollView>
 
-      <View style={detailStyles.systemChip}>
-        <Text style={detailStyles.systemEyebrow}>MY SYSTEM</Text>
-        <View style={detailStyles.systemValues}>
-          <Text style={detailStyles.systemValue}>☀ 3 kW</Text>
-          <Text style={detailStyles.systemValue}>⚡ 4 kW</Text>
-          <Text style={detailStyles.systemValue}>🔋 6kWh</Text>
-        </View>
-      </View>
       <Pressable style={detailStyles.chatButton}>
         <MessageCircle color="#FFFFFF" size={18} strokeWidth={2.2} />
       </Pressable>
@@ -1329,23 +1321,6 @@ const detailStyles = StyleSheet.create({
   installText: { marginTop: 5, color: 'rgba(255,255,255,0.75)', fontSize: 11.5, fontWeight: '700', lineHeight: 16 },
   quoteButton: { borderRadius: 14, backgroundColor: '#FDB813', paddingHorizontal: 14, paddingVertical: 10 },
   quoteText: { color: '#111827', fontSize: 12, fontWeight: '900' },
-  systemChip: {
-    position: 'absolute',
-    left: 16,
-    bottom: 82,
-    borderRadius: 15,
-    backgroundColor: 'rgba(45,52,38,0.94)',
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.18,
-    shadowRadius: 14,
-    elevation: 5
-  },
-  systemEyebrow: { color: '#F5B700', fontSize: 7.5, fontWeight: '900' },
-  systemValues: { marginTop: 5, flexDirection: 'row', gap: 8 },
-  systemValue: { color: '#F8F5D9', fontSize: 10.5, fontWeight: '800' },
   chatButton: {
     position: 'absolute',
     right: 18,

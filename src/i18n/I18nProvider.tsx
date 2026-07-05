@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import { AppLanguage, changeLanguage, currentLanguage, initI18n, isRTL } from './index';
 import { colors } from '@/constants/colors';
 
@@ -51,11 +50,10 @@ export const I18nProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 const I18nLoadingScreen = () => {
-  const { t } = useTranslation();
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#FBF8F1' }}>
       <ActivityIndicator color={colors.amber} size="large" />
-      <Text style={{ color: colors.navy, fontSize: 13, fontWeight: '800' }}>{t('common.loading')}</Text>
+      <Text style={{ color: colors.navy, fontSize: 13, fontWeight: '800' }}>Loading...</Text>
     </View>
   );
 };

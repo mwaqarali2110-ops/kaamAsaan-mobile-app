@@ -33,25 +33,42 @@ type TimelineState = 'completed' | 'active' | 'pending' | 'cancelled';
 
 const getTimelineState = (status: SurveyBookingStatus, index: number): TimelineState => {
   if (status === 'cancelled') return index === 0 ? 'cancelled' : 'pending';
-  if (status === 'pending') return index === 0 ? 'active' : 'pending';
-  if (status === 'confirmed') return index < 1 ? 'completed' : index === 1 ? 'active' : 'pending';
-  if (status === 'survey_scheduled') return index < 2 ? 'completed' : index === 2 ? 'active' : 'pending';
-  if (status === 'survey_completed' || status === 'completed') return index <= 3 ? 'completed' : 'pending';
-  if (status === 'proposal_preparation') return index < 4 ? 'completed' : index === 4 ? 'active' : 'pending';
+  if (['pending', 'survey_requested', 'survey_booked', 'survey_pending'].includes(status)) return index === 0 ? 'active' : 'pending';
+  if (['confirmed', 'survey_confirmed'].includes(status)) return index < 1 ? 'completed' : index === 1 ? 'active' : 'pending';
+  if (['survey_scheduled', 'site_visit_scheduled', 'site_survey_scheduled'].includes(status)) {
+    return index < 2 ? 'completed' : index === 2 ? 'active' : 'pending';
+  }
+  if (status === 'survey_completed') return index <= 3 ? 'completed' : 'pending';
+  if (['proposal_preparation', 'quotation_pending'].includes(status)) return index < 4 ? 'completed' : index === 4 ? 'active' : 'pending';
   if (status === 'quotation_shared') return index < 5 ? 'completed' : index === 5 ? 'active' : 'pending';
-  if (status === 'installation_planning') return index < 6 ? 'completed' : index === 6 ? 'active' : 'pending';
+  if (['installation_pending', 'installation_planning', 'installation_in_progress', 'project_in_progress'].includes(status)) {
+    return index < 6 ? 'completed' : index === 6 ? 'active' : 'pending';
+  }
   return 'completed';
 };
 
 const statusCopy: Record<SurveyBookingStatus, { title: string; detail: string; tone: string }> = {
+  survey_requested: { title: 'Survey request received', detail: 'Our consultant will contact you within 1 hour.', tone: '#F5A623' },
+  survey_booked: { title: 'Survey request received', detail: 'Our consultant will contact you within 1 hour.', tone: '#F5A623' },
+  survey_pending: { title: 'Survey request received', detail: 'Our consultant will contact you within 1 hour.', tone: '#F5A623' },
+  survey_confirmed: { title: 'Representative call confirmed', detail: 'Our consultant is coordinating your preferred survey schedule.', tone: '#2563EB' },
+  site_visit_scheduled: { title: 'Survey scheduled', detail: 'Your site survey date and time have been confirmed.', tone: '#2563EB' },
+  site_survey_scheduled: { title: 'Survey scheduled', detail: 'Your site survey date and time have been confirmed.', tone: '#2563EB' },
   pending: { title: 'Survey request received', detail: 'Our consultant will contact you within 1 hour.', tone: '#F5A623' },
   confirmed: { title: 'Representative call confirmed', detail: 'Our consultant is coordinating your preferred survey schedule.', tone: '#2563EB' },
   survey_scheduled: { title: 'Survey scheduled', detail: 'Your site survey date and time have been confirmed.', tone: '#2563EB' },
   survey_completed: { title: 'Survey completed', detail: 'Our team has completed the site inspection.', tone: '#168A4A' },
   proposal_preparation: { title: 'Proposal preparation', detail: 'Your recommended solar system and estimate are being prepared.', tone: '#E87916' },
+  quotation_pending: { title: 'Proposal preparation', detail: 'Your recommended solar system and estimate are being prepared.', tone: '#E87916' },
   quotation_shared: { title: 'Quotation shared', detail: 'Your quotation is ready for review.', tone: '#7C3AED' },
+  installation_pending: { title: 'Installation planning', detail: 'Your installation plan is being finalized after approval.', tone: '#0F8B8D' },
   installation_planning: { title: 'Installation planning', detail: 'Your installation plan is being finalized after approval.', tone: '#0F8B8D' },
+  installation_in_progress: { title: 'Installation in progress', detail: 'Your solar installation is currently in progress.', tone: '#0F8B8D' },
   installation_completed: { title: 'Installation completed', detail: 'Your solar installation has been completed successfully.', tone: '#168A4A' },
+  project_in_progress: { title: 'Project in progress', detail: 'Your solar installation project is currently in progress.', tone: '#0F8B8D' },
+  project_completed: { title: 'Installation completed', detail: 'Your solar installation has been completed successfully.', tone: '#168A4A' },
+  installed: { title: 'Installation completed', detail: 'Your solar installation has been completed successfully.', tone: '#168A4A' },
+  system_active: { title: 'Solar system active', detail: 'Your solar system is active and ready for maintenance care.', tone: '#168A4A' },
   completed: { title: 'Survey completed', detail: 'Your site survey has been completed successfully.', tone: '#168A4A' },
   cancelled: { title: 'Survey cancelled', detail: 'This survey request is no longer active.', tone: '#D14343' }
 };

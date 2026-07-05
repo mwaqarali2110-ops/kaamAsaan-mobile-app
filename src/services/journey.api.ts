@@ -2,25 +2,56 @@ import { supabase } from '@/lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type SurveyBookingStatus =
+  | 'survey_requested'
+  | 'survey_booked'
+  | 'survey_pending'
+  | 'survey_confirmed'
+  | 'site_visit_scheduled'
+  | 'site_survey_scheduled'
   | 'pending'
   | 'confirmed'
   | 'survey_scheduled'
   | 'survey_completed'
   | 'proposal_preparation'
+  | 'quotation_pending'
   | 'quotation_shared'
+  | 'installation_pending'
   | 'installation_planning'
+  | 'installation_in_progress'
   | 'installation_completed'
+  | 'project_in_progress'
+  | 'project_completed'
+  | 'installed'
+  | 'system_active'
   | 'cancelled'
   | 'completed';
 
 export const activeSurveyBookingStatuses: SurveyBookingStatus[] = [
+  'survey_requested',
+  'survey_booked',
+  'survey_pending',
+  'survey_confirmed',
+  'site_visit_scheduled',
+  'site_survey_scheduled',
   'pending',
   'confirmed',
   'survey_scheduled',
   'survey_completed',
   'proposal_preparation',
+  'quotation_pending',
   'quotation_shared',
-  'installation_planning'
+  'installation_pending',
+  'installation_planning',
+  'installation_in_progress',
+  'project_in_progress'
+];
+
+export const completedSurveyBookingStatuses: SurveyBookingStatus[] = [
+  'installed',
+  'completed',
+  'system_active',
+  'installation_completed',
+  'project_completed'
 ];
 
 export type SurveyJourneyBooking = {
@@ -75,6 +106,24 @@ export const saveLocalActiveSurveyBooking = async (booking: SurveyJourneyBooking
 };
 
 export const journeyApi = {
+  getLatestSurveyBooking: async (userId: string) => {
+    const { data, error } = await supabase
+      .from('survey_bookings')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      const localBooking = await getLocalActiveSurveyBooking(userId);
+      if (localBooking) return localBooking;
+      throw error;
+    }
+
+    return data ? (data as SurveyJourneyBooking) : getLocalActiveSurveyBooking(userId);
+  },
+
   getLatestActiveSurveyBooking: async (userId: string) => {
     const { data, error } = await supabase
       .from('survey_bookings')

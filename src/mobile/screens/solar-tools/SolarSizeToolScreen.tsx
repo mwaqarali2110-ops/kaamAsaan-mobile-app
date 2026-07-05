@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { AirVent, ArrowLeft, ArrowRight, BatteryCharging, ChevronUp, Home, Lightbulb, MessageCircle, Plus, Refrigerator, Shirt, Sun, Zap } from 'lucide-react-native';
+import { AirVent, ArrowLeft, ArrowRight, ChevronUp, Home, Lightbulb, MessageCircle, Plus, Refrigerator, Shirt, Sun, Zap } from 'lucide-react-native';
 import type { Appliance } from '@/types/system.types';
-import { calculateEnergyKwh, calculateLoadKw, recommendSolarKw } from '@/utils/calculations';
+import { calculateLoadKw, recommendSolarKw } from '@/utils/calculations';
 import { useSystemStore } from '@/store/useSystemStore';
 
 const starterAppliances: Appliance[] = [
@@ -34,7 +34,6 @@ export const SolarSizeToolScreen = ({ navigation }: any) => {
   const setRecommendedSolarKw = useSystemStore((state) => state.setRecommendedSolarKw);
 
   const loadKw = useMemo(() => calculateLoadKw(appliances), [appliances]);
-  const energyKwh = useMemo(() => calculateEnergyKwh(appliances), [appliances]);
   const systemKw = useMemo(() => (loadKw > 0 ? recommendSolarKw(appliances) : 0), [appliances, loadKw]);
   const selectedAppliances = useMemo(() => appliances.filter((item) => item.quantity > 0), [appliances]);
 
@@ -95,14 +94,6 @@ export const SolarSizeToolScreen = ({ navigation }: any) => {
           <Text style={styles.moreText}>+  More appliances</Text>
         </Pressable>
 
-        <View style={styles.systemCard}>
-          <Text style={styles.systemEyebrow}>MY SYSTEM</Text>
-          <View style={styles.systemGrid}>
-            <SystemMetric Icon={Sun} value={`${systemKw} kW`} label="System Size" />
-            <SystemMetric Icon={Zap} value={`${loadKw.toFixed(1)} kW`} label="Est. Power" />
-            <SystemMetric Icon={BatteryCharging} value={`${energyKwh.toFixed(1)} kWh`} label="Est. Daily Energy" />
-          </View>
-        </View>
           </ScrollView>
 
           <View style={styles.footer}>
@@ -143,14 +134,6 @@ const Counter = ({ value, onMinus, onPlus }: { value: number; onMinus: () => voi
     <Pressable style={[styles.counterButton, styles.counterButtonPlus]} onPress={onPlus}>
       <Text style={styles.counterText}>+</Text>
     </Pressable>
-  </View>
-);
-
-const SystemMetric = ({ Icon, value, label }: { Icon: any; value: string; label: string }) => (
-  <View style={styles.systemMetric}>
-    <Icon color="#B07800" size={14} strokeWidth={2.3} />
-    <Text style={styles.metricValue}>{value}</Text>
-    <Text style={styles.metricLabel}>{label}</Text>
   </View>
 );
 
@@ -215,16 +198,6 @@ const RunningLoadResult = ({
         </Pressable>
       </ScrollView>
 
-      <View style={styles.floatingChip}>
-        <Text style={styles.floatingEyebrow}>MY SYSTEM</Text>
-        <View style={styles.floatingValues}>
-          <Text style={styles.floatingValue}>☀ 3 kW</Text>
-          <Text style={styles.floatingDivider}>|</Text>
-          <Text style={styles.floatingValue}>⚡ 4 kW</Text>
-          <Text style={styles.floatingDivider}>|</Text>
-          <Text style={styles.floatingValue}>🌿 6 kWh</Text>
-        </View>
-      </View>
       <Pressable style={styles.chatButton} accessibilityLabel="Help">
         <MessageCircle color="#FFFFFF" size={19} strokeWidth={2.2} />
       </Pressable>
@@ -323,19 +296,6 @@ const styles = StyleSheet.create({
     marginBottom: 12
   },
   moreText: { color: '#10213A', fontSize: 11, fontWeight: '800' },
-  systemCard: {
-    borderRadius: 17,
-    backgroundColor: '#FFF2C2',
-    borderWidth: 1,
-    borderColor: '#F5D482',
-    paddingHorizontal: 12,
-    paddingVertical: 12
-  },
-  systemEyebrow: { color: '#B07800', fontSize: 8.5, fontWeight: '900', marginBottom: 9 },
-  systemGrid: { flexDirection: 'row', justifyContent: 'space-between' },
-  systemMetric: { flex: 1, alignItems: 'center', gap: 3 },
-  metricValue: { color: '#10213A', fontSize: 11, fontWeight: '900' },
-  metricLabel: { color: '#64748B', fontSize: 8, fontWeight: '700', textAlign: 'center' },
   footer: {
     position: 'absolute',
     left: 0,
@@ -526,42 +486,6 @@ const styles = StyleSheet.create({
     color: '#10213A',
     fontSize: 15,
     fontWeight: '900'
-  },
-  floatingChip: {
-    position: 'absolute',
-    left: 18,
-    bottom: 22,
-    borderRadius: 18,
-    backgroundColor: 'rgba(45,52,38,0.94)',
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 5
-  },
-  floatingEyebrow: {
-    color: '#F5B700',
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 1
-  },
-  floatingValues: {
-    marginTop: 7,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8
-  },
-  floatingValue: {
-    color: '#F8F5D9',
-    fontSize: 13,
-    fontWeight: '800'
-  },
-  floatingDivider: {
-    color: 'rgba(248,245,217,0.32)',
-    fontSize: 13,
-    fontWeight: '800'
   },
   chatButton: {
     position: 'absolute',

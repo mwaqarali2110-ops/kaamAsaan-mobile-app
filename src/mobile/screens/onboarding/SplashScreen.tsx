@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import Animated, {
   Easing,
   cancelAnimation,
+  useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -14,10 +15,22 @@ import Animated, {
 import Svg, { Line, Path } from 'react-native-svg';
 
 const cartLogo = require('../../../assets/onboarding/Splash-Screen-Cart-1-transparent.png');
+const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 const SPLASH_DURATION_MS = 4800;
 const CART_SLIDE_DURATION_MS = 1000;
 const SPARK_START_DELAY_MS = 190;
+const CART_BASE_WIDTH = 150;
+const CART_BASE_HEIGHT = 145;
+const CURRENT_LOOP_MS = 1650;
+const CART_CURRENT_PATH =
+  'M33 126 C42 119 55 119 70 120 L103 120 C116 119 124 111 128 98 L134 67 C134 60 129 55 119 53 L43 44 C31 43 24 50 24 63 C24 76 34 86 50 90 C68 95 90 93 105 84 C116 77 119 65 112 55 C105 44 94 34 86 24';
+const VOLTAGE_PULSE_BASE = {
+  top: 8,
+  left: 65,
+  width: 42,
+  height: 62
+};
 
 export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
   const { width, height } = useWindowDimensions();
@@ -28,26 +41,51 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
   const brandFontSize = Math.min(43, Math.max(34, width * 0.105));
   const taglineFontSize = Math.min(12.5, Math.max(10.5, width * 0.03));
   const waveHeight = Math.min(164, Math.max(132, height * 0.18));
+  const cartScaleX = logoWidth / CART_BASE_WIDTH;
+  const cartScaleY = logoHeight / CART_BASE_HEIGHT;
+  const voltagePulseTop = VOLTAGE_PULSE_BASE.top * cartScaleY;
+  const voltagePulseLeft = VOLTAGE_PULSE_BASE.left * cartScaleX;
+  const voltagePulseWidth = VOLTAGE_PULSE_BASE.width * cartScaleX;
+  const voltagePulseHeight = VOLTAGE_PULSE_BASE.height * cartScaleY;
 
   const cartTranslateX = useSharedValue(0);
-  const sparkGlowOpacity = useSharedValue(0);
-  const sparkGlowScale = useSharedValue(0.88);
-  const sparkOpacity = useSharedValue(0);
-  const sparkScale = useSharedValue(0.82);
-  const sparkRotate = useSharedValue(-4);
+  const currentDashOffset = useSharedValue(0);
+  const voltagePulseOpacity = useSharedValue(0);
+  const voltagePulseScale = useSharedValue(0.95);
+  const voltageTrembleX = useSharedValue(0);
+  const voltageTrembleY = useSharedValue(0);
+  const voltageTrembleRotate = useSharedValue(0);
+  const sparkOneOpacity = useSharedValue(0);
+  const sparkOneScale = useSharedValue(0.7);
+  const sparkTwoOpacity = useSharedValue(0);
+  const sparkTwoScale = useSharedValue(0.7);
 
   const cartAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: cartTranslateX.value }]
   }));
 
-  const sparkGlowAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: sparkGlowOpacity.value,
-    transform: [{ scale: sparkGlowScale.value }]
+  const currentAnimatedProps = useAnimatedProps(() => ({
+    strokeDashoffset: currentDashOffset.value
   }));
 
-  const sparkAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: sparkOpacity.value,
-    transform: [{ scale: sparkScale.value }, { rotateZ: `${sparkRotate.value}deg` }]
+  const voltagePulseStyle = useAnimatedStyle(() => ({
+    opacity: voltagePulseOpacity.value,
+    transform: [
+      { translateX: voltageTrembleX.value },
+      { translateY: voltageTrembleY.value },
+      { rotateZ: `${voltageTrembleRotate.value}deg` },
+      { scale: voltagePulseScale.value }
+    ]
+  }));
+
+  const sparkOneStyle = useAnimatedStyle(() => ({
+    opacity: sparkOneOpacity.value,
+    transform: [{ scale: sparkOneScale.value }, { rotateZ: '-24deg' }]
+  }));
+
+  const sparkTwoStyle = useAnimatedStyle(() => ({
+    opacity: sparkTwoOpacity.value,
+    transform: [{ scale: sparkTwoScale.value }, { rotateZ: '28deg' }]
   }));
 
   useEffect(() => {
@@ -60,68 +98,124 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
     const startOffset = -Math.max(width * 0.95, logoWidth + 150);
 
     cartTranslateX.value = startOffset;
-    sparkGlowOpacity.value = 0;
-    sparkGlowScale.value = 0.88;
-    sparkOpacity.value = 0;
-    sparkScale.value = 0.82;
-    sparkRotate.value = -4;
+    currentDashOffset.value = 0;
+    voltagePulseOpacity.value = 0;
+    voltagePulseScale.value = 0.95;
+    voltageTrembleX.value = 0;
+    voltageTrembleY.value = 0;
+    voltageTrembleRotate.value = 0;
+    sparkOneOpacity.value = 0;
+    sparkOneScale.value = 0.7;
+    sparkTwoOpacity.value = 0;
+    sparkTwoScale.value = 0.7;
 
     cartTranslateX.value = withTiming(0, {
       duration: CART_SLIDE_DURATION_MS,
       easing: Easing.out(Easing.cubic)
     });
 
-    const sparkTimer = setTimeout(() => {
-      sparkGlowOpacity.value = withRepeat(
+    const voltageTimer = setTimeout(() => {
+      currentDashOffset.value = withRepeat(
+        withTiming(-220, {
+          duration: CURRENT_LOOP_MS,
+          easing: Easing.linear
+        }),
+        -1,
+        false
+      );
+
+      voltagePulseOpacity.value = withRepeat(
         withSequence(
-          withTiming(0.26, { duration: 180, easing: Easing.out(Easing.quad) }),
-          withTiming(0.12, { duration: 150, easing: Easing.inOut(Easing.quad) }),
-          withTiming(0.2, { duration: 130, easing: Easing.out(Easing.quad) }),
-          withTiming(0.08, { duration: 1140, easing: Easing.inOut(Easing.quad) })
+          withTiming(0, { duration: 1200 }),
+          withTiming(0.65, { duration: 160, easing: Easing.out(Easing.cubic) }),
+          withTiming(0.15, { duration: 220, easing: Easing.inOut(Easing.cubic) }),
+          withTiming(0, { duration: 70 })
         ),
         -1,
         false
       );
 
-      sparkGlowScale.value = withRepeat(
+      voltagePulseScale.value = withRepeat(
         withSequence(
-          withTiming(1.08, { duration: 200, easing: Easing.out(Easing.cubic) }),
-          withTiming(0.96, { duration: 160, easing: Easing.inOut(Easing.quad) }),
-          withTiming(1.03, { duration: 120, easing: Easing.out(Easing.quad) }),
-          withTiming(0.92, { duration: 1140, easing: Easing.inOut(Easing.quad) })
+          withTiming(0.95, { duration: 1200 }),
+          withTiming(1.12, { duration: 160, easing: Easing.out(Easing.cubic) }),
+          withTiming(1, { duration: 290, easing: Easing.inOut(Easing.cubic) })
         ),
         -1,
         false
       );
 
-      sparkOpacity.value = withRepeat(
+      voltageTrembleX.value = withRepeat(
         withSequence(
-          withTiming(0.94, { duration: 120, easing: Easing.out(Easing.quad) }),
-          withTiming(0.34, { duration: 90, easing: Easing.inOut(Easing.quad) }),
-          withTiming(0.82, { duration: 110, easing: Easing.out(Easing.quad) }),
-          withTiming(0.18, { duration: 1280, easing: Easing.inOut(Easing.quad) })
+          withTiming(0, { duration: 1220 }),
+          withTiming(1.2, { duration: 70, easing: Easing.linear }),
+          withTiming(-1.1, { duration: 76, easing: Easing.linear }),
+          withTiming(0.7, { duration: 68, easing: Easing.linear }),
+          withTiming(0, { duration: 216, easing: Easing.linear })
         ),
         -1,
         false
       );
 
-      sparkScale.value = withRepeat(
+      voltageTrembleY.value = withRepeat(
         withSequence(
-          withTiming(1.08, { duration: 130, easing: Easing.out(Easing.cubic) }),
-          withTiming(0.9, { duration: 90, easing: Easing.inOut(Easing.quad) }),
-          withTiming(1.02, { duration: 110, easing: Easing.out(Easing.quad) }),
-          withTiming(0.9, { duration: 1270, easing: Easing.inOut(Easing.quad) })
+          withTiming(0, { duration: 1220 }),
+          withTiming(-0.8, { duration: 72, easing: Easing.linear }),
+          withTiming(0.65, { duration: 78, easing: Easing.linear }),
+          withTiming(0, { duration: 280, easing: Easing.linear })
         ),
         -1,
         false
       );
 
-      sparkRotate.value = withRepeat(
+      voltageTrembleRotate.value = withRepeat(
         withSequence(
-          withTiming(3, { duration: 140, easing: Easing.out(Easing.quad) }),
-          withTiming(-2, { duration: 120, easing: Easing.inOut(Easing.quad) }),
-          withTiming(1, { duration: 90, easing: Easing.out(Easing.quad) }),
-          withTiming(-1, { duration: 1250, easing: Easing.inOut(Easing.quad) })
+          withTiming(0, { duration: 1220 }),
+          withTiming(0.8, { duration: 70, easing: Easing.linear }),
+          withTiming(-0.75, { duration: 76, easing: Easing.linear }),
+          withTiming(0.3, { duration: 70, easing: Easing.linear }),
+          withTiming(0, { duration: 214, easing: Easing.linear })
+        ),
+        -1,
+        false
+      );
+
+      sparkOneOpacity.value = withRepeat(
+        withSequence(
+          withTiming(0, { duration: 1260 }),
+          withTiming(0.9, { duration: 100, easing: Easing.out(Easing.cubic) }),
+          withTiming(0, { duration: 260, easing: Easing.inOut(Easing.cubic) }),
+          withTiming(0, { duration: 30 })
+        ),
+        -1,
+        false
+      );
+
+      sparkOneScale.value = withRepeat(
+        withSequence(
+          withTiming(0.7, { duration: 1260 }),
+          withTiming(1.15, { duration: 100, easing: Easing.out(Easing.cubic) }),
+          withTiming(0.7, { duration: 290, easing: Easing.inOut(Easing.cubic) })
+        ),
+        -1,
+        false
+      );
+
+      sparkTwoOpacity.value = withRepeat(
+        withSequence(
+          withTiming(0, { duration: 1380 }),
+          withTiming(0.82, { duration: 95, easing: Easing.out(Easing.cubic) }),
+          withTiming(0, { duration: 175, easing: Easing.inOut(Easing.cubic) })
+        ),
+        -1,
+        false
+      );
+
+      sparkTwoScale.value = withRepeat(
+        withSequence(
+          withTiming(0.7, { duration: 1380 }),
+          withTiming(1.12, { duration: 95, easing: Easing.out(Easing.cubic) }),
+          withTiming(0.7, { duration: 175, easing: Easing.inOut(Easing.cubic) })
         ),
         -1,
         false
@@ -131,24 +225,34 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
     const finishTimer = setTimeout(completeSplash, SPLASH_DURATION_MS);
 
     return () => {
-      clearTimeout(sparkTimer);
+      clearTimeout(voltageTimer);
       clearTimeout(finishTimer);
       cancelAnimation(cartTranslateX);
-      cancelAnimation(sparkGlowOpacity);
-      cancelAnimation(sparkGlowScale);
-      cancelAnimation(sparkOpacity);
-      cancelAnimation(sparkScale);
-      cancelAnimation(sparkRotate);
+      cancelAnimation(currentDashOffset);
+      cancelAnimation(voltagePulseOpacity);
+      cancelAnimation(voltagePulseScale);
+      cancelAnimation(voltageTrembleX);
+      cancelAnimation(voltageTrembleY);
+      cancelAnimation(voltageTrembleRotate);
+      cancelAnimation(sparkOneOpacity);
+      cancelAnimation(sparkOneScale);
+      cancelAnimation(sparkTwoOpacity);
+      cancelAnimation(sparkTwoScale);
     };
   }, [
     cartTranslateX,
+    currentDashOffset,
     logoWidth,
     onDone,
-    sparkGlowOpacity,
-    sparkGlowScale,
-    sparkOpacity,
-    sparkRotate,
-    sparkScale,
+    sparkOneOpacity,
+    sparkOneScale,
+    sparkTwoOpacity,
+    sparkTwoScale,
+    voltagePulseOpacity,
+    voltagePulseScale,
+    voltageTrembleRotate,
+    voltageTrembleX,
+    voltageTrembleY,
     width
   ]);
 
@@ -184,17 +288,49 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
       </View>
 
       <View style={styles.content}>
-        <Animated.View style={[styles.logoWrap, cartAnimatedStyle]}>
-          <Image source={cartLogo} style={{ width: logoWidth, height: logoHeight }} resizeMode="contain" />
+        <Animated.View style={[styles.cartWrapper, { width: logoWidth, height: logoHeight }, cartAnimatedStyle]}>
+          <Image source={cartLogo} style={[styles.cartImage, { width: logoWidth, height: logoHeight }]} resizeMode="contain" />
+
+          <Svg
+            style={StyleSheet.absoluteFill}
+            width="100%"
+            height="100%"
+            viewBox={`0 0 ${CART_BASE_WIDTH} ${CART_BASE_HEIGHT}`}
+            pointerEvents="none"
+          >
+            <AnimatedPath
+              animatedProps={currentAnimatedProps}
+              d={CART_CURRENT_PATH}
+              fill="none"
+              stroke="#F5B400"
+              strokeWidth={6}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeDasharray="18 160"
+              opacity={0.13}
+            />
+            <AnimatedPath
+              animatedProps={currentAnimatedProps}
+              d={CART_CURRENT_PATH}
+              fill="none"
+              stroke="#FFF1A8"
+              strokeWidth={2.2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeDasharray="18 160"
+            />
+          </Svg>
 
           <Animated.View
             pointerEvents="none"
             style={[
-              styles.sparkGlow,
-              sparkGlowAnimatedStyle,
+              styles.voltagePulse,
+              voltagePulseStyle,
               {
-                left: logoWidth * 0.45,
-                top: logoHeight * 0.07
+                top: voltagePulseTop,
+                left: voltagePulseLeft,
+                width: voltagePulseWidth,
+                height: voltagePulseHeight
               }
             ]}
           />
@@ -202,20 +338,28 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
           <Animated.View
             pointerEvents="none"
             style={[
-              styles.spark,
-              sparkAnimatedStyle,
+              styles.voltageSpark,
+              styles.voltageSparkTop,
+              sparkOneStyle,
               {
-                left: logoWidth * 0.44,
-                top: logoHeight * 0.055
+                top: voltagePulseTop + voltagePulseHeight * 0.12,
+                left: voltagePulseLeft + voltagePulseWidth * 0.72
               }
             ]}
-          >
-            <View style={styles.sparkCore} />
-            <View style={[styles.sparkRay, styles.sparkRayVertical]} />
-            <View style={[styles.sparkRay, styles.sparkRayHorizontal]} />
-            <View style={[styles.sparkRay, styles.sparkRayDiagonalA]} />
-            <View style={[styles.sparkRay, styles.sparkRayDiagonalB]} />
-          </Animated.View>
+          />
+
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.voltageSpark,
+              styles.voltageSparkLower,
+              sparkTwoStyle,
+              {
+                top: voltagePulseTop + voltagePulseHeight * 0.7,
+                left: voltagePulseLeft + voltagePulseWidth * 0.18
+              }
+            ]}
+          />
         </Animated.View>
 
         <View style={styles.brandWrap}>
@@ -283,49 +427,47 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 44
   },
-  logoWrap: {
+  cartWrapper: {
+    position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 18
   },
-  sparkGlow: {
-    position: 'absolute',
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 210, 84, 0.36)'
+  cartImage: {
+    flexShrink: 0
   },
-  spark: {
+  voltagePulse: {
     position: 'absolute',
-    width: 28,
-    height: 28,
+    zIndex: 5,
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    borderRadius: 20,
+    backgroundColor: 'rgba(245, 180, 0, 0.18)',
+    shadowColor: '#F5B400',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 5
   },
-  sparkCore: {
-    width: 8,
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255, 222, 110, 0.95)'
-  },
-  sparkRay: {
+  voltageSpark: {
     position: 'absolute',
-    width: 2.5,
-    height: 16,
+    zIndex: 6,
+    width: 3,
+    height: 11,
     borderRadius: 999,
-    backgroundColor: '#F5A400'
+    backgroundColor: '#FFF1A8',
+    shadowColor: '#F5B400',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.55,
+    shadowRadius: 4,
+    elevation: 5
   },
-  sparkRayVertical: {
-    transform: [{ rotate: '0deg' }]
+  voltageSparkTop: {
+    height: 12
   },
-  sparkRayHorizontal: {
-    transform: [{ rotate: '90deg' }]
-  },
-  sparkRayDiagonalA: {
-    transform: [{ rotate: '45deg' }]
-  },
-  sparkRayDiagonalB: {
-    transform: [{ rotate: '-45deg' }]
+  voltageSparkLower: {
+    height: 10,
+    backgroundColor: '#FFC928'
   },
   brandWrap: {
     alignItems: 'center'

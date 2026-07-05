@@ -15,7 +15,7 @@ export const SurveyConfirmationScreen = ({ navigation, route }: any) => {
         </View>
         <Text style={styles.heading}>Survey Request Received</Text>
         <Text style={styles.message}>
-          Thank you for choosing KaamAsaan. We have received your survey request. Our solar consultant will contact you within 1 hour to confirm the details and guide you through the next steps.
+          Your request has been received. Our team will call you shortly to confirm the visit time.
         </Text>
 
         <View style={styles.statusCard}>

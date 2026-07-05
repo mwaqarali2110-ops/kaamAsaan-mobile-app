@@ -28,7 +28,8 @@
     },
     "owner": "mwaqarali2110s-organization",
     "plugins": [
-      "expo-video"
+      "expo-video",
+      "expo-sharing"
     ]
   }
 }

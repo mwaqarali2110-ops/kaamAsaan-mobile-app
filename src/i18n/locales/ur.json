@@ -250,7 +250,11 @@
     "afterSales": "بعد از فروخت سروسز",
     "afterSalesSubtitle": "مسئلہ ہو تو ہم ساتھ ہیں",
     "netBilling": "نیٹ بلنگ",
-    "netBillingSubtitle": "اضافی بجلی گرڈ کو بیچیں"
+    "netBillingSubtitle": "اضافی بجلی گرڈ کو بیچیں",
+    "cleaning": "Cleaning",
+    "cleaningSubtitle": "Panel cleaning & maintenance",
+    "electricalWork": "Electrical Work",
+    "electricalWorkSubtitle": "Load distribution, 1 to 3 phase wiring"
   },
   "errors": {
     "supabaseMissing": "Supabase کنفیگر نہیں۔ Expo public Supabase variables شامل کریں۔",

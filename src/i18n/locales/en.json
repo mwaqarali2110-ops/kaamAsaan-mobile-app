@@ -241,6 +241,8 @@
     "preventiveMaintenance": "Preventive Maintenance",
     "solarCare": "Solar Care",
     "maintenancePackages": "Maintenance Packages",
+    "cleaning": "Cleaning",
+    "cleaningSubtitle": "Panel cleaning & maintenance",
     "liveTracking": "Live Tracking",
     "healthReport": "Health Report",
     "postServiceReport": "Post Service Health Report",
@@ -249,6 +251,8 @@
     "installationSubtitle": "Expert setup, no guesswork",
     "afterSales": "After-Sales Services",
     "afterSalesSubtitle": "Here when things need fixing",
+    "electricalWork": "Electrical Work",
+    "electricalWorkSubtitle": "Load distribution, 1 to 3 phase wiring",
     "netBilling": "Net Billing",
     "netBillingSubtitle": "Sell surplus power to the grid"
   },

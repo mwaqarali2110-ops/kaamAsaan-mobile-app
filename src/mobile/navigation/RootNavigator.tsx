@@ -23,6 +23,7 @@ import { BookSurveyScreen } from '@/mobile/screens/survey/BookSurveyScreen';
 import { SurveyConfirmationScreen } from '@/mobile/screens/survey/SurveyConfirmationScreen';
 import { MySolarJourneyScreen } from '@/mobile/screens/survey/MySolarJourneyScreen';
 import { PreventiveMaintenanceScreen } from '@/mobile/screens/services/PreventiveMaintenanceScreen';
+import { ElectricalWorkBookingScreen, ElectricalWorkServicesScreen } from '@/mobile/screens/services/ElectricalWorkServicesScreen';
 import { MaintenancePackagesScreen } from '@/mobile/screens/services/MaintenancePackagesScreen';
 import { MaintenancePlanDetailsScreen } from '@/mobile/screens/services/MaintenancePlanDetailsScreen';
 import { MaintenanceBookingScreen } from '@/mobile/screens/services/MaintenanceBookingScreen';
@@ -35,6 +36,8 @@ import { ROICalculatorScreen, ROIResultScreen } from '@/mobile/screens/solar-too
 import { SolarSizeToolScreen } from '@/mobile/screens/solar-tools/SolarSizeToolScreen';
 import { RecommendedSolarSizeScreen } from '@/mobile/screens/solar-tools/RecommendedSolarSizeScreen';
 import { BatterySizeToolScreen } from '@/mobile/screens/solar-tools/BatterySizeToolScreen';
+import { BatteryRunningLoadScreen } from '@/mobile/screens/solar-tools/BatteryRunningLoadScreen';
+import { BatteryRecommendedSizeScreen } from '@/mobile/screens/solar-tools/BatteryRecommendedSizeScreen';
 import { NotificationsScreen } from '@/mobile/screens/notifications/NotificationsScreen';
 import { LoginScreen } from '@/mobile/screens/auth/LoginScreen';
 import { SignupScreen } from '@/mobile/screens/auth/SignupScreen';
@@ -127,6 +130,8 @@ export const RootNavigator = () => {
         <Stack.Screen name="SurveyConfirmation" component={SurveyConfirmationScreen} />
         <Stack.Screen name="MySolarJourney" component={MySolarJourneyScreen} />
         <Stack.Screen name="PreventiveMaintenance" component={PreventiveMaintenanceScreen} />
+        <Stack.Screen name="ElectricalWorkServices" component={ElectricalWorkServicesScreen} />
+        <Stack.Screen name="ElectricalWorkBooking" component={ElectricalWorkBookingScreen} />
         <Stack.Screen name="MaintenancePackages" component={MaintenancePackagesScreen} />
         <Stack.Screen name="MaintenancePlanDetails" component={MaintenancePlanDetailsScreen} />
         <Stack.Screen name="MaintenanceBooking" component={MaintenanceBookingScreen} />
@@ -140,6 +145,8 @@ export const RootNavigator = () => {
         <Stack.Screen name="SolarSizeTool" component={SolarSizeToolScreen} />
         <Stack.Screen name="RecommendedSolarSize" component={RecommendedSolarSizeScreen} />
         <Stack.Screen name="BatterySizeTool" component={BatterySizeToolScreen} />
+        <Stack.Screen name="BatteryRunningLoad" component={BatteryRunningLoadScreen} />
+        <Stack.Screen name="BatteryRecommendedSize" component={BatteryRecommendedSizeScreen} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
