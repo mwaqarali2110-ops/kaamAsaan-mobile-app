@@ -59,7 +59,7 @@ export const SolarSizeToolScreen = ({ navigation }: any) => {
         </Pressable>
         <Text style={styles.topTitle}>{showResult ? 'Running Load' : 'Solar Size'}</Text>
         <Pressable style={styles.iconButton} accessibilityLabel="Solar size tool">
-          <Zap color="#F5A400" size={17} strokeWidth={2.4} />
+          <Zap color="#F5A400" size={16} strokeWidth={2.4} />
         </Pressable>
       </View>
 
@@ -199,7 +199,7 @@ const RunningLoadResult = ({
       </ScrollView>
 
       <Pressable style={styles.chatButton} accessibilityLabel="Help">
-        <MessageCircle color="#FFFFFF" size={19} strokeWidth={2.2} />
+        <MessageCircle color="#FFFFFF" size={20} strokeWidth={2.2} />
       </Pressable>
     </>
   );
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 2
   },
-  sectionLabel: { color: '#64748B', fontSize: 9, fontWeight: '900', letterSpacing: 0.5, marginBottom: 4 },
+  sectionLabel: { color: '#64748B', fontSize: 10, fontWeight: '900', letterSpacing: 0.5, marginBottom: 4 },
   applianceRow: {
     minHeight: 57,
     flexDirection: 'row',
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
   },
   applianceCopy: { flex: 1 },
   applianceName: { color: '#10213A', fontSize: 12, fontWeight: '900' },
-  wattage: { marginTop: 3, color: '#64748B', fontSize: 9.5, fontWeight: '700' },
+  wattage: { marginTop: 3, color: '#64748B', fontSize: 10, fontWeight: '700' },
   counter: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   counterButton: {
     width: 25,
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
   },
   loadUnit: {
     color: '#B07800',
-    fontSize: 31,
+    fontSize: 32,
     fontWeight: '900'
   },
   loadHelper: {
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
   },
   totalValue: {
     color: '#0F172A',
-    fontSize: 19,
+    fontSize: 20,
     fontWeight: '900'
   },
   recommendButton: {

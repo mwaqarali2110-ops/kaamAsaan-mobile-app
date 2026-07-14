@@ -162,7 +162,7 @@ export const BookSurveyScreen = ({ navigation }: any) => {
         </View>
 
         <View style={styles.sectionTitleRow}>
-          <CalendarDays color="#0F1E33" size={23} strokeWidth={2.1} />
+          <CalendarDays color="#0F1E33" size={24} strokeWidth={2.1} />
           <Text style={styles.sectionTitle}>Select Date</Text>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dateTrack}>
@@ -194,7 +194,7 @@ export const BookSurveyScreen = ({ navigation }: any) => {
         </View>
 
         <View style={styles.sectionTitleRow}>
-          <MapPin color="#0F1E33" size={25} strokeWidth={2.1} />
+          <MapPin color="#0F1E33" size={24} strokeWidth={2.1} />
           <Text style={styles.sectionTitle}>Service Address</Text>
         </View>
         <View style={styles.fields}>
@@ -204,7 +204,7 @@ export const BookSurveyScreen = ({ navigation }: any) => {
 
         <View style={styles.trustCard}>
           <View style={styles.trustIcon}>
-            <ShieldCheck color="#FFFFFF" size={25} fill="#22A06B" strokeWidth={2.2} />
+            <ShieldCheck color="#FFFFFF" size={24} fill="#22A06B" strokeWidth={2.2} />
           </View>
           <View style={styles.trustCopy}>
             <Text style={styles.trustTitle}>Your information is safe with us</Text>
@@ -227,7 +227,7 @@ export const BookSurveyScreen = ({ navigation }: any) => {
       <View style={[styles.footer, { bottom: 64 + insets.bottom }]}>
         <Pressable style={[styles.confirmButton, (mutation.isPending || isSubmitted) && styles.confirmButtonDisabled]} onPress={submit} disabled={mutation.isPending || isSubmitted}>
           <Text style={styles.confirmText}>{mutation.isPending || isSubmitted ? 'Confirming...' : 'Confirm Booking'}</Text>
-          <ArrowRight color="#111827" size={27} strokeWidth={2.3} />
+          <ArrowRight color="#111827" size={28} strokeWidth={2.3} />
         </Pressable>
       </View>
 
@@ -236,7 +236,7 @@ export const BookSurveyScreen = ({ navigation }: any) => {
           const active = title === 'Home';
           return (
             <Pressable key={title} style={styles.navItem} onPress={() => route && navigation.navigate(route, params)}>
-              <Icon color={active ? '#F5A400' : '#566174'} size={21} strokeWidth={2} />
+              <Icon color={active ? '#F5A400' : '#566174'} size={20} strokeWidth={2} />
               <Text style={[styles.navText, active && styles.navTextActive]}>{title}</Text>
             </Pressable>
           );
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
   },
   heroCopy: { flex: 1, paddingLeft: 12, paddingRight: 4 },
   heroTitle: { color: '#0F1E33', fontSize: 14, fontWeight: '900', lineHeight: 16 },
-  heroText: { marginTop: 3, color: '#334155', fontSize: 10.8, lineHeight: 15, fontWeight: '600' },
+  heroText: { marginTop: 3, color: '#334155', fontSize: 11, lineHeight: 15, fontWeight: '600' },
   heroArt: { width: 68, height: 62, alignItems: 'center', justifyContent: 'center' },
   clockBubble: {
     position: 'absolute',
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 7 },
-  sectionTitle: { color: '#0F1E33', fontSize: 17, fontWeight: '900', letterSpacing: -0.4 },
+  sectionTitle: { color: '#0F1E33', fontSize: 18, fontWeight: '900', letterSpacing: -0.4 },
   dateTrack: { gap: 8, paddingBottom: 7 },
   dateCard: {
     width: 58,
@@ -352,9 +352,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 12
   },
-  input: { flex: 1, color: '#0F1E33', fontSize: 13.5, fontWeight: '600' },
+  input: { flex: 1, color: '#0F1E33', fontSize: 14, fontWeight: '600' },
   errorText: { marginTop: 5, color: '#D9534F', fontSize: 11, fontWeight: '700' },
-  submitErrorText: { marginTop: 10, borderRadius: 10, backgroundColor: '#FEF2F2', padding: 10, color: '#B42318', fontSize: 11.5, fontWeight: '800', lineHeight: 16 },
+  submitErrorText: { marginTop: 10, borderRadius: 10, backgroundColor: '#FEF2F2', padding: 10, color: '#B42318', fontSize: 12, fontWeight: '800', lineHeight: 16 },
   trustCard: {
     minHeight: 104,
     borderRadius: 14,
@@ -380,8 +380,8 @@ const styles = StyleSheet.create({
     elevation: 2
   },
   trustCopy: { flex: 1, paddingLeft: 13, paddingRight: 6 },
-  trustTitle: { color: '#0F1E33', fontSize: 13.5, fontWeight: '900', lineHeight: 18 },
-  trustText: { marginTop: 5, color: '#334155', fontSize: 11.8, lineHeight: 17, fontWeight: '600' },
+  trustTitle: { color: '#0F1E33', fontSize: 14, fontWeight: '900', lineHeight: 18 },
+  trustText: { marginTop: 5, color: '#334155', fontSize: 12, lineHeight: 17, fontWeight: '600' },
   houseWrap: { width: 74, height: 68, alignItems: 'center', justifyContent: 'center' },
   houseImage: { width: 90, height: 66 },
   houseShield: {
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
     elevation: 3
   },
   confirmButtonDisabled: { opacity: 0.68 },
-  confirmText: { color: '#0F1E33', fontSize: 17, fontWeight: '900' },
+  confirmText: { color: '#0F1E33', fontSize: 18, fontWeight: '900' },
   bottomNav: {
     position: 'absolute',
     left: 0,

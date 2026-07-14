@@ -17,11 +17,11 @@ export const RecommendedSolarSizeScreen = ({ navigation, route }: any) => {
     <SafeAreaView style={styles.screen}>
       <View style={styles.topBar}>
         <Pressable style={styles.iconButton} onPress={() => navigation.goBack()} accessibilityLabel="Back">
-          <ArrowLeft color="#10213A" size={19} strokeWidth={2.5} />
+          <ArrowLeft color="#10213A" size={20} strokeWidth={2.5} />
         </Pressable>
         <Text style={styles.topTitle}>Recommended Size</Text>
         <Pressable style={styles.iconButton} accessibilityLabel="Recommended solar size">
-          <Zap color="#F5A400" size={19} strokeWidth={2.4} />
+          <Zap color="#F5A400" size={20} strokeWidth={2.4} />
         </Pressable>
       </View>
 
@@ -55,7 +55,7 @@ export const RecommendedSolarSizeScreen = ({ navigation, route }: any) => {
 
         <View style={styles.confirmationCard}>
           <View style={styles.confirmationIcon}>
-            <ShieldCheck color="#15803D" size={27} strokeWidth={2.2} />
+            <ShieldCheck color="#15803D" size={28} strokeWidth={2.2} />
           </View>
           <View style={styles.confirmationCopy}>
             <Text style={styles.confirmationTitle}>This size is perfect for your current load</Text>
@@ -65,17 +65,17 @@ export const RecommendedSolarSizeScreen = ({ navigation, route }: any) => {
 
         <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('SystemSummary')}>
           <Text style={styles.primaryText}>Continue to System Summary</Text>
-          <ArrowRight color="#111827" size={19} strokeWidth={2.7} />
+          <ArrowRight color="#111827" size={20} strokeWidth={2.7} />
         </Pressable>
 
         <Pressable style={styles.secondaryButton} onPress={() => navigation.goBack()}>
           <Text style={styles.secondaryText}>Recalculate</Text>
-          <RefreshCw color="#10213A" size={17} strokeWidth={2.4} />
+          <RefreshCw color="#10213A" size={16} strokeWidth={2.4} />
         </Pressable>
       </ScrollView>
 
       <Pressable style={styles.chatButton} accessibilityLabel="Help">
-        <MessageCircle color="#FFFFFF" size={19} strokeWidth={2.2} />
+        <MessageCircle color="#FFFFFF" size={20} strokeWidth={2.2} />
       </Pressable>
     </SafeAreaView>
   );
@@ -93,7 +93,7 @@ const ReasonRow = ({ Icon, title, subtitle }: { Icon: any; title: string; subtit
 
 const PreviewItem = ({ Icon, value, label }: { Icon: any; value: string; label: string }) => (
   <View style={styles.previewItem}>
-    <View style={styles.previewIcon}><Icon color="#B07800" size={17} strokeWidth={2.3} /></View>
+    <View style={styles.previewIcon}><Icon color="#B07800" size={16} strokeWidth={2.3} /></View>
     <Text style={styles.previewValue}>{value}</Text>
     <Text style={styles.previewLabel}>{label}</Text>
   </View>
@@ -109,25 +109,25 @@ const styles = StyleSheet.create({
   eyebrow: { color: '#B07800', fontSize: 10, fontWeight: '900', letterSpacing: 0.7, backgroundColor: '#FFF0BF', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
   recommendationValueRow: { marginTop: 15, flexDirection: 'row', alignItems: 'center', gap: 9 },
   recommendationValue: { color: '#10213A', fontSize: 48, lineHeight: 54, fontWeight: '900' },
-  recommendationUnit: { color: '#B07800', fontSize: 29, fontWeight: '900' },
+  recommendationUnit: { color: '#B07800', fontSize: 30, fontWeight: '900' },
   recommendationTitle: { color: '#10213A', fontSize: 14, fontWeight: '900', textAlign: 'center', marginTop: 10 },
   recommendationText: { maxWidth: 260, color: '#64748B', fontSize: 12, lineHeight: 17, fontWeight: '700', textAlign: 'center', marginTop: 8 },
   card: { borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: 'rgba(232,217,190,0.76)', padding: 14, shadowColor: '#6B5B43', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.05, shadowRadius: 14, elevation: 2 },
-  cardTitle: { color: '#10213A', fontSize: 17, fontWeight: '900', marginBottom: 8 },
+  cardTitle: { color: '#10213A', fontSize: 18, fontWeight: '900', marginBottom: 8 },
   reasonRow: { minHeight: 57, flexDirection: 'row', alignItems: 'center', gap: 11 },
   reasonIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#EAF8EC', alignItems: 'center', justifyContent: 'center' },
   reasonCopy: { flex: 1 },
-  reasonTitle: { color: '#10213A', fontSize: 12.5, fontWeight: '900' },
+  reasonTitle: { color: '#10213A', fontSize: 13, fontWeight: '900' },
   reasonSubtitle: { color: '#64748B', fontSize: 11, fontWeight: '700', marginTop: 3 },
   previewGrid: { flexDirection: 'row', alignItems: 'stretch' },
   previewItem: { flex: 1, alignItems: 'center', paddingHorizontal: 3, borderRightWidth: 1, borderRightColor: '#EEF0F2' },
   previewIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#FFF3D6', alignItems: 'center', justifyContent: 'center' },
-  previewValue: { color: '#10213A', fontSize: 11.5, fontWeight: '900', textAlign: 'center', marginTop: 8 },
-  previewLabel: { color: '#64748B', fontSize: 9.5, lineHeight: 12, fontWeight: '700', textAlign: 'center', marginTop: 4 },
+  previewValue: { color: '#10213A', fontSize: 12, fontWeight: '900', textAlign: 'center', marginTop: 8 },
+  previewLabel: { color: '#64748B', fontSize: 10, lineHeight: 12, fontWeight: '700', textAlign: 'center', marginTop: 4 },
   confirmationCard: { borderRadius: 18, backgroundColor: '#F0F9F0', borderWidth: 1, borderColor: '#D4ECD5', padding: 13, flexDirection: 'row', alignItems: 'center', gap: 11 },
   confirmationIcon: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#E5F7E7', alignItems: 'center', justifyContent: 'center' },
   confirmationCopy: { flex: 1 },
-  confirmationTitle: { color: '#14532D', fontSize: 12.5, fontWeight: '900' },
+  confirmationTitle: { color: '#14532D', fontSize: 13, fontWeight: '900' },
   confirmationText: { color: '#64748B', fontSize: 11, fontWeight: '700', marginTop: 4 },
   primaryButton: { height: 52, borderRadius: 16, backgroundColor: '#FDB813', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, shadowColor: '#D79300', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.16, shadowRadius: 14, elevation: 3 },
   primaryText: { color: '#111827', fontSize: 14, fontWeight: '900' },

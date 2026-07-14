@@ -26,7 +26,7 @@ export const SurveyConfirmationScreen = ({ navigation, route }: any) => {
 
         {bookingId ? (
           <View style={styles.referenceCard}>
-            <ShieldCheck color="#168A4A" size={17} strokeWidth={2.2} />
+            <ShieldCheck color="#168A4A" size={16} strokeWidth={2.2} />
             <Text style={styles.referenceText}>Reference: {formatSurveyReference({ id: bookingId })}</Text>
           </View>
         ) : null}
@@ -36,7 +36,7 @@ export const SurveyConfirmationScreen = ({ navigation, route }: any) => {
         <Pressable style={styles.homeButton} onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}>
           <Home color="#10213A" size={20} strokeWidth={2.4} />
           <Text style={styles.homeButtonText}>Back to Home</Text>
-          <ArrowRight color="#10213A" size={21} strokeWidth={2.4} />
+          <ArrowRight color="#10213A" size={20} strokeWidth={2.4} />
         </Pressable>
       </View>
     </SafeAreaView>
@@ -59,8 +59,8 @@ const styles = StyleSheet.create({
   shell: { flex: 1, justifyContent: 'space-between', backgroundColor: '#FBF8F1' },
   content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 22, paddingBottom: 30 },
   successIcon: { width: 78, height: 78, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: '#22A06B', shadowColor: '#0F5132', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.18, shadowRadius: 18, elevation: 5 },
-  heading: { marginTop: 24, color: '#10213A', textAlign: 'center', fontSize: 25, fontWeight: '900', letterSpacing: -0.7 },
-  message: { marginTop: 13, color: '#526174', textAlign: 'center', fontSize: 13.5, fontWeight: '600', lineHeight: 21 },
+  heading: { marginTop: 24, color: '#10213A', textAlign: 'center', fontSize: 26, fontWeight: '900', letterSpacing: -0.7 },
+  message: { marginTop: 13, color: '#526174', textAlign: 'center', fontSize: 14, fontWeight: '600', lineHeight: 21 },
   statusCard: { width: '100%', marginTop: 26, borderRadius: 18, borderWidth: 1, borderColor: '#D9E9DA', backgroundColor: '#FFFFFF', paddingHorizontal: 15, paddingVertical: 5, shadowColor: '#1F2937', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.06, shadowRadius: 16, elevation: 2 },
   statusRow: { minHeight: 68, flexDirection: 'row', alignItems: 'center', gap: 12 },
   statusIcon: { width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: '#ECFDF3' },

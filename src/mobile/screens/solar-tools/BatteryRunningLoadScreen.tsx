@@ -40,11 +40,11 @@ export const BatteryRunningLoadScreen = ({ navigation, route }: any) => {
     <SafeAreaView style={styles.screen}>
       <View style={styles.topBar}>
         <Pressable style={styles.iconButton} onPress={() => navigation.goBack()} accessibilityLabel="Back">
-          <ArrowLeft color="#10213A" size={19} strokeWidth={2.5} />
+          <ArrowLeft color="#10213A" size={20} strokeWidth={2.5} />
         </Pressable>
         <Text style={styles.topTitle}>Running Load</Text>
         <View style={styles.iconButton}>
-          <BatteryCharging color="#F5A400" size={19} strokeWidth={2.4} />
+          <BatteryCharging color="#F5A400" size={20} strokeWidth={2.4} />
         </View>
       </View>
 
@@ -88,11 +88,11 @@ export const BatteryRunningLoadScreen = ({ navigation, route }: any) => {
           onPress={() => navigation.navigate('BatteryRecommendedSize', { selectedAppliances, totalBackupWatts, backupHours })}
         >
           <Text style={styles.primaryText}>See Recommended Battery Size</Text>
-          <ArrowRight color="#111827" size={19} strokeWidth={2.7} />
+          <ArrowRight color="#111827" size={20} strokeWidth={2.7} />
         </Pressable>
 
         <Pressable style={styles.secondaryButton} onPress={() => navigation.goBack()}>
-          <ArrowLeft color="#10213A" size={17} strokeWidth={2.4} />
+          <ArrowLeft color="#10213A" size={16} strokeWidth={2.4} />
           <Text style={styles.secondaryText}>Adjust appliances</Text>
         </Pressable>
       </ScrollView>
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   heroValue: { color: '#10213A', fontSize: 48, lineHeight: 54, fontWeight: '900' },
   heroSubtitle: { maxWidth: 260, color: '#64748B', fontSize: 12, lineHeight: 17, fontWeight: '700', textAlign: 'center', marginTop: 8 },
   card: { borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: 'rgba(232,217,190,0.76)', padding: 14, shadowColor: '#6B5B43', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.05, shadowRadius: 14, elevation: 2 },
-  cardTitle: { color: '#10213A', fontSize: 17, fontWeight: '900', marginBottom: 8 },
+  cardTitle: { color: '#10213A', fontSize: 18, fontWeight: '900', marginBottom: 8 },
   calcRow: { minHeight: 52, flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#F1F2F4' },
   calcRowLast: { borderBottomWidth: 0 },
   applianceIcon: { width: 32, height: 32, borderRadius: 11, backgroundColor: '#FFF3D6', alignItems: 'center', justifyContent: 'center', marginRight: 10 },

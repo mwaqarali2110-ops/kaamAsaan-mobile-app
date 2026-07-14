@@ -28,7 +28,7 @@ export const MaintenancePlanDetailsScreen = ({ navigation, route }: any) => {
       <SafeAreaView style={styles.shell} edges={['top']}>
         <View style={styles.topBar}>
           <Pressable style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="Back" accessibilityRole="button">
-            <ArrowLeft color="#10213A" size={19} strokeWidth={2.4} />
+            <ArrowLeft color="#10213A" size={20} strokeWidth={2.4} />
           </Pressable>
           <Text style={styles.topTitle}>Plan Details</Text>
           <View style={styles.topSpacer} />
@@ -47,7 +47,7 @@ export const MaintenancePlanDetailsScreen = ({ navigation, route }: any) => {
     <SafeAreaView style={styles.shell} edges={['top']}>
       <View style={styles.topBar}>
         <Pressable style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="Back" accessibilityRole="button">
-          <ArrowLeft color="#10213A" size={19} strokeWidth={2.4} />
+          <ArrowLeft color="#10213A" size={20} strokeWidth={2.4} />
         </Pressable>
         <Text style={styles.topTitle}>Plan Details</Text>
         <View style={styles.topSpacer} />
@@ -68,7 +68,7 @@ export const MaintenancePlanDetailsScreen = ({ navigation, route }: any) => {
           {includedServices.map((service) => (
             <View key={service} style={styles.serviceRow}>
               <View style={styles.checkWrap}>
-                <Check color="#16A34A" size={13} strokeWidth={2.7} />
+                <Check color="#16A34A" size={12} strokeWidth={2.7} />
               </View>
               <Text style={styles.serviceText}>{service}</Text>
             </View>
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   sectionTitle: { color: '#10213A', fontSize: 15, fontWeight: '900', marginBottom: 10 },
   serviceRow: { minHeight: 34, flexDirection: 'row', alignItems: 'center', gap: 9 },
   checkWrap: { width: 22, height: 22, borderRadius: 999, backgroundColor: '#ECF8EF', alignItems: 'center', justifyContent: 'center' },
-  serviceText: { color: '#334155', fontSize: 12.5, fontWeight: '800' },
+  serviceText: { color: '#334155', fontSize: 13, fontWeight: '800' },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 18, gap: 14 },
   emptyTitle: { color: '#10213A', fontSize: 16, fontWeight: '900' },
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 14, backgroundColor: '#FBF8F1' },

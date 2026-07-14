@@ -462,7 +462,7 @@ const RecommendedPackageCard = ({
         </View>
         <Pressable style={packagesStyles.detailsButton} onPress={onViewDetails}>
           <Text style={packagesStyles.detailsText}>View Details</Text>
-          <ArrowRight color="#10213A" size={15} strokeWidth={2.5} />
+          <ArrowRight color="#10213A" size={16} strokeWidth={2.5} />
         </Pressable>
       </View>
     </Pressable>
@@ -721,7 +721,7 @@ const packagesStyles = StyleSheet.create({
   },
   packageSubtitle: {
     color: '#64748B',
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '800',
     marginTop: 3
   },
@@ -742,7 +742,7 @@ const packagesStyles = StyleSheet.create({
   miniBadgeGreen: { backgroundColor: '#DCFCE7' },
   miniBadgeText: {
     color: '#7A5600',
-    fontSize: 8,
+    fontSize: 10,
     fontWeight: '900'
   },
   miniBadgeTextBlue: { color: '#1D4ED8' },
@@ -775,7 +775,7 @@ const packagesStyles = StyleSheet.create({
   },
   productLineLabel: {
     color: '#C48A00',
-    fontSize: 8.5,
+    fontSize: 10,
     fontWeight: '900',
     letterSpacing: 0.5
   },
@@ -928,7 +928,7 @@ const packagesStyles = StyleSheet.create({
   },
   compactPackageTitle: {
     color: '#10213A',
-    fontSize: 13.2,
+    fontSize: 13,
     lineHeight: 15,
     fontWeight: '900',
     textAlign: 'left',
@@ -951,13 +951,13 @@ const packagesStyles = StyleSheet.create({
   },
   compactWarrantyYears: {
     color: '#10213A',
-    fontSize: 9,
+    fontSize: 10,
     lineHeight: 10,
     fontWeight: '900'
   },
   compactWarrantyLabel: {
     color: '#64748B',
-    fontSize: 7.2,
+    fontSize: 10,
     lineHeight: 8,
     fontWeight: '800'
   },
@@ -1035,7 +1035,7 @@ const packagesStyles = StyleSheet.create({
   },
   warrantyLabel: {
     color: '#64748B',
-    fontSize: 8.5,
+    fontSize: 10,
     fontWeight: '800'
   },
   divider: {
@@ -1117,7 +1117,7 @@ const packagesStyles = StyleSheet.create({
   },
   trustText: {
     color: '#047857',
-    fontSize: 10.5,
+    fontSize: 11,
     lineHeight: 13,
     fontWeight: '700',
     marginTop: 2
@@ -1156,7 +1156,7 @@ const packagesStyles = StyleSheet.create({
   },
   reviewText: {
     color: '#10213A',
-    fontSize: 11.5,
+    fontSize: 12,
     fontWeight: '900'
   },
   expertButton: {
@@ -1173,7 +1173,7 @@ const packagesStyles = StyleSheet.create({
   },
   expertText: {
     color: '#10213A',
-    fontSize: 11.5,
+    fontSize: 12,
     fontWeight: '900'
   },
   modalOverlay: {
@@ -1234,11 +1234,11 @@ const ApplianceStepScreen = ({ store, onPrevious, onContinue }: { store: any; on
     <SafeAreaView style={applianceStyles.shell} edges={['top']}>
       <View style={applianceStyles.topbar}>
         <Pressable style={applianceStyles.topIconButton} onPress={onPrevious} accessibilityLabel="Back">
-          <ArrowLeft color="#172031" size={15} strokeWidth={2.4} />
+          <ArrowLeft color="#172031" size={16} strokeWidth={2.4} />
         </Pressable>
         <Text style={applianceStyles.topTitle}>Solar Size</Text>
         <View style={applianceStyles.topIconButton}>
-          <Zap color="#F5B700" size={15} strokeWidth={2.3} />
+          <Zap color="#F5B700" size={16} strokeWidth={2.3} />
         </View>
       </View>
 
@@ -1510,7 +1510,7 @@ const SolarRecommendationStepScreen = ({ navigation, store, onPrevious, onContin
         <Text style={solarStyles.runningLoad}>Running Load: <Text style={solarStyles.runningLoadStrong}>{runningLoadKw.toFixed(1)} kW</Text></Text>
 
         <Pressable style={solarStyles.recalculateButton} onPress={store.calculateRecommendation}>
-          <RotateCcw color="#253247" size={15} strokeWidth={2.2} />
+          <RotateCcw color="#253247" size={16} strokeWidth={2.2} />
           <Text style={solarStyles.recalculateText}>Recalculate</Text>
         </Pressable>
 
@@ -1647,7 +1647,7 @@ const RecommendedSystemStepScreen = ({
           </View>
           <View style={recommendedStyles.specPane}>
             <View style={recommendedStyles.specRow}>
-              <View style={recommendedStyles.specIcon}><Sun color="#F5A400" size={15} strokeWidth={2.4} /></View>
+              <View style={recommendedStyles.specIcon}><Sun color="#F5A400" size={16} strokeWidth={2.4} /></View>
               <View>
                 <Text style={recommendedStyles.specValue}>{solarSize} kW</Text>
                 <Text style={recommendedStyles.specLabel}>Solar Panels</Text>
@@ -1655,7 +1655,7 @@ const RecommendedSystemStepScreen = ({
             </View>
             <View style={recommendedStyles.specDivider} />
             <View style={recommendedStyles.specRow}>
-              <View style={recommendedStyles.specIcon}><Zap color="#F5A400" size={15} strokeWidth={2.4} /></View>
+              <View style={recommendedStyles.specIcon}><Zap color="#F5A400" size={16} strokeWidth={2.4} /></View>
               <View>
                 <Text style={recommendedStyles.specValue}>{inverterSize} kW</Text>
                 <Text style={recommendedStyles.specLabel}>Inverter</Text>
@@ -1663,7 +1663,7 @@ const RecommendedSystemStepScreen = ({
             </View>
             <View style={recommendedStyles.specDivider} />
             <View style={recommendedStyles.specRow}>
-              <View style={recommendedStyles.specIcon}><BatteryCharging color="#F5A400" size={15} strokeWidth={2.4} /></View>
+              <View style={recommendedStyles.specIcon}><BatteryCharging color="#F5A400" size={16} strokeWidth={2.4} /></View>
               <View>
                 <Text style={recommendedStyles.specValue}>{batterySize} kWh</Text>
                 <Text style={recommendedStyles.specLabel}>Battery Bank</Text>
@@ -1936,7 +1936,7 @@ const BatteryChoiceStepScreen = ({
           <Image source={batteryBackupHeroImage} style={batteryChoiceStyles.heroImage} resizeMode="cover" />
         </View>
         <Pressable style={[batteryChoiceStyles.optionCard, selected !== 'no' && batteryChoiceStyles.optionSelected]} onPress={handleYes}>
-          <View style={batteryChoiceStyles.checkIcon}><Check color="#FFFFFF" size={23} strokeWidth={2.8} /></View>
+          <View style={batteryChoiceStyles.checkIcon}><Check color="#FFFFFF" size={24} strokeWidth={2.8} /></View>
           <View style={batteryChoiceStyles.optionCopy}>
             <Text style={batteryChoiceStyles.optionTitle}>Yes, I want backup</Text>
             <Text style={batteryChoiceStyles.optionSub}>Let's calculate my battery size</Text>
@@ -1944,7 +1944,7 @@ const BatteryChoiceStepScreen = ({
           <View style={batteryChoiceStyles.badge}><Text style={batteryChoiceStyles.badgeText}>RECOMMENDED</Text></View>
         </Pressable>
         <Pressable style={batteryChoiceStyles.optionCard} onPress={handleNo}>
-          <View style={batteryChoiceStyles.xIcon}><X color="#FFFFFF" size={23} strokeWidth={2.8} /></View>
+          <View style={batteryChoiceStyles.xIcon}><X color="#FFFFFF" size={24} strokeWidth={2.8} /></View>
           <View style={batteryChoiceStyles.optionCopy}>
             <Text style={batteryChoiceStyles.optionTitle}>No, I don't need backup</Text>
             <Text style={batteryChoiceStyles.optionSub}>I'll continue without battery</Text>
@@ -2088,7 +2088,7 @@ const BackupCalculationDetailsCard = ({
           <Text style={backupStyles.detailsActionText}>{expanded ? 'Hide' : 'View'}</Text>
           <ChevronDown
             color="#C48A00"
-            size={15}
+            size={16}
             strokeWidth={2.5}
             style={expanded && backupStyles.chevronUp}
           />
@@ -2109,7 +2109,7 @@ const BackupCalculationDetailsCard = ({
                   <View key={item.id}>
                     <View style={backupStyles.calcRow}>
                       <View style={backupStyles.calcIcon}>
-                        <Icon color="#B98900" size={13} strokeWidth={2} />
+                        <Icon color="#B98900" size={12} strokeWidth={2} />
                       </View>
                       <View style={backupStyles.calcCopy}>
                         <Text style={backupStyles.calcName} numberOfLines={1}>{item.name}</Text>
@@ -2163,11 +2163,11 @@ const BackupAppliancesStepScreen = ({ store, onPrevious, onContinue }: { store: 
     <SafeAreaView style={applianceStyles.shell} edges={['top']}>
       <View style={applianceStyles.topbar}>
         <Pressable style={applianceStyles.topIconButton} onPress={onPrevious} accessibilityLabel="Back">
-          <ArrowLeft color="#172031" size={15} strokeWidth={2.4} />
+          <ArrowLeft color="#172031" size={16} strokeWidth={2.4} />
         </Pressable>
         <Text style={applianceStyles.topTitle}>Battery Size</Text>
         <View style={applianceStyles.topIconButton}>
-          <Zap color="#F5B700" size={15} strokeWidth={2.3} />
+          <Zap color="#F5B700" size={16} strokeWidth={2.3} />
         </View>
       </View>
 
@@ -2505,7 +2505,7 @@ const backupPlanStyles = StyleSheet.create({
   },
   statLabel: {
     color: '#A27500',
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '900'
   },
   statValue: {
@@ -2517,7 +2517,7 @@ const backupPlanStyles = StyleSheet.create({
   statSub: {
     marginTop: 4,
     color: '#64748B',
-    fontSize: 8.5,
+    fontSize: 10,
     fontWeight: '800'
   },
   adjustTitle: {
@@ -2550,7 +2550,7 @@ const backupPlanStyles = StyleSheet.create({
   },
   selectedLabel: {
     color: '#16A34A',
-    fontSize: 7.5,
+    fontSize: 10,
     fontWeight: '900',
     marginBottom: 2
   },
@@ -2569,7 +2569,7 @@ const backupPlanStyles = StyleSheet.create({
   optionNote: {
     marginTop: 3,
     color: '#64748B',
-    fontSize: 8.2,
+    fontSize: 10,
     fontWeight: '800',
     lineHeight: 11,
     textAlign: 'center'
@@ -2649,7 +2649,7 @@ const recommendedStyles = StyleSheet.create({
   },
   subtitle: {
     color: '#6B7D93',
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '800',
     textAlign: 'center'
   },
@@ -2700,7 +2700,7 @@ const recommendedStyles = StyleSheet.create({
   },
   specLabel: {
     color: '#64748B',
-    fontSize: 8.5,
+    fontSize: 10,
     fontWeight: '800',
     marginTop: 1
   },
@@ -2712,7 +2712,7 @@ const recommendedStyles = StyleSheet.create({
   designedText: {
     textAlign: 'center',
     color: '#46566C',
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '900',
     marginTop: 1
   },
@@ -2732,13 +2732,13 @@ const recommendedStyles = StyleSheet.create({
   },
   exploreText: {
     color: '#111827',
-    fontSize: 12.5,
+    fontSize: 13,
     fontWeight: '900'
   },
   trustText: {
     textAlign: 'center',
     color: '#94A3B8',
-    fontSize: 9.2,
+    fontSize: 10,
     fontWeight: '900'
   },
   footer: {
@@ -2868,7 +2868,7 @@ const roofStyles = StyleSheet.create({
   heroCopy: { marginTop: 4, textAlign: 'center', color: '#6B7280', fontSize: 12, fontWeight: '900', lineHeight: 17 },
   metricCard: { minHeight: 90, borderRadius: 16, backgroundColor: '#FFFFFF', padding: 16, justifyContent: 'center' },
   metricLabel: { color: '#A27500', fontSize: 11, fontWeight: '900', letterSpacing: 0.4 },
-  metricValue: { marginTop: 6, color: '#1F2A3D', fontSize: 23, fontWeight: '900' },
+  metricValue: { marginTop: 6, color: '#1F2A3D', fontSize: 24, fontWeight: '900' },
   metricSub: { marginTop: 6, color: '#64748B', fontSize: 12, fontWeight: '500' },
   layoutCard: { borderRadius: 18, backgroundColor: '#FFFFFF', padding: 14, gap: 12 },
   layoutHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
@@ -2939,16 +2939,16 @@ const batteryChoiceStyles = StyleSheet.create({
   optionTitle: { color: '#172031', fontSize: 14, fontWeight: '900' },
   optionSub: { marginTop: 4, color: '#64748B', fontSize: 12, fontWeight: '800' },
   badge: { alignSelf: 'flex-start', borderRadius: 999, backgroundColor: '#FFF0BC', paddingHorizontal: 8, paddingVertical: 4 },
-  badgeText: { color: '#A27500', fontSize: 8, fontWeight: '900' },
+  badgeText: { color: '#A27500', fontSize: 10, fontWeight: '900' },
   laterText: { marginTop: 12, textAlign: 'center', color: '#64748B', fontSize: 12, fontWeight: '800' }
 });
 
 const backupStyles = StyleSheet.create({
   content: { paddingHorizontal: 16, paddingBottom: 116, gap: 7 },
-  title: { color: '#172031', fontSize: 19, fontWeight: '900', letterSpacing: -0.3 },
+  title: { color: '#172031', fontSize: 20, fontWeight: '900', letterSpacing: -0.3 },
   subtitle: { marginTop: 6, color: '#46566C', fontSize: 12, fontWeight: '600', lineHeight: 16 },
   tableHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 46, paddingRight: 20 },
-  headerText: { color: '#64748B', fontSize: 9, fontWeight: '900' },
+  headerText: { color: '#64748B', fontSize: 10, fontWeight: '900' },
   rows: { gap: 6 },
   rowCard: { minHeight: 50, borderRadius: 14, backgroundColor: '#FFFFFF', paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', gap: 7 },
   rowSelected: { borderWidth: 1.2, borderColor: 'rgba(245,183,0,0.45)', backgroundColor: '#FFF9EB' },
@@ -2956,8 +2956,8 @@ const backupStyles = StyleSheet.create({
   checkboxSelected: { backgroundColor: '#F5B700', borderColor: '#F5B700' },
   rowIcon: { width: 28, height: 28, borderRadius: 8, backgroundColor: '#FFF3D8', alignItems: 'center', justifyContent: 'center' },
   rowCopy: { flex: 1, minWidth: 0 },
-  rowName: { color: '#172031', fontSize: 10.5, fontWeight: '900' },
-  rowWatts: { marginTop: 1, color: '#64748B', fontSize: 7.5, fontWeight: '800' },
+  rowName: { color: '#172031', fontSize: 11, fontWeight: '900' },
+  rowWatts: { marginTop: 1, color: '#64748B', fontSize: 10, fontWeight: '800' },
   qtyPill: { width: 62, height: 27, borderRadius: 999, borderWidth: 1, borderColor: '#DEE5EF', backgroundColor: '#F8FAFC', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
   qtyButton: { color: '#94A3B8', fontSize: 14, fontWeight: '900' },
   qtyValue: { color: '#172031', fontSize: 11, fontWeight: '900' },
@@ -2968,7 +2968,7 @@ const backupStyles = StyleSheet.create({
   capacityCard: { minHeight: 58, borderRadius: 14, borderWidth: 1.2, borderColor: 'rgba(245,183,0,0.4)', backgroundColor: '#FFF9EB', padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   capacityTitle: { color: '#172031', fontSize: 13, fontWeight: '900' },
   capacitySub: { marginTop: 5, color: '#64748B', fontSize: 10, fontWeight: '800' },
-  capacityValue: { color: '#D89100', fontSize: 21, fontWeight: '900' },
+  capacityValue: { color: '#D89100', fontSize: 22, fontWeight: '900' },
   detailsCard: {
     minHeight: 50,
     borderRadius: 14,
@@ -3086,7 +3086,7 @@ const solarStyles = StyleSheet.create({
   },
   title: {
     color: '#1F2A3D',
-    fontSize: 19,
+    fontSize: 20,
     fontWeight: '900',
     letterSpacing: -0.45
   },
@@ -3151,7 +3151,7 @@ const solarStyles = StyleSheet.create({
     letterSpacing: -1.7
   },
   sizeUnit: {
-    fontSize: 27,
+    fontSize: 28,
     letterSpacing: -1
   },
   sizeLabel: {
@@ -3199,7 +3199,7 @@ const solarStyles = StyleSheet.create({
   insightText: {
     color: '#1F2A3D',
     textAlign: 'center',
-    fontSize: 9.5,
+    fontSize: 10,
     fontWeight: '800'
   },
   chartCard: {
@@ -3263,7 +3263,7 @@ const solarStyles = StyleSheet.create({
   chartNote: {
     color: '#94A3B8',
     textAlign: 'center',
-    fontSize: 9.3,
+    fontSize: 10,
     lineHeight: 13,
     fontWeight: '500'
   },
@@ -3455,7 +3455,7 @@ const applianceStyles = StyleSheet.create({
     maxWidth: 260,
     color: '#10213A',
     textAlign: 'left',
-    fontSize: 21,
+    fontSize: 22,
     fontWeight: '900',
     lineHeight: 23,
     letterSpacing: -0.55
@@ -3475,7 +3475,7 @@ const applianceStyles = StyleSheet.create({
   },
   sectionTitle: {
     color: '#64748B',
-    fontSize: 8,
+    fontSize: 10,
     fontWeight: '900',
     letterSpacing: 0.8,
     paddingHorizontal: 14,
@@ -3541,13 +3541,13 @@ const applianceStyles = StyleSheet.create({
   },
   cardTitle: {
     color: '#10213A',
-    fontSize: 10.2,
+    fontSize: 10,
     fontWeight: '900',
     lineHeight: 13
   },
   cardWatts: {
     color: '#64748B',
-    fontSize: 7.6,
+    fontSize: 10,
     fontWeight: '800'
   },
   stepper: {
@@ -3591,7 +3591,7 @@ const applianceStyles = StyleSheet.create({
     minWidth: 10,
     color: '#10213A',
     textAlign: 'center',
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '900'
   },
   hoursPill: {
@@ -3661,7 +3661,7 @@ const applianceStyles = StyleSheet.create({
   },
   addOtherText: {
     color: '#172031',
-    fontSize: 8.5,
+    fontSize: 10,
     fontWeight: '900'
   },
   addOtherPlus: {
@@ -3725,7 +3725,7 @@ const applianceStyles = StyleSheet.create({
   },
   primaryButtonText: {
     color: '#18202D',
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '900'
   },
   modalBackdrop: {

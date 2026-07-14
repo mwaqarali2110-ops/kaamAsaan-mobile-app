@@ -15,7 +15,7 @@ export const Header = ({ title, subtitle, onBack, right }: HeaderProps) => (
   <View className="flex-row items-center gap-3 px-4 py-3">
     {onBack ? (
       <Pressable className="h-10 w-10 items-center justify-center rounded-full bg-white" onPress={onBack}>
-        <ArrowLeft size={19} color={colors.navy} />
+        <ArrowLeft size={20} color={colors.navy} />
       </Pressable>
     ) : null}
     <View className="flex-1">

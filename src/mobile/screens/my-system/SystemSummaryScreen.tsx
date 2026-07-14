@@ -127,7 +127,7 @@ export const SystemSummaryScreen = ({ navigation }: any) => {
           {financials.map(({ label, value, Icon, tint, color }) => (
             <View key={label} style={styles.financialCard}>
               <View style={[styles.financialIcon, { backgroundColor: tint }]}>
-                <Icon color={color} size={25} strokeWidth={2.2} />
+                <Icon color={color} size={24} strokeWidth={2.2} />
               </View>
               <View style={styles.financialCopy}>
                 <Text style={styles.financialLabel}>{label}</Text>

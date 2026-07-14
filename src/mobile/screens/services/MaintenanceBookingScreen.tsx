@@ -23,7 +23,7 @@ const Field = ({
   multiline?: boolean;
 }) => (
   <View style={[styles.field, multiline && styles.fieldMultiline]}>
-    <Icon color="#526174" size={17} strokeWidth={2.2} />
+    <Icon color="#526174" size={16} strokeWidth={2.2} />
     <TextInput
       style={[styles.input, multiline && styles.inputMultiline]}
       placeholder={placeholder}
@@ -93,7 +93,7 @@ export const MaintenanceBookingScreen = ({ navigation, route }: any) => {
     <SafeAreaView style={styles.shell} edges={['top']}>
       <View style={styles.topBar}>
         <Pressable style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="Back" accessibilityRole="button">
-          <ArrowLeft color="#10213A" size={19} strokeWidth={2.4} />
+          <ArrowLeft color="#10213A" size={20} strokeWidth={2.4} />
         </Pressable>
         <Text style={styles.topTitle}>Book Maintenance</Text>
         <View style={styles.topSpacer} />

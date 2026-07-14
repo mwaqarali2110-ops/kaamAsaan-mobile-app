@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
   },
   primaryActionText: {
     color: '#0F172A',
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '800'
   },
   secondaryActionButton: {

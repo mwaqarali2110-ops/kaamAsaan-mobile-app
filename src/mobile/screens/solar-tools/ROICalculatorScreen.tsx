@@ -244,7 +244,7 @@ export const ROICalculatorScreen = ({ navigation }: any) => {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.topBar}>
           <Pressable style={styles.topIconButton} onPress={() => navigation.goBack()} accessibilityLabel="Back">
-            <ArrowLeft color="#10213A" size={19} strokeWidth={2.4} />
+            <ArrowLeft color="#10213A" size={20} strokeWidth={2.4} />
           </Pressable>
           <View style={styles.topCopy}>
             <Text style={styles.topTitle}>ROI Calculator</Text>
@@ -301,7 +301,7 @@ export const ROICalculatorScreen = ({ navigation }: any) => {
             <Text style={styles.helpText}>Build a system with guided solar planning.</Text>
           </View>
           <Pressable style={styles.helpArrow} onPress={() => navigation.navigate('DesignFlow')}>
-            <ArrowRight color="#B07800" size={17} strokeWidth={2.4} />
+            <ArrowRight color="#B07800" size={16} strokeWidth={2.4} />
           </Pressable>
         </View>
       </ScrollView>
@@ -421,7 +421,7 @@ export const ROIResultScreen = ({ navigation, route }: any) => {
       <ScrollView contentContainerStyle={styles.resultContent} showsVerticalScrollIndicator={false}>
         <View style={styles.resultTop}>
           <Pressable style={styles.backButtonLight} onPress={() => navigation.goBack()} accessibilityLabel="Back">
-            <ArrowLeft color="#10213A" size={19} strokeWidth={2.4} />
+            <ArrowLeft color="#10213A" size={20} strokeWidth={2.4} />
           </Pressable>
           <View style={styles.resultHeaderCopy}>
             <Text style={styles.resultTitle}>ROI Estimate</Text>
@@ -443,7 +443,7 @@ export const ROIResultScreen = ({ navigation, route }: any) => {
               <Text style={styles.sectionSubtitle}>Based on 10-year solar production</Text>
             </View>
             <View style={styles.sectionIcon}>
-              <Landmark color="#B07800" size={19} strokeWidth={2.4} />
+              <Landmark color="#B07800" size={20} strokeWidth={2.4} />
             </View>
           </View>
           <MetricRow label="Total System Cost" value={formatCurrency(input.systemCost)} />
@@ -459,7 +459,7 @@ export const ROIResultScreen = ({ navigation, route }: any) => {
               <Text style={styles.sectionSubtitle}>Bars show annual savings, line shows cumulative savings</Text>
             </View>
             <View style={styles.sectionIcon}>
-              <BarChart3 color="#B07800" size={19} strokeWidth={2.4} />
+              <BarChart3 color="#B07800" size={20} strokeWidth={2.4} />
             </View>
           </View>
           <SavingsProjectionChart
@@ -482,7 +482,7 @@ export const ROIResultScreen = ({ navigation, route }: any) => {
               <Text style={styles.sectionSubtitle}>Annual savings, cumulative savings and ROI</Text>
             </View>
             <View style={styles.sectionIcon}>
-              <LineChart color="#B07800" size={19} strokeWidth={2.4} />
+              <LineChart color="#B07800" size={20} strokeWidth={2.4} />
             </View>
           </View>
 
@@ -786,7 +786,7 @@ const styles = StyleSheet.create({
   helperText: {
     flex: 1,
     color: '#64748B',
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '700'
   },
   divider: {
@@ -932,7 +932,7 @@ const styles = StyleSheet.create({
   summaryHelper: {
     marginTop: 5,
     color: '#8A6B14',
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '800'
   },
   investmentCard: {
@@ -1055,7 +1055,7 @@ const styles = StyleSheet.create({
   chartNote: {
     marginTop: 10,
     color: '#526174',
-    fontSize: 11.5,
+    fontSize: 12,
     lineHeight: 16,
     fontWeight: '700',
     textAlign: 'center'
@@ -1095,7 +1095,7 @@ const styles = StyleSheet.create({
   },
   breakdownYear: {
     color: '#10213A',
-    fontSize: 11.5,
+    fontSize: 12,
     fontWeight: '900'
   },
   breakdownValue: {

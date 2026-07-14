@@ -88,7 +88,7 @@ export const BatterySizeToolScreen = ({ navigation }: any) => {
         </Pressable>
         <Text style={styles.topTitle}>Battery Size</Text>
         <Pressable style={styles.iconButton} accessibilityLabel="Battery size tool">
-          <BatteryCharging color="#F5A400" size={17} strokeWidth={2.4} />
+          <BatteryCharging color="#F5A400" size={16} strokeWidth={2.4} />
         </Pressable>
       </View>
 
@@ -192,7 +192,7 @@ const Counter = ({ value, onMinus, onPlus }: { value: number; onMinus: () => voi
 
 const SystemMetric = ({ Icon, value, label }: { Icon: any; value: string; label: string }) => (
   <View style={styles.systemMetric}>
-    <Icon color="#B07800" size={15} strokeWidth={2.3} />
+    <Icon color="#B07800" size={16} strokeWidth={2.3} />
     <Text style={styles.systemValue}>{value}</Text>
     <Text style={styles.systemLabel}>{label}</Text>
   </View>
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 2
   },
-  sectionLabel: { color: '#64748B', fontSize: 9, fontWeight: '900', letterSpacing: 0.5, marginBottom: 4 },
+  sectionLabel: { color: '#64748B', fontSize: 10, fontWeight: '900', letterSpacing: 0.5, marginBottom: 4 },
   applianceRow: {
     minHeight: 57,
     flexDirection: 'row',
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
   },
   applianceCopy: { flex: 1 },
   applianceName: { color: '#10213A', fontSize: 12, fontWeight: '900' },
-  wattage: { marginTop: 3, color: '#64748B', fontSize: 9.5, fontWeight: '700' },
+  wattage: { marginTop: 3, color: '#64748B', fontSize: 10, fontWeight: '700' },
   counter: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   counterButton: {
     width: 25,
@@ -297,11 +297,11 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     marginBottom: 12
   },
-  systemEyebrow: { color: '#8A5D00', fontSize: 8.5, fontWeight: '900', letterSpacing: 0.5 },
+  systemEyebrow: { color: '#8A5D00', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
   systemGrid: { marginTop: 10, flexDirection: 'row', justifyContent: 'space-between' },
   systemMetric: { flex: 1, alignItems: 'center', gap: 4 },
   systemValue: { color: '#10213A', fontSize: 11, fontWeight: '900' },
-  systemLabel: { color: '#64748B', fontSize: 8.5, fontWeight: '800' },
+  systemLabel: { color: '#64748B', fontSize: 10, fontWeight: '800' },
   footer: {
     position: 'absolute',
     left: 0,

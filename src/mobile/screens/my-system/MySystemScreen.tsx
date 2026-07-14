@@ -94,7 +94,7 @@ const MySystemEmptyScreen = ({ navigation, bottomPadding }: { navigation: any; b
             onPress={() => navigation.navigate('DesignFlow', { screen: 'appliances' })}
             style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
           >
-            <Sun color={colors.navy} size={21} strokeWidth={2.4} />
+            <Sun color={colors.navy} size={20} strokeWidth={2.4} />
             <Text style={styles.primaryButtonText}>Design your System!</Text>
             <ArrowRight color={colors.navy} size={20} strokeWidth={2.6} />
           </Pressable>
@@ -265,7 +265,7 @@ const ConfirmedSurveySystem = ({ navigation, bottomPadding, booking }: { navigat
             </Svg>
 
             <View style={styles.trackProgressContent}>
-              <ChartNoAxesCombined color="#FFFFFF" size={31} strokeWidth={2.5} />
+              <ChartNoAxesCombined color="#FFFFFF" size={32} strokeWidth={2.5} />
               <Text style={styles.trackProgressText}>Track Progress</Text>
               <ArrowRight color="#FFFFFF" size={34} strokeWidth={2.6} />
             </View>
@@ -523,7 +523,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   continueButtonText: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '800',
     color: '#0B1F33',
   },
@@ -660,7 +660,7 @@ const styles = StyleSheet.create({
   },
   confirmedTitle: {
     color: colors.navy,
-    fontSize: 21,
+    fontSize: 22,
     fontWeight: '900',
     textAlign: 'center',
   },

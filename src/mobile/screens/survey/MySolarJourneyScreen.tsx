@@ -124,7 +124,7 @@ export const MySolarJourneyScreen = ({ navigation, route }: any) => {
             <Text style={styles.reference}>{formatSurveyReference(booking)}</Text>
           </View>
           <View style={styles.referenceIcon}>
-            <ShieldCheck color="#168A4A" size={25} strokeWidth={2.2} />
+            <ShieldCheck color="#168A4A" size={24} strokeWidth={2.2} />
           </View>
         </View>
 
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
   shell: { flex: 1, backgroundColor: '#F7F3EB' },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24, backgroundColor: '#F7F3EB' },
   loadingText: { color: '#526174', fontSize: 13, fontWeight: '700' },
-  errorTitle: { color: '#10213A', fontSize: 19, fontWeight: '900' },
+  errorTitle: { color: '#10213A', fontSize: 20, fontWeight: '900' },
   errorText: { color: '#64748B', fontSize: 13, fontWeight: '600' },
   backHome: { marginTop: 8, borderRadius: 12, backgroundColor: '#F7B500', paddingHorizontal: 22, paddingVertical: 12 },
   backHomeText: { color: '#10213A', fontSize: 13, fontWeight: '900' },
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   headerCopy: { flex: 1, alignItems: 'center' },
   headerSpacer: { width: 38 },
   title: { color: '#10213A', fontSize: 18, fontWeight: '900' },
-  subtitle: { marginTop: 3, color: '#738094', fontSize: 10.5, fontWeight: '700' },
+  subtitle: { marginTop: 3, color: '#738094', fontSize: 11, fontWeight: '700' },
   content: { padding: 14, paddingBottom: 34, gap: 12 },
   referenceCard: { minHeight: 80, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 16, paddingHorizontal: 16, backgroundColor: '#FFFFFF', shadowColor: '#172031', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 2 },
   eyebrow: { color: '#8A6B14', fontSize: 10, fontWeight: '900', letterSpacing: 0.7 },
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
   detailIcon: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center', borderRadius: 9, backgroundColor: '#FFF7E6' },
   detailCopy: { flex: 1 },
   detailLabel: { color: '#7A8492', fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
-  detailValue: { marginTop: 3, color: '#243246', fontSize: 12.5, fontWeight: '800', textTransform: 'capitalize' },
+  detailValue: { marginTop: 3, color: '#243246', fontSize: 13, fontWeight: '800', textTransform: 'capitalize' },
   timelineCard: { borderRadius: 16, padding: 14, backgroundColor: '#FFFFFF', shadowColor: '#172031', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 1 },
   timelineRow: { minHeight: 77, flexDirection: 'row', gap: 11 },
   timelineRail: { width: 30, alignItems: 'center' },
@@ -237,8 +237,8 @@ const styles = StyleSheet.create({
   timelineLine: { width: 2, flex: 1, marginVertical: 3 },
   timelineCopy: { flex: 1, paddingTop: 3, paddingBottom: 12 },
   timelineHead: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 7 },
-  timelineTitle: { flex: 1, color: '#697586', fontSize: 12.5, fontWeight: '800' },
+  timelineTitle: { flex: 1, color: '#697586', fontSize: 13, fontWeight: '800' },
   timelineTitleStrong: { color: '#10213A' },
   timelineText: { marginTop: 5, color: '#7A8492', fontSize: 11, fontWeight: '600', lineHeight: 15 },
-  badge: { overflow: 'hidden', borderRadius: 999, paddingHorizontal: 7, paddingVertical: 3, fontSize: 8.5, fontWeight: '900' }
+  badge: { overflow: 'hidden', borderRadius: 999, paddingHorizontal: 7, paddingVertical: 3, fontSize: 10, fontWeight: '900' }
 });

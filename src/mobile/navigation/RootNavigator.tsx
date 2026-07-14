@@ -92,11 +92,11 @@ const MainTabs = () => {
         tabBarLabelStyle: { fontSize: 10, fontWeight: '800' }
       }}
     >
-      <Tabs.Screen name="Home" component={HomeScreen} options={{ title: t('tabs.home'), tabBarIcon: ({ color }) => <Home color={color} size={19} /> }} />
-      <Tabs.Screen name="Marketplace" component={ExploreMarketplaceScreen} options={{ title: t('tabs.marketplace'), tabBarIcon: ({ color }) => <ShoppingBag color={color} size={19} /> }} />
-      <Tabs.Screen name="MySystem" component={MySystemScreen} options={{ title: t('tabs.mySystem'), tabBarIcon: ({ color }) => <PanelsTopLeft color={color} size={19} /> }} />
-      <Tabs.Screen name="MyProject" component={MyProjectScreen} options={{ title: t('tabs.myProject'), tabBarIcon: ({ color }) => <ClipboardList color={color} size={19} /> }} />
-      <Tabs.Screen name="Profile" component={ProfileScreen} options={{ title: t('tabs.profile'), tabBarIcon: ({ color }) => <User color={color} size={19} /> }} />
+      <Tabs.Screen name="Home" component={HomeScreen} options={{ title: t('tabs.home'), tabBarIcon: ({ color }) => <Home color={color} size={20} /> }} />
+      <Tabs.Screen name="Marketplace" component={ExploreMarketplaceScreen} options={{ title: t('tabs.marketplace'), tabBarIcon: ({ color }) => <ShoppingBag color={color} size={20} /> }} />
+      <Tabs.Screen name="MySystem" component={MySystemScreen} options={{ title: t('tabs.mySystem'), tabBarIcon: ({ color }) => <PanelsTopLeft color={color} size={20} /> }} />
+      <Tabs.Screen name="MyProject" component={MyProjectScreen} options={{ title: t('tabs.myProject'), tabBarIcon: ({ color }) => <ClipboardList color={color} size={20} /> }} />
+      <Tabs.Screen name="Profile" component={ProfileScreen} options={{ title: t('tabs.profile'), tabBarIcon: ({ color }) => <User color={color} size={20} /> }} />
     </Tabs.Navigator>
   );
 };

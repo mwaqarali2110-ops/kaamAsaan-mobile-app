@@ -114,7 +114,7 @@ export const RoofSpaceToolScreen = ({ navigation }: any) => {
         </Pressable>
         <Text style={styles.topTitle}>Roof Space</Text>
         <Pressable style={styles.toolButton} accessibilityLabel="Roof space settings">
-          <Ruler color="#C98300" size={17} strokeWidth={2.2} />
+          <Ruler color="#C98300" size={16} strokeWidth={2.2} />
         </Pressable>
       </View>
 
@@ -193,7 +193,7 @@ export const RoofSpaceToolScreen = ({ navigation }: any) => {
 
             <Pressable style={styles.buildButton} onPress={() => navigation.navigate('DesignFlow')}>
               <Text style={styles.buildButtonText}>Build Your System</Text>
-              <ArrowRight color="#111827" size={17} strokeWidth={2.5} />
+              <ArrowRight color="#111827" size={16} strokeWidth={2.5} />
             </Pressable>
           </Animated.View>
         ) : null}
@@ -307,11 +307,11 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 8
   },
-  heading: { color: '#0F1E33', textAlign: 'center', fontSize: 27, lineHeight: 31, fontWeight: '900', marginBottom: 10 },
+  heading: { color: '#0F1E33', textAlign: 'center', fontSize: 28, lineHeight: 31, fontWeight: '900', marginBottom: 10 },
   headingAccent: { color: '#E6A400' },
   subtitle: { color: '#6B7280', textAlign: 'center', fontSize: 11, lineHeight: 15, fontWeight: '600', paddingHorizontal: 24, marginBottom: 17 },
   inputBlock: { marginBottom: 17 },
-  inputLabel: { color: '#9AA4B2', fontSize: 9.5, fontWeight: '900', letterSpacing: 0.8, marginBottom: 7 },
+  inputLabel: { color: '#9AA4B2', fontSize: 10, fontWeight: '900', letterSpacing: 0.8, marginBottom: 7 },
   input: {
     height: 40,
     borderRadius: 11,
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800'
   },
-  tip: { color: '#7C8797', fontSize: 10.5, fontWeight: '600', marginTop: 8 },
+  tip: { color: '#7C8797', fontSize: 11, fontWeight: '600', marginTop: 8 },
   checkButton: {
     height: 42,
     borderRadius: 12,
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
     gap: 6
   },
   disabledButton: { opacity: 0.72 },
-  checkButtonText: { color: '#111827', fontSize: 12.5, fontWeight: '900' },
+  checkButtonText: { color: '#111827', fontSize: 13, fontWeight: '900' },
   results: { gap: 10 },
   resultCard: {
     borderRadius: 12,
@@ -348,9 +348,9 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 3
   },
-  resultLabel: { color: '#9B7A2D', fontSize: 9.5, fontWeight: '900', letterSpacing: 1.1, marginBottom: 5 },
-  areaValue: { color: '#0F1E33', fontSize: 25, fontWeight: '900', lineHeight: 29 },
-  resultSubtext: { color: '#64748B', fontSize: 10.5, fontWeight: '800', marginTop: 1 },
+  resultLabel: { color: '#9B7A2D', fontSize: 10, fontWeight: '900', letterSpacing: 1.1, marginBottom: 5 },
+  areaValue: { color: '#0F1E33', fontSize: 26, fontWeight: '900', lineHeight: 29 },
+  resultSubtext: { color: '#64748B', fontSize: 11, fontWeight: '800', marginTop: 1 },
   layoutCard: {
     borderRadius: 12,
     backgroundColor: 'rgba(255,255,255,0.94)',
@@ -364,11 +364,11 @@ const styles = StyleSheet.create({
   layoutHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
   layoutMeta: { color: '#172031', fontSize: 11, fontWeight: '900' },
   sizeBadge: { borderRadius: 999, backgroundColor: '#FFF1CC', borderWidth: 1, borderColor: '#F5D482', paddingHorizontal: 9, paddingVertical: 5 },
-  sizeBadgeText: { color: '#9B6800', fontSize: 9, fontWeight: '900' },
+  sizeBadgeText: { color: '#9B6800', fontSize: 10, fontWeight: '900' },
   toggle: { height: 31, borderRadius: 10, backgroundColor: '#F3F4F6', flexDirection: 'row', padding: 3, marginBottom: 12 },
   toggleItem: { flex: 1, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   toggleItemActive: { backgroundColor: '#FDB813' },
-  toggleText: { color: '#64748B', fontSize: 10.5, fontWeight: '900' },
+  toggleText: { color: '#64748B', fontSize: 11, fontWeight: '900' },
   toggleTextActive: { color: '#111827' },
   layoutCanvas: {
     minHeight: 220,
@@ -381,8 +381,8 @@ const styles = StyleSheet.create({
     paddingTop: 30,
     paddingBottom: 12
   },
-  widthDimension: { position: 'absolute', top: 9, color: '#334155', fontSize: 10.5, fontWeight: '900' },
-  heightDimension: { position: 'absolute', right: 7, top: '47%', color: '#334155', fontSize: 10.5, fontWeight: '900', transform: [{ rotate: '90deg' }] },
+  widthDimension: { position: 'absolute', top: 9, color: '#334155', fontSize: 11, fontWeight: '900' },
+  heightDimension: { position: 'absolute', right: 7, top: '47%', color: '#334155', fontSize: 11, fontWeight: '900', transform: [{ rotate: '90deg' }] },
   panelGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     padding: 11
   },
   bestBadge: { alignSelf: 'flex-start', borderRadius: 999, backgroundColor: '#FDB813', paddingHorizontal: 9, paddingVertical: 4, marginBottom: 8 },
-  bestBadgeText: { color: '#111827', fontSize: 9, fontWeight: '900' },
+  bestBadgeText: { color: '#111827', fontSize: 10, fontWeight: '900' },
   bestText: { color: '#172031', fontSize: 12, lineHeight: 17, fontWeight: '800' },
   buildButton: {
     height: 47,
@@ -445,5 +445,5 @@ const styles = StyleSheet.create({
     elevation: 6,
     zIndex: 4
   },
-  expertText: { color: '#FFFFFF', fontSize: 11.5, fontWeight: '900' }
+  expertText: { color: '#FFFFFF', fontSize: 12, fontWeight: '900' }
 });

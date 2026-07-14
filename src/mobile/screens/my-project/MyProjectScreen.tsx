@@ -30,7 +30,7 @@ const EmptyProjectScreen = ({ navigation }: any) => (
         <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('DesignFlow')}>
           <PanelsTopLeft color="#10213A" size={18} strokeWidth={2.4} />
           <Text style={styles.primaryButtonText}>Design My System</Text>
-          <ArrowRight color="#10213A" size={17} strokeWidth={2.5} />
+          <ArrowRight color="#10213A" size={16} strokeWidth={2.5} />
         </Pressable>
         <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('Marketplace')}>
           <ShoppingBag color="#E8A000" size={18} strokeWidth={2.4} />
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     color: '#071B33',
-    fontSize: 25,
+    fontSize: 26,
     lineHeight: 30,
     fontWeight: '900',
     textAlign: 'center'

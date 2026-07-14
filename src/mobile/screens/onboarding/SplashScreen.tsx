@@ -8,6 +8,7 @@ import Animated, {
   useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
   withRepeat,
   withSequence,
   withTiming
@@ -20,24 +21,42 @@ const AnimatedPath = Animated.createAnimatedComponent(Path);
 const SPLASH_DURATION_MS = 4800;
 const CART_SLIDE_DURATION_MS = 1000;
 const SPARK_START_DELAY_MS = 190;
+const BRAND_ENTRANCE_DELAY_MS = 550;
+// The overlay space must match the cart artwork's aspect ratio (876x940 px)
+// exactly, otherwise the SVG and the letterboxed image scale differently and
+// the current drifts off the artwork. 150x161 = the artwork ratio; artwork
+// pixels convert at x0.1712.
 const CART_BASE_WIDTH = 150;
-const CART_BASE_HEIGHT = 145;
-const CURRENT_LOOP_MS = 1650;
+const CART_BASE_HEIGHT = 161;
+const CART_ASPECT = CART_BASE_HEIGHT / CART_BASE_WIDTH;
+const CURRENT_LOOP_MS = 1800;
+// Traced over the cart artwork: front tyre -> across all four tyres -> up the
+// rear frame -> along the basket rim -> up the handle -> then discharges
+// upward through the lightning bolt.
 const CART_CURRENT_PATH =
-  'M33 126 C42 119 55 119 70 120 L103 120 C116 119 124 111 128 98 L134 67 C134 60 129 55 119 53 L43 44 C31 43 24 50 24 63 C24 76 34 86 50 90 C68 95 90 93 105 84 C116 77 119 65 112 55 C105 44 94 34 86 24';
+  'M33.5 151 C39 153.7 46 153.7 52 151.5 C70 154.2 95 154.2 111 151 L124 146.5 C126 137.6 126.5 127.6 125 118.7 C130 102 133.5 83.2 135 65.5 C97 57.7 58 52.1 20 51 C15 45.5 11.5 38.8 10.5 32.2 C22 57.7 44 82.1 67 93.2 C74 68.8 78 55.5 84 44.4 C89 31.1 93 17.8 95 5.5';
+// Dash cycle (dash + gap) exceeds the path length so exactly one pulse travels
+// the cart per loop, and the loop offset is one full cycle so it never jumps.
+const CURRENT_DASH_PATTERN = '30 520';
+const CURRENT_DASH_CYCLE = 550;
+const CURRENT_DASH_HIDDEN_OFFSET = 30;
 const VOLTAGE_PULSE_BASE = {
-  top: 8,
+  top: 4,
   left: 65,
-  width: 42,
-  height: 62
+  width: 46,
+  height: 70
 };
+const WHEEL_GLOW_SPOTS = [
+  { top: 140, left: 22, width: 42, height: 20 },
+  { top: 137, left: 100, width: 35, height: 20 }
+];
 
 export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
   const { width, height } = useWindowDimensions();
   const hasCompletedRef = useRef(false);
 
   const logoWidth = Math.min(112, Math.max(95, width * 0.285));
-  const logoHeight = logoWidth * 1.18;
+  const logoHeight = logoWidth * CART_ASPECT;
   const brandFontSize = Math.min(43, Math.max(34, width * 0.105));
   const taglineFontSize = Math.min(12.5, Math.max(10.5, width * 0.03));
   const waveHeight = Math.min(164, Math.max(132, height * 0.18));
@@ -49,7 +68,9 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
   const voltagePulseHeight = VOLTAGE_PULSE_BASE.height * cartScaleY;
 
   const cartTranslateX = useSharedValue(0);
-  const currentDashOffset = useSharedValue(0);
+  const currentDashOffset = useSharedValue(CURRENT_DASH_HIDDEN_OFFSET);
+  const wheelGlowOpacity = useSharedValue(0);
+  const wheelGlowScale = useSharedValue(0.9);
   const voltagePulseOpacity = useSharedValue(0);
   const voltagePulseScale = useSharedValue(0.95);
   const voltageTrembleX = useSharedValue(0);
@@ -59,6 +80,8 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
   const sparkOneScale = useSharedValue(0.7);
   const sparkTwoOpacity = useSharedValue(0);
   const sparkTwoScale = useSharedValue(0.7);
+  const brandOpacity = useSharedValue(0);
+  const brandTranslateY = useSharedValue(16);
 
   const cartAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: cartTranslateX.value }]
@@ -66,6 +89,11 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
 
   const currentAnimatedProps = useAnimatedProps(() => ({
     strokeDashoffset: currentDashOffset.value
+  }));
+
+  const wheelGlowStyle = useAnimatedStyle(() => ({
+    opacity: wheelGlowOpacity.value,
+    transform: [{ scale: wheelGlowScale.value }]
   }));
 
   const voltagePulseStyle = useAnimatedStyle(() => ({
@@ -88,6 +116,11 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
     transform: [{ scale: sparkTwoScale.value }, { rotateZ: '28deg' }]
   }));
 
+  const brandEntranceStyle = useAnimatedStyle(() => ({
+    opacity: brandOpacity.value,
+    transform: [{ translateY: brandTranslateY.value }]
+  }));
+
   useEffect(() => {
     const completeSplash = () => {
       if (hasCompletedRef.current) return;
@@ -98,7 +131,9 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
     const startOffset = -Math.max(width * 0.95, logoWidth + 150);
 
     cartTranslateX.value = startOffset;
-    currentDashOffset.value = 0;
+    currentDashOffset.value = CURRENT_DASH_HIDDEN_OFFSET;
+    wheelGlowOpacity.value = 0;
+    wheelGlowScale.value = 0.9;
     voltagePulseOpacity.value = 0;
     voltagePulseScale.value = 0.95;
     voltageTrembleX.value = 0;
@@ -108,15 +143,26 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
     sparkOneScale.value = 0.7;
     sparkTwoOpacity.value = 0;
     sparkTwoScale.value = 0.7;
+    brandOpacity.value = 0;
+    brandTranslateY.value = 16;
 
     cartTranslateX.value = withTiming(0, {
       duration: CART_SLIDE_DURATION_MS,
       easing: Easing.out(Easing.cubic)
     });
 
+    brandOpacity.value = withDelay(
+      BRAND_ENTRANCE_DELAY_MS,
+      withTiming(1, { duration: 650, easing: Easing.out(Easing.cubic) })
+    );
+    brandTranslateY.value = withDelay(
+      BRAND_ENTRANCE_DELAY_MS,
+      withTiming(0, { duration: 650, easing: Easing.out(Easing.cubic) })
+    );
+
     const voltageTimer = setTimeout(() => {
       currentDashOffset.value = withRepeat(
-        withTiming(-220, {
+        withTiming(CURRENT_DASH_HIDDEN_OFFSET - CURRENT_DASH_CYCLE, {
           duration: CURRENT_LOOP_MS,
           easing: Easing.linear
         }),
@@ -124,12 +170,32 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
         false
       );
 
+      wheelGlowOpacity.value = withRepeat(
+        withSequence(
+          withTiming(0.9, { duration: 140, easing: Easing.out(Easing.cubic) }),
+          withTiming(0, { duration: 360, easing: Easing.inOut(Easing.cubic) }),
+          withTiming(0, { duration: 1300 })
+        ),
+        -1,
+        false
+      );
+
+      wheelGlowScale.value = withRepeat(
+        withSequence(
+          withTiming(1.15, { duration: 140, easing: Easing.out(Easing.cubic) }),
+          withTiming(0.9, { duration: 360, easing: Easing.inOut(Easing.cubic) }),
+          withTiming(0.9, { duration: 1300 })
+        ),
+        -1,
+        false
+      );
+
       voltagePulseOpacity.value = withRepeat(
         withSequence(
-          withTiming(0, { duration: 1200 }),
-          withTiming(0.65, { duration: 160, easing: Easing.out(Easing.cubic) }),
-          withTiming(0.15, { duration: 220, easing: Easing.inOut(Easing.cubic) }),
-          withTiming(0, { duration: 70 })
+          withTiming(0, { duration: 1180 }),
+          withTiming(0.7, { duration: 140, easing: Easing.out(Easing.cubic) }),
+          withTiming(0.18, { duration: 260, easing: Easing.inOut(Easing.cubic) }),
+          withTiming(0, { duration: 220 })
         ),
         -1,
         false
@@ -137,9 +203,9 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
 
       voltagePulseScale.value = withRepeat(
         withSequence(
-          withTiming(0.95, { duration: 1200 }),
-          withTiming(1.12, { duration: 160, easing: Easing.out(Easing.cubic) }),
-          withTiming(1, { duration: 290, easing: Easing.inOut(Easing.cubic) })
+          withTiming(0.95, { duration: 1180 }),
+          withTiming(1.14, { duration: 140, easing: Easing.out(Easing.cubic) }),
+          withTiming(1, { duration: 480, easing: Easing.inOut(Easing.cubic) })
         ),
         -1,
         false
@@ -147,11 +213,11 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
 
       voltageTrembleX.value = withRepeat(
         withSequence(
-          withTiming(0, { duration: 1220 }),
+          withTiming(0, { duration: 1200 }),
           withTiming(1.2, { duration: 70, easing: Easing.linear }),
           withTiming(-1.1, { duration: 76, easing: Easing.linear }),
           withTiming(0.7, { duration: 68, easing: Easing.linear }),
-          withTiming(0, { duration: 216, easing: Easing.linear })
+          withTiming(0, { duration: 386, easing: Easing.linear })
         ),
         -1,
         false
@@ -159,10 +225,10 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
 
       voltageTrembleY.value = withRepeat(
         withSequence(
-          withTiming(0, { duration: 1220 }),
+          withTiming(0, { duration: 1200 }),
           withTiming(-0.8, { duration: 72, easing: Easing.linear }),
           withTiming(0.65, { duration: 78, easing: Easing.linear }),
-          withTiming(0, { duration: 280, easing: Easing.linear })
+          withTiming(0, { duration: 450, easing: Easing.linear })
         ),
         -1,
         false
@@ -170,11 +236,11 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
 
       voltageTrembleRotate.value = withRepeat(
         withSequence(
-          withTiming(0, { duration: 1220 }),
+          withTiming(0, { duration: 1200 }),
           withTiming(0.8, { duration: 70, easing: Easing.linear }),
           withTiming(-0.75, { duration: 76, easing: Easing.linear }),
           withTiming(0.3, { duration: 70, easing: Easing.linear }),
-          withTiming(0, { duration: 214, easing: Easing.linear })
+          withTiming(0, { duration: 384, easing: Easing.linear })
         ),
         -1,
         false
@@ -182,10 +248,10 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
 
       sparkOneOpacity.value = withRepeat(
         withSequence(
-          withTiming(0, { duration: 1260 }),
+          withTiming(0, { duration: 1240 }),
           withTiming(0.9, { duration: 100, easing: Easing.out(Easing.cubic) }),
           withTiming(0, { duration: 260, easing: Easing.inOut(Easing.cubic) }),
-          withTiming(0, { duration: 30 })
+          withTiming(0, { duration: 200 })
         ),
         -1,
         false
@@ -193,9 +259,9 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
 
       sparkOneScale.value = withRepeat(
         withSequence(
-          withTiming(0.7, { duration: 1260 }),
+          withTiming(0.7, { duration: 1240 }),
           withTiming(1.15, { duration: 100, easing: Easing.out(Easing.cubic) }),
-          withTiming(0.7, { duration: 290, easing: Easing.inOut(Easing.cubic) })
+          withTiming(0.7, { duration: 460, easing: Easing.inOut(Easing.cubic) })
         ),
         -1,
         false
@@ -203,9 +269,10 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
 
       sparkTwoOpacity.value = withRepeat(
         withSequence(
-          withTiming(0, { duration: 1380 }),
+          withTiming(0, { duration: 1320 }),
           withTiming(0.82, { duration: 95, easing: Easing.out(Easing.cubic) }),
-          withTiming(0, { duration: 175, easing: Easing.inOut(Easing.cubic) })
+          withTiming(0, { duration: 175, easing: Easing.inOut(Easing.cubic) }),
+          withTiming(0, { duration: 210 })
         ),
         -1,
         false
@@ -213,9 +280,9 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
 
       sparkTwoScale.value = withRepeat(
         withSequence(
-          withTiming(0.7, { duration: 1380 }),
+          withTiming(0.7, { duration: 1320 }),
           withTiming(1.12, { duration: 95, easing: Easing.out(Easing.cubic) }),
-          withTiming(0.7, { duration: 175, easing: Easing.inOut(Easing.cubic) })
+          withTiming(0.7, { duration: 385, easing: Easing.inOut(Easing.cubic) })
         ),
         -1,
         false
@@ -229,6 +296,8 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
       clearTimeout(finishTimer);
       cancelAnimation(cartTranslateX);
       cancelAnimation(currentDashOffset);
+      cancelAnimation(wheelGlowOpacity);
+      cancelAnimation(wheelGlowScale);
       cancelAnimation(voltagePulseOpacity);
       cancelAnimation(voltagePulseScale);
       cancelAnimation(voltageTrembleX);
@@ -238,8 +307,12 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
       cancelAnimation(sparkOneScale);
       cancelAnimation(sparkTwoOpacity);
       cancelAnimation(sparkTwoScale);
+      cancelAnimation(brandOpacity);
+      cancelAnimation(brandTranslateY);
     };
   }, [
+    brandOpacity,
+    brandTranslateY,
     cartTranslateX,
     currentDashOffset,
     logoWidth,
@@ -253,6 +326,8 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
     voltageTrembleRotate,
     voltageTrembleX,
     voltageTrembleY,
+    wheelGlowOpacity,
+    wheelGlowScale,
     width
   ]);
 
@@ -306,8 +381,8 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
               strokeWidth={6}
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeDasharray="18 160"
-              opacity={0.13}
+              strokeDasharray={CURRENT_DASH_PATTERN}
+              opacity={0.16}
             />
             <AnimatedPath
               animatedProps={currentAnimatedProps}
@@ -317,9 +392,26 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
               strokeWidth={2.2}
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeDasharray="18 160"
+              strokeDasharray={CURRENT_DASH_PATTERN}
             />
           </Svg>
+
+          {WHEEL_GLOW_SPOTS.map((spot, index) => (
+            <Animated.View
+              key={`wheel-glow-${index}`}
+              pointerEvents="none"
+              style={[
+                styles.wheelGlow,
+                wheelGlowStyle,
+                {
+                  top: spot.top * cartScaleY,
+                  left: spot.left * cartScaleX,
+                  width: spot.width * cartScaleX,
+                  height: spot.height * cartScaleY
+                }
+              ]}
+            />
+          ))}
 
           <Animated.View
             pointerEvents="none"
@@ -362,18 +454,20 @@ export const SplashScreen = ({ onDone }: { onDone: () => void }) => {
           />
         </Animated.View>
 
-        <View style={styles.brandWrap}>
-          <Text style={[styles.brandText, { fontSize: brandFontSize }]}>
-            <Text style={styles.brandNavy}>Kaam</Text>
-            <Text style={styles.brandGold}>Asaan</Text>
-          </Text>
-        </View>
+        <Animated.View style={brandEntranceStyle}>
+          <View style={styles.brandWrap}>
+            <Text style={[styles.brandText, { fontSize: brandFontSize }]}>
+              <Text style={styles.brandNavy}>Kaam</Text>
+              <Text style={styles.brandGold}>Asaan</Text>
+            </Text>
+          </View>
 
-        <View style={styles.taglineWrap}>
-          <View style={styles.taglineLine} />
-          <Text style={[styles.tagline, { fontSize: taglineFontSize }]}>Pakistan No.1 Smart Solar Marketplace</Text>
-          <View style={styles.taglineLine} />
-        </View>
+          <View style={styles.taglineWrap}>
+            <View style={styles.taglineLine} />
+            <Text style={[styles.tagline, { fontSize: taglineFontSize }]}>Pakistan No.1 Smart Solar Marketplace</Text>
+            <View style={styles.taglineLine} />
+          </View>
+        </Animated.View>
       </View>
 
       <View style={[styles.waveWrap, { height: waveHeight }]}>
@@ -435,6 +529,17 @@ const styles = StyleSheet.create({
   },
   cartImage: {
     flexShrink: 0
+  },
+  wheelGlow: {
+    position: 'absolute',
+    zIndex: 5,
+    borderRadius: 999,
+    backgroundColor: 'rgba(245, 180, 0, 0.32)',
+    shadowColor: '#F5B400',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.45,
+    shadowRadius: 8,
+    elevation: 5
   },
   voltagePulse: {
     position: 'absolute',

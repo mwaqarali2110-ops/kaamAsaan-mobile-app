@@ -122,7 +122,7 @@ export const ProfileScreen = ({ navigation }: any) => {
               <Text style={[styles.title, rtl && styles.rtlText]}>{t('profile.title')}</Text>
             </View>
             <Pressable disabled={loading} onPress={() => void signOut()} style={styles.logoutIcon} accessibilityLabel={t('profile.logout')}>
-              <LogOut color="#8A6A16" size={19} strokeWidth={2.3} />
+              <LogOut color="#8A6A16" size={20} strokeWidth={2.3} />
             </Pressable>
           </View>
 
@@ -136,7 +136,7 @@ export const ProfileScreen = ({ navigation }: any) => {
               <Text style={[styles.name, rtl && styles.rtlText]}>{form.fullName || t('profile.customerAccount')}</Text>
               <Text style={[styles.email, rtl && styles.rtlText]}>{session.user.email || t('profile.customerAccount')}</Text>
               <View style={styles.statusPill}>
-                <ShieldCheck color="#128A3E" size={13} strokeWidth={2.4} />
+                <ShieldCheck color="#128A3E" size={12} strokeWidth={2.4} />
                 <Text style={styles.statusText}>{t('profile.verified')}</Text>
               </View>
             </View>
@@ -196,7 +196,7 @@ export const ProfileScreen = ({ navigation }: any) => {
                     style={[styles.languageOption, selected && styles.languageOptionActive]}
                   >
                     <Text style={[styles.languageText, selected && styles.languageTextActive]}>{item.nativeLabel}</Text>
-                    {selected ? <CheckCircle2 color="#128A3E" size={17} strokeWidth={2.4} /> : null}
+                    {selected ? <CheckCircle2 color="#128A3E" size={16} strokeWidth={2.4} /> : null}
                   </Pressable>
                 );
               })}
@@ -228,7 +228,7 @@ const ProfileInput = ({
   <View style={styles.inputBlock}>
     <Text style={[styles.inputLabel, rtl && styles.rtlText]}>{label}</Text>
     <View style={[styles.inputWrap, !editable && styles.inputWrapDisabled]}>
-      <Icon color="#9A6C00" size={17} strokeWidth={2.2} />
+      <Icon color="#9A6C00" size={16} strokeWidth={2.2} />
       <TextInput
         {...props}
         editable={editable}
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     color: '#F8C642',
-    fontSize: 25,
+    fontSize: 26,
     fontWeight: '900'
   },
   heroCopy: {
@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
   supportText: {
     marginTop: 6,
     color: '#4F6B58',
-    fontSize: 12.5,
+    fontSize: 13,
     lineHeight: 18,
     fontWeight: '700'
   },
@@ -475,7 +475,7 @@ const styles = StyleSheet.create({
   languageSubtitle: {
     marginTop: 5,
     color: '#64748B',
-    fontSize: 12.5,
+    fontSize: 13,
     fontWeight: '700'
   },
   languageOptions: {
@@ -508,7 +508,7 @@ const styles = StyleSheet.create({
   restartText: {
     marginTop: 10,
     color: '#9A6C00',
-    fontSize: 11.5,
+    fontSize: 12,
     lineHeight: 17,
     fontWeight: '800'
   },
@@ -533,7 +533,7 @@ const styles = StyleSheet.create({
   guestTitle: {
     marginTop: 16,
     color: '#10213A',
-    fontSize: 27,
+    fontSize: 28,
     fontWeight: '900'
   },
   guestSubtitle: {
@@ -554,13 +554,13 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     color: '#10213A',
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '900'
   },
   cardText: {
     marginTop: 7,
     color: '#64748B',
-    fontSize: 12.5,
+    fontSize: 13,
     lineHeight: 18,
     fontWeight: '700'
   },

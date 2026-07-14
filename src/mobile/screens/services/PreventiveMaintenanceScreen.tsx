@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: '#5B677A',
-    fontSize: 17,
+    fontSize: 18,
     lineHeight: 22,
     fontWeight: '500'
   },
@@ -510,7 +510,7 @@ const styles = StyleSheet.create({
   },
   price: {
     color: '#0B1528',
-    fontSize: 19,
+    fontSize: 20,
     lineHeight: 24,
     fontWeight: '900'
   },
@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
   },
   chipText: {
     color: '#0B1528',
-    fontSize: 12.5,
+    fontSize: 13,
     fontWeight: '800'
   },
   urgencyCard: {
@@ -556,7 +556,7 @@ const styles = StyleSheet.create({
   urgencyText: {
     flex: 1,
     color: '#263247',
-    fontSize: 13.5,
+    fontSize: 14,
     lineHeight: 18,
     fontWeight: '600'
   },
@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
   trustText: {
     flexShrink: 1,
     color: '#5B677A',
-    fontSize: 11.5,
+    fontSize: 12,
     lineHeight: 15,
     fontWeight: '800',
     textAlign: 'center'
@@ -701,7 +701,7 @@ const styles = StyleSheet.create({
   },
   infoTitle: {
     color: '#0F172A',
-    fontSize: 23,
+    fontSize: 24,
     lineHeight: 29,
     fontWeight: '900'
   },
@@ -750,7 +750,7 @@ const styles = StyleSheet.create({
   },
   infoSecondaryText: {
     color: '#B07800',
-    fontSize: 14.5,
+    fontSize: 15,
     fontWeight: '900'
   },
   infoTertiaryButton: {

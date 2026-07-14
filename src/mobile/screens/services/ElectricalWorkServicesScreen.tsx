@@ -94,7 +94,7 @@ export const ElectricalWorkBookingScreen = ({ route, navigation }: any) => {
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
-            <ArrowLeft size={23} color="#0F172A" strokeWidth={2.4} />
+            <ArrowLeft size={24} color="#0F172A" strokeWidth={2.4} />
           </Pressable>
           <View style={styles.headerCopy}>
             <Text style={styles.title}>{serviceTitle}</Text>
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cardTitle: {
-    fontSize: 17,
+    fontSize: 18,
     lineHeight: 22,
     fontWeight: '800',
     color: '#101828',

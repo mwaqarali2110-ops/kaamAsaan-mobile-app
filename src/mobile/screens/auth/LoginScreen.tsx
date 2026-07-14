@@ -33,7 +33,7 @@ const LoginField = ({
       <Text style={styles.label}>{label}</Text>
       <View style={[styles.inputWrap, error && styles.inputWrapError]}>
         <View style={styles.inputIcon}>
-          <Icon size={19} color="#D99A00" strokeWidth={2.2} />
+          <Icon size={20} color="#D99A00" strokeWidth={2.2} />
         </View>
         <TextInput
           {...props}
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   },
   loginHeading: {
     color: '#0F172A',
-    fontSize: 29,
+    fontSize: 30,
     lineHeight: 35,
     fontWeight: '900',
     marginTop: 6
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
   errorText: {
     marginTop: 5,
     color: '#C2413B',
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '800'
   },
   message: {

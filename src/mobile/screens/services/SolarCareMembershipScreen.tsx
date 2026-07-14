@@ -78,13 +78,13 @@ export const SolarCareMembershipScreen = ({ navigation }: any) => (
     </ScrollView>
 
     <Pressable style={styles.chatButton} accessibilityLabel="WhatsApp help">
-      <MessageCircle color="#FFFFFF" size={19} strokeWidth={2.2} />
+      <MessageCircle color="#FFFFFF" size={20} strokeWidth={2.2} />
     </Pressable>
 
     <View style={styles.footer}>
       <Pressable style={styles.subscribeButton}>
         <Text style={styles.subscribeText}>Subscribe Now</Text>
-        <ArrowRight color="#111827" size={17} strokeWidth={2.4} />
+        <ArrowRight color="#111827" size={16} strokeWidth={2.4} />
       </Pressable>
       <Pressable style={styles.skipButton} onPress={() => navigation.goBack()}>
         <Text style={styles.skipText}>Continue Without Membership</Text>
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     marginBottom: 12
   },
   heroTitle: { color: '#111827', textAlign: 'center', fontSize: 18, lineHeight: 21, fontWeight: '900', marginBottom: 8 },
-  heroText: { color: '#334155', textAlign: 'center', fontSize: 11.5, lineHeight: 17, fontWeight: '600', paddingHorizontal: 20 },
+  heroText: { color: '#334155', textAlign: 'center', fontSize: 12, lineHeight: 17, fontWeight: '600', paddingHorizontal: 20 },
   planRow: { flexDirection: 'row', gap: 7, marginBottom: 17 },
   planCard: {
     flex: 1,
@@ -154,16 +154,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2
   },
-  bestBadgeText: { color: '#111827', fontSize: 7.5, fontWeight: '900' },
-  planName: { color: '#8B7254', fontSize: 8.5, fontWeight: '900', letterSpacing: 0.8, marginBottom: 5 },
+  bestBadgeText: { color: '#111827', fontSize: 10, fontWeight: '900' },
+  planName: { color: '#8B7254', fontSize: 10, fontWeight: '900', letterSpacing: 0.8, marginBottom: 5 },
   priceLine: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center' },
-  currency: { color: '#172031', fontSize: 8, fontWeight: '900', marginBottom: 2 },
+  currency: { color: '#172031', fontSize: 10, fontWeight: '900', marginBottom: 2 },
   planPrice: { color: '#111827', fontSize: 16, fontWeight: '900' },
   yearlyPrice: { color: '#F5A400' },
-  planPeriod: { color: '#172031', fontSize: 8.5, fontWeight: '800', marginTop: 3 },
-  planVisits: { color: '#172031', fontSize: 8.5, fontWeight: '900', marginTop: 4 },
+  planPeriod: { color: '#172031', fontSize: 10, fontWeight: '800', marginTop: 3 },
+  planVisits: { color: '#172031', fontSize: 10, fontWeight: '900', marginTop: 4 },
   savePill: { backgroundColor: '#DCFCE7', borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2, marginTop: 5 },
-  saveText: { color: '#16A34A', fontSize: 7.5, fontWeight: '900' },
+  saveText: { color: '#16A34A', fontSize: 10, fontWeight: '900' },
   sectionLabel: { color: '#8B7254', fontSize: 10, fontWeight: '900', letterSpacing: 1.9, marginBottom: 10 },
   benefitsCard: {
     borderRadius: 13,
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
     marginRight: 12
   },
   benefitText: { flex: 1, color: '#172031', fontSize: 12, fontWeight: '900' },
-  cancelText: { color: '#7C6F5F', textAlign: 'center', fontSize: 10.5, fontWeight: '600' },
+  cancelText: { color: '#7C6F5F', textAlign: 'center', fontSize: 11, fontWeight: '600' },
   chatButton: {
     position: 'absolute',
     right: 17,
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8
   },
-  subscribeText: { color: '#111827', fontSize: 12.5, fontWeight: '900' },
+  subscribeText: { color: '#111827', fontSize: 13, fontWeight: '900' },
   skipButton: {
     height: 38,
     borderRadius: 11,
@@ -232,5 +232,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center'
   },
-  skipText: { color: '#172031', fontSize: 11.5, fontWeight: '900' }
+  skipText: { color: '#172031', fontSize: 12, fontWeight: '900' }
 });

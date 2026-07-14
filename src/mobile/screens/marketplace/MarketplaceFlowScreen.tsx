@@ -385,7 +385,7 @@ const BrandHeroBanner = ({
       {badges.map((badge, index) => (
         <View key={badge} style={brandStyles.heroBadge}>
           <View style={brandStyles.heroBadgeIcon}>
-            {index === 0 ? <ShieldCheck color="#F5A400" size={13} strokeWidth={2.3} /> : index === 1 ? <Zap color="#F5A400" size={13} fill="#F5A400" /> : <CheckCircle2 color="#F5A400" size={13} strokeWidth={2.3} />}
+            {index === 0 ? <ShieldCheck color="#F5A400" size={12} strokeWidth={2.3} /> : index === 1 ? <Zap color="#F5A400" size={12} fill="#F5A400" /> : <CheckCircle2 color="#F5A400" size={12} strokeWidth={2.3} />}
           </View>
           <Text style={brandStyles.heroBadgeText}>{badge}</Text>
         </View>
@@ -416,13 +416,13 @@ const InverterBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigatio
           <Text style={brandStyles.subtitle}>Browse trusted inverter manufacturers</Text>
         </View>
         <View style={brandStyles.toolIcon}>
-          <Zap color="#B07800" size={17} fill="#B07800" />
+          <Zap color="#B07800" size={16} fill="#B07800" />
         </View>
       </View>
 
       <ScrollView style={brandStyles.scroll} contentContainerStyle={brandStyles.content} showsVerticalScrollIndicator={false}>
         <View style={brandStyles.searchWrap}>
-          <Search color="#94A3B8" size={17} strokeWidth={2.1} />
+          <Search color="#94A3B8" size={16} strokeWidth={2.1} />
           <TextInput
             value={searchText}
             onChangeText={setSearchText}
@@ -521,13 +521,13 @@ const SolarPanelBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigat
           <Text style={brandStyles.subtitle}>Browse trusted solar manufacturers</Text>
         </View>
         <View style={brandStyles.toolIcon}>
-          <Sun color="#B07800" size={17} strokeWidth={2.2} />
+          <Sun color="#B07800" size={16} strokeWidth={2.2} />
         </View>
       </View>
 
       <ScrollView style={brandStyles.scroll} contentContainerStyle={brandStyles.content} showsVerticalScrollIndicator={false}>
         <View style={brandStyles.searchWrap}>
-          <Search color="#94A3B8" size={17} strokeWidth={2.1} />
+          <Search color="#94A3B8" size={16} strokeWidth={2.1} />
           <TextInput
             value={searchText}
             onChangeText={setSearchText}
@@ -626,13 +626,13 @@ const BatteryBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigation
           <Text style={brandStyles.subtitle}>Browse trusted battery manufacturers</Text>
         </View>
         <View style={brandStyles.toolIcon}>
-          <BatteryCharging color="#B07800" size={17} strokeWidth={2.2} />
+          <BatteryCharging color="#B07800" size={16} strokeWidth={2.2} />
         </View>
       </View>
 
       <ScrollView style={brandStyles.scroll} contentContainerStyle={brandStyles.content} showsVerticalScrollIndicator={false}>
         <View style={brandStyles.searchWrap}>
-          <Search color="#94A3B8" size={17} strokeWidth={2.1} />
+          <Search color="#94A3B8" size={16} strokeWidth={2.1} />
           <TextInput
             value={searchText}
             onChangeText={setSearchText}
@@ -862,7 +862,7 @@ const brandStyles = StyleSheet.create({
   },
   titleBlock: { flex: 1, alignItems: 'center', paddingHorizontal: 8 },
   title: { color: '#172031', fontSize: 14, fontWeight: '900' },
-  subtitle: { color: '#64748B', fontSize: 10.5, fontWeight: '700', marginTop: 3 },
+  subtitle: { color: '#64748B', fontSize: 11, fontWeight: '700', marginTop: 3 },
   toolIcon: {
     width: 34,
     height: 34,
@@ -946,8 +946,8 @@ const brandStyles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 3
   },
-  warrantyBig: { color: '#B07800', fontSize: 17, fontWeight: '900', lineHeight: 18 },
-  warrantyText: { color: '#7A5610', textAlign: 'center', fontSize: 6.5, fontWeight: '900', lineHeight: 8 },
+  warrantyBig: { color: '#B07800', fontSize: 18, fontWeight: '900', lineHeight: 18 },
+  warrantyText: { color: '#7A5610', textAlign: 'center', fontSize: 10, fontWeight: '900', lineHeight: 8 },
   heroLeft: { position: 'absolute', left: 16, top: 14, width: '54%', zIndex: 2 },
   heroPremiumPill: {
     alignSelf: 'flex-start',
@@ -958,10 +958,10 @@ const brandStyles = StyleSheet.create({
     paddingHorizontal: 8,
     marginBottom: 6
   },
-  heroPremiumText: { color: '#B07800', fontSize: 8.5, fontWeight: '900' },
+  heroPremiumText: { color: '#B07800', fontSize: 10, fontWeight: '900' },
   heroHeading: { color: '#111827', fontSize: 20, lineHeight: 22, fontWeight: '900' },
   heroAccent: { color: '#E8A400' },
-  heroSubtitle: { color: '#334155', fontSize: 10.5, lineHeight: 14, fontWeight: '700', marginTop: 6 },
+  heroSubtitle: { color: '#334155', fontSize: 11, lineHeight: 14, fontWeight: '700', marginTop: 6 },
   productStage: {
     position: 'absolute',
     right: 18,
@@ -1032,7 +1032,7 @@ const brandStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center'
   },
-  heroBadgeText: { flex: 1, color: '#172031', fontSize: 7.5, lineHeight: 9, fontWeight: '900' },
+  heroBadgeText: { flex: 1, color: '#172031', fontSize: 10, lineHeight: 9, fontWeight: '900' },
   searchWrap: {
     height: 43,
     borderRadius: 13,
@@ -1045,7 +1045,7 @@ const brandStyles = StyleSheet.create({
     gap: 9,
     marginBottom: 12
   },
-  searchInput: { flex: 1, color: '#172031', fontSize: 12.5, fontWeight: '700' },
+  searchInput: { flex: 1, color: '#172031', fontSize: 13, fontWeight: '700' },
   chips: { flexDirection: 'row', gap: 8, marginBottom: 13 },
   chip: {
     height: 32,
@@ -1105,9 +1105,9 @@ const brandStyles = StyleSheet.create({
   premiumBadge: { backgroundColor: '#FFF1CC' },
   gridBadge: { backgroundColor: '#E0F2FE' },
   popularBadge: { backgroundColor: '#FDECC8' },
-  badgeText: { color: '#0F1E33', fontSize: 7.5, fontWeight: '900' },
-  brandTitle: { color: '#172031', fontSize: 11.3, fontWeight: '900', marginBottom: 3 },
-  brandDescription: { color: '#64748B', fontSize: 10.2, fontWeight: '700' },
+  badgeText: { color: '#0F1E33', fontSize: 10, fontWeight: '900' },
+  brandTitle: { color: '#172031', fontSize: 11, fontWeight: '900', marginBottom: 3 },
+  brandDescription: { color: '#64748B', fontSize: 10, fontWeight: '700' },
   trustStrip: {
     marginTop: 14,
     minHeight: 42,
@@ -1121,7 +1121,7 @@ const brandStyles = StyleSheet.create({
     paddingHorizontal: 7
   },
   trustItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  trustText: { color: '#334155', fontSize: 9.3, fontWeight: '800' },
+  trustText: { color: '#334155', fontSize: 10, fontWeight: '800' },
   bottomNav: {
     position: 'absolute',
     left: 0,

@@ -143,7 +143,7 @@ const ElectricHeroCta = ({ onPress }: { onPress: () => void }) => {
         <View style={s.heroCtaIconWrap}>
           <Reanimated.View pointerEvents="none" style={[s.heroCtaIconHalo, iconPulseStyle]} />
           <Reanimated.View style={iconStyle}>
-            <Zap color="#B07800" size={13} fill="#B07800" />
+            <Zap color="#B07800" size={12} fill="#B07800" />
           </Reanimated.View>
         </View>
       </View>
@@ -176,7 +176,7 @@ const CategoryCard = ({ item, onPress }: { item: typeof MARKETPLACE_CATEGORIES[0
           <Text style={s.catMeta} numberOfLines={1}>{t(item.subtitleKey)}</Text>
         </View>
         <View style={s.catArrow}>
-          <ChevronRight color="#B07800" size={15} strokeWidth={2.4} />
+          <ChevronRight color="#B07800" size={16} strokeWidth={2.4} />
         </View>
       </View>
     </Pressable>
@@ -290,7 +290,7 @@ const ContinuePlanBar = ({
         <ArrowRight color="#3f2a00" size={14} strokeWidth={2.5} />
       </Pressable>
       <Pressable style={s.planDismiss} onPress={dismiss} hitSlop={8}>
-        <X color="#6B7280" size={13} strokeWidth={2.4} />
+        <X color="#6B7280" size={12} strokeWidth={2.4} />
       </Pressable>
     </Animated.View>
   );
@@ -318,7 +318,7 @@ const ActiveJourneyBar = ({ booking, navigation, bottomOffset }: { booking: Surv
   return (
     <Animated.View style={[s.journeyBar, { bottom: bottomOffset, opacity: entrance, transform: [{ translateY: entrance.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] }]}>
       <View style={s.journeyIcon}>
-        <ClipboardCheck color="#128A3E" size={21} strokeWidth={2.3} />
+        <ClipboardCheck color="#128A3E" size={20} strokeWidth={2.3} />
       </View>
       <View style={s.journeyCopy}>
         <Text style={s.journeyTitle}>{t('survey.mySolarJourney')}</Text>
@@ -334,7 +334,7 @@ const ActiveJourneyBar = ({ booking, navigation, bottomOffset }: { booking: Surv
       </View>
       <Pressable style={s.journeyCta} onPress={() => navigation.navigate('MyProject')}>
         <Text style={s.journeyCtaText}>{t('home.viewProgress')}</Text>
-        <ArrowRight color="#493000" size={13} strokeWidth={2.7} />
+        <ArrowRight color="#493000" size={12} strokeWidth={2.7} />
       </Pressable>
     </Animated.View>
   );
@@ -562,13 +562,13 @@ export const HomeScreen = ({ navigation }: any) => {
         <View style={s.heroContent}>
           <View style={s.heroBullet}>
             <View style={s.bulletBadge}>
-              <Zap color="#B07800" size={11} fill="#B07800" />
+              <Zap color="#B07800" size={12} fill="#B07800" />
             </View>
             <Text style={s.bulletText}>{t('home.estimateLoad')}</Text>
           </View>
           <View style={s.heroBullet}>
             <View style={[s.bulletBadge, s.bulletBadgeGreen]}>
-              <HomeIcon color="#128A3E" size={11} strokeWidth={2.4} />
+              <HomeIcon color="#128A3E" size={12} strokeWidth={2.4} />
             </View>
             <Text style={s.bulletText}>{t('home.designSystem')}</Text>
           </View>
@@ -590,7 +590,7 @@ export const HomeScreen = ({ navigation }: any) => {
             onPress={() => navigation.navigate(a.id === 'roof-space' ? 'RoofSpaceTool' : a.id === 'roi' ? 'ROICalculator' : a.id === 'solar-size' ? 'SolarSizeTool' : a.id === 'battery-size' ? 'BatterySizeTool' : 'DesignFlow')}
           >
             <View style={s.qaIcon}>
-              <a.Icon color="#B07800" size={19} strokeWidth={1.9} />
+              <a.Icon color="#B07800" size={20} strokeWidth={1.9} />
             </View>
             <Text style={s.qaLabel} numberOfLines={2}>{t(a.labelKey)}</Text>
           </Pressable>
@@ -606,7 +606,7 @@ export const HomeScreen = ({ navigation }: any) => {
             <Text style={s.maintTitle}>{t('services.preventiveMaintenance')}</Text>
             <View style={s.maintCta}>
               <Text style={s.maintCtaText}>{t('tools.checkSolarHealth')}</Text>
-              <ChevronRight color="#201503" size={11} strokeWidth={2.8} />
+              <ChevronRight color="#201503" size={12} strokeWidth={2.8} />
             </View>
           </View>
         </ImageBackground>
@@ -708,7 +708,7 @@ const s = StyleSheet.create({
     gap: 4,
   },
   logoImg: { width: 31, height: 30, opacity: 0.96 },
-  logoText: { fontSize: 21, fontWeight: '900', lineHeight: 24, letterSpacing: -0.6 },
+  logoText: { fontSize: 22, fontWeight: '900', lineHeight: 24, letterSpacing: -0.6 },
   logoTextKaam: { color: '#08213F' },
   logoTextAsaan: { color: '#E8A000' },
   drawerBackdrop: {
@@ -747,7 +747,7 @@ const s = StyleSheet.create({
   },
   drawerBrandText: {
     flexShrink: 1,
-    fontSize: 23,
+    fontSize: 24,
     lineHeight: 28,
     fontWeight: '900',
     letterSpacing: -0.4,
@@ -814,7 +814,7 @@ const s = StyleSheet.create({
   },
   drawerFooterBrand: {
     color: '#0F172A',
-    fontSize: 14.5,
+    fontSize: 15,
     fontWeight: '800',
   },
   drawerFooterText: {
@@ -1001,11 +1001,11 @@ const s = StyleSheet.create({
     borderColor: 'rgba(255,234,177,0.36)',
     backgroundColor: 'rgba(255,255,255,0.16)',
     color: 'rgba(255,245,214,0.96)',
-    fontSize: 8,
+    fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.8,
   },
-  maintTitle: { width: 140, color: '#FFFAF0', fontSize: 19, fontWeight: '900', lineHeight: 20, letterSpacing: -0.7 },
+  maintTitle: { width: 140, color: '#FFFAF0', fontSize: 20, fontWeight: '900', lineHeight: 20, letterSpacing: -0.7 },
   maintCta: {
     alignSelf: 'flex-start',
     minHeight: 29,
@@ -1087,7 +1087,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(247,181,0,0.16)',
   },
   whyCheckMark: { color: '#B77900', fontSize: 12, fontWeight: '900' },
-  whyItemText: { color: '#111827', fontSize: 11.5, fontWeight: '700' },
+  whyItemText: { color: '#111827', fontSize: 12, fontWeight: '700' },
   whyBtn: {
     height: 40,
     borderRadius: 14,
@@ -1132,7 +1132,7 @@ const s = StyleSheet.create({
     color: '#8a6400',
     lineHeight: 15,
   },
-  planSummary: { fontSize: 12.5, fontWeight: '600', color: '#111827', lineHeight: 16 },
+  planSummary: { fontSize: 13, fontWeight: '600', color: '#111827', lineHeight: 16 },
   planProgress: {
     height: 4,
     borderRadius: 999,
@@ -1202,12 +1202,12 @@ const s = StyleSheet.create({
     backgroundColor: '#ECFDF3',
   },
   journeyCopy: { flex: 1, minWidth: 0 },
-  journeyTitle: { color: '#10213A', fontSize: 13.5, fontWeight: '900' },
+  journeyTitle: { color: '#10213A', fontSize: 14, fontWeight: '900' },
   journeySubtitle: { marginTop: 2, color: '#526174', fontSize: 11, fontWeight: '700' },
   journeyMeta: { marginTop: 5, flexDirection: 'row', alignItems: 'center', gap: 5 },
-  journeyReference: { color: '#128A3E', fontSize: 9.5, fontWeight: '900' },
+  journeyReference: { color: '#128A3E', fontSize: 10, fontWeight: '900' },
   journeyMetaDot: { width: 3, height: 3, borderRadius: 999, backgroundColor: '#C4A86A' },
-  journeyStatus: { color: '#8A6400', fontSize: 9.5, fontWeight: '800' },
+  journeyStatus: { color: '#8A6400', fontSize: 10, fontWeight: '800' },
   journeyProgress: { height: 3, marginTop: 6, overflow: 'hidden', borderRadius: 999, backgroundColor: '#ECE7DD' },
   journeyProgressFill: { height: '100%', borderRadius: 999, backgroundColor: '#F5A623' },
   journeyCta: {
@@ -1219,5 +1219,5 @@ const s = StyleSheet.create({
     paddingHorizontal: 9,
     paddingVertical: 9,
   },
-  journeyCtaText: { color: '#493000', fontSize: 9.5, fontWeight: '900' },
+  journeyCtaText: { color: '#493000', fontSize: 10, fontWeight: '900' },
 });

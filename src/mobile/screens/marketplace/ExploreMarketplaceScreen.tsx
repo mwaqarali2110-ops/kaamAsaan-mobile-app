@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start'
   },
   headerTitle: {
-    fontSize: 27,
+    fontSize: 28,
     fontWeight: '900',
     color: '#071B33',
     lineHeight: 34

@@ -12,7 +12,7 @@ export const AuthShell = ({ title, subtitle, onBack, children }: { title: string
         <View style={styles.topBar}>
           {onBack ? (
             <Pressable style={styles.backButton} onPress={onBack} accessibilityLabel="Back">
-              <ArrowLeft size={21} color="#10213A" strokeWidth={2.5} />
+              <ArrowLeft size={20} color="#10213A" strokeWidth={2.5} />
             </Pressable>
           ) : <View style={styles.backSpacer} />}
           <View style={styles.brandMark}><Sun size={20} color="#F5A400" strokeWidth={2.5} /></View>
@@ -44,7 +44,7 @@ export const AuthField = <T extends FieldValues>({
       <View style={styles.fieldBlock}>
         <Text style={styles.label}>{label}</Text>
         <View style={[styles.inputWrap, error && styles.inputWrapError]}>
-          <Icon size={17} color="#8A6A16" strokeWidth={2.1} />
+          <Icon size={16} color="#8A6A16" strokeWidth={2.1} />
           <TextInput
             {...props}
             style={styles.input}
@@ -87,21 +87,21 @@ const styles = StyleSheet.create({
   backButton: { width: 42, height: 42, borderRadius: 14, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', elevation: 2 },
   backSpacer: { width: 42 },
   brandMark: { width: 42, height: 42, borderRadius: 14, borderWidth: 1, borderColor: '#F1D99C', backgroundColor: '#FFF9E9', alignItems: 'center', justifyContent: 'center' },
-  title: { color: '#10213A', fontSize: 27, fontWeight: '900', letterSpacing: -0.7 },
-  subtitle: { marginTop: 6, marginBottom: 18, color: '#64748B', fontSize: 13.5, lineHeight: 19, fontWeight: '600' },
+  title: { color: '#10213A', fontSize: 28, fontWeight: '900', letterSpacing: -0.7 },
+  subtitle: { marginTop: 6, marginBottom: 18, color: '#64748B', fontSize: 14, lineHeight: 19, fontWeight: '600' },
   card: { gap: 12, borderRadius: 20, borderWidth: 1, borderColor: '#E8DED2', backgroundColor: '#FFFFFF', padding: 16, elevation: 2 },
   fieldBlock: { gap: 6 },
-  label: { color: '#10213A', fontSize: 12.5, fontWeight: '900' },
+  label: { color: '#10213A', fontSize: 13, fontWeight: '900' },
   inputWrap: { height: 46, flexDirection: 'row', alignItems: 'center', gap: 9, borderRadius: 13, borderWidth: 1, borderColor: '#E5DED3', backgroundColor: '#FFFEFB', paddingHorizontal: 12 },
   inputWrapError: { borderColor: '#D9534F' },
-  input: { flex: 1, color: '#10213A', fontSize: 13.5, fontWeight: '600' },
-  error: { color: '#C2413B', fontSize: 10.5, fontWeight: '700' },
+  input: { flex: 1, color: '#10213A', fontSize: 14, fontWeight: '600' },
+  error: { color: '#C2413B', fontSize: 11, fontWeight: '700' },
   message: { borderRadius: 11, backgroundColor: '#FEF2F2', padding: 10, color: '#B42318', fontSize: 12, fontWeight: '700', lineHeight: 17 },
   messageSuccess: { backgroundColor: '#ECFDF3', color: '#027A48' },
   submit: { height: 48, marginTop: 3, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F7B500' },
   submitDisabled: { opacity: 0.6 },
   submitText: { color: '#10213A', fontSize: 14, fontWeight: '900' },
-  link: { color: '#9A6C00', textAlign: 'center', fontSize: 12.5, fontWeight: '800' }
+  link: { color: '#9A6C00', textAlign: 'center', fontSize: 13, fontWeight: '800' }
 });
 
 export const authStyles = styles;

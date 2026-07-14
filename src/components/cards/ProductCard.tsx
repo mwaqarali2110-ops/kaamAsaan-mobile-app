@@ -26,7 +26,7 @@ export const ProductCard = ({ product, selected, compared, onPress, onCompare }:
       <View className="ml-3 flex-1">
         <View className="flex-row items-start">
           <Text className="flex-1 text-sm font-extrabold text-kaam-navy">{product.name}</Text>
-          <Bookmark size={17} color={selected ? colors.amber : colors.muted} fill={selected ? colors.amber : 'none'} />
+          <Bookmark size={16} color={selected ? colors.amber : colors.muted} fill={selected ? colors.amber : 'none'} />
         </View>
         <View className="mt-2 flex-row flex-wrap gap-1">
           {product.specs.slice(0, 3).map((spec) => (

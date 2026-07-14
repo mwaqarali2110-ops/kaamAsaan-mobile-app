@@ -52,7 +52,7 @@ export const LiveTrackingScreen = ({ navigation }: any) => (
               <View key={step.title} style={styles.timelineRow}>
                 <View style={styles.markerColumn}>
                   <View style={[styles.marker, done && styles.markerDone, active && styles.markerActive]}>
-                    {done ? <Check color="#FFFFFF" size={11} strokeWidth={3} /> : null}
+                    {done ? <Check color="#FFFFFF" size={12} strokeWidth={3} /> : null}
                   </View>
                   {index < steps.length - 1 ? <View style={[styles.timelineLine, (done || active) && styles.timelineLineActive]} /> : null}
                 </View>
@@ -72,13 +72,13 @@ export const LiveTrackingScreen = ({ navigation }: any) => (
       </View>
 
       <View style={styles.infoCard}>
-        <Info color="#9B845F" size={15} strokeWidth={2} />
+        <Info color="#9B845F" size={16} strokeWidth={2} />
         <Text style={styles.infoText}>You will receive an SMS notification when your technician arrives. The service report will be uploaded here after completion.</Text>
       </View>
     </ScrollView>
 
     <Pressable style={styles.chatButton} accessibilityLabel="WhatsApp help">
-      <MessageCircle color="#FFFFFF" size={19} strokeWidth={2.2} />
+      <MessageCircle color="#FFFFFF" size={20} strokeWidth={2.2} />
     </Pressable>
 
     <View style={styles.footer}>
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     marginBottom: 14
   },
   etaDot: { width: 9, height: 9, borderRadius: 999, backgroundColor: '#FFD166' },
-  etaText: { color: '#F5A400', fontSize: 10.5, fontWeight: '900' },
+  etaText: { color: '#F5A400', fontSize: 11, fontWeight: '900' },
   techCard: {
     minHeight: 78,
     borderRadius: 14,
@@ -148,8 +148,8 @@ const styles = StyleSheet.create({
   },
   techCopy: { flex: 1, paddingHorizontal: 12 },
   techName: { color: '#020617', fontSize: 13, fontWeight: '900' },
-  techTitle: { marginTop: 3, color: '#334155', fontSize: 10.5, fontWeight: '700' },
-  rating: { marginTop: 7, color: '#F5A400', fontSize: 9.5, fontWeight: '900' },
+  techTitle: { marginTop: 3, color: '#334155', fontSize: 11, fontWeight: '700' },
+  rating: { marginTop: 7, color: '#F5A400', fontSize: 10, fontWeight: '900' },
   ratingMeta: { color: '#172031', fontWeight: '800' },
   callButton: {
     width: 39,
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: -2
   },
-  progressBadgeText: { color: '#F5A400', fontSize: 8.5, fontWeight: '900' },
+  progressBadgeText: { color: '#F5A400', fontSize: 10, fontWeight: '900' },
   infoCard: {
     borderRadius: 10,
     backgroundColor: '#FFFFFF',
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
     padding: 12,
     gap: 9
   },
-  infoText: { flex: 1, color: '#64748B', fontSize: 10.5, lineHeight: 15, fontWeight: '600' },
+  infoText: { flex: 1, color: '#64748B', fontSize: 11, lineHeight: 15, fontWeight: '600' },
   chatButton: {
     position: 'absolute',
     right: 18,

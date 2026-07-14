@@ -42,7 +42,7 @@ export const MaintenancePackagesScreen = ({ navigation }: any) => {
     <SafeAreaView style={styles.shell} edges={['top']}>
       <View style={styles.topBar}>
         <Pressable style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="Back">
-          <ArrowLeft color="#111827" size={19} strokeWidth={2.3} />
+          <ArrowLeft color="#111827" size={20} strokeWidth={2.3} />
         </Pressable>
         <Text style={styles.topTitle}>Maintenance Packages</Text>
         <View style={styles.topSpacer} />
@@ -102,7 +102,7 @@ export const MaintenancePackagesScreen = ({ navigation }: any) => {
       </ScrollView>
 
       <Pressable style={styles.chatButton} accessibilityLabel="WhatsApp help">
-        <MessageCircle color="#FFFFFF" size={19} strokeWidth={2.2} />
+        <MessageCircle color="#FFFFFF" size={20} strokeWidth={2.2} />
       </Pressable>
 
       <View style={styles.footer}>
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   topSpacer: { width: 36 },
   scroll: { flex: 1 },
   content: { paddingHorizontal: 14, paddingTop: 14, paddingBottom: 124 },
-  intro: { color: '#334155', fontSize: 11.4, lineHeight: 17, fontWeight: '600', marginBottom: 10 },
+  intro: { color: '#334155', fontSize: 11, lineHeight: 17, fontWeight: '600', marginBottom: 10 },
   cards: { gap: 8 },
   packageCard: {
     borderRadius: 14,
@@ -165,17 +165,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4
   },
-  recommendedText: { color: '#9B6900', fontSize: 9, fontWeight: '900' },
+  recommendedText: { color: '#9B6900', fontSize: 10, fontWeight: '900' },
   packageHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  packageTitle: { color: '#111827', fontSize: 13.2, fontWeight: '900' },
+  packageTitle: { color: '#111827', fontSize: 13, fontWeight: '900' },
   packageTitleSelected: { color: '#D99A00' },
-  visitText: { marginTop: 2, color: '#334155', fontSize: 9.2, fontWeight: '700' },
+  visitText: { marginTop: 2, color: '#334155', fontSize: 10, fontWeight: '700' },
   priceRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 4 },
-  currency: { marginTop: 6, color: '#172031', fontSize: 9, fontWeight: '900' },
-  price: { color: '#111827', fontSize: 21, lineHeight: 25, fontWeight: '900', letterSpacing: -0.5 },
+  currency: { marginTop: 6, color: '#172031', fontSize: 10, fontWeight: '900' },
+  price: { color: '#111827', fontSize: 22, lineHeight: 25, fontWeight: '900', letterSpacing: -0.5 },
   features: { marginTop: 8, gap: 5 },
   featureRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  featureText: { color: '#334155', fontSize: 10.3, fontWeight: '700' },
+  featureText: { color: '#334155', fontSize: 10, fontWeight: '700' },
   selectButton: {
     height: 26,
     borderRadius: 7,
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   },
   trustItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   trustDot: { width: 7, height: 7, borderRadius: 999, backgroundColor: '#16A34A' },
-  trustText: { color: '#172031', fontSize: 9.5, fontWeight: '800' },
+  trustText: { color: '#172031', fontSize: 10, fontWeight: '800' },
   chatButton: {
     position: 'absolute',
     right: 18,

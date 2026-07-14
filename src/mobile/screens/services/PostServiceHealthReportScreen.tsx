@@ -100,7 +100,7 @@ export const PostServiceHealthReportScreen = ({ navigation }: any) => (
           return (
             <View key={item.title} style={[styles.resultRow, index < diagnostics.length - 1 && styles.resultBorder]}>
               <View style={[styles.resultIcon, healthy ? styles.healthyIcon : styles.attentionIcon]}>
-                <item.Icon color={healthy ? '#22C55E' : '#F5A400'} size={15} strokeWidth={2.2} />
+                <item.Icon color={healthy ? '#22C55E' : '#F5A400'} size={16} strokeWidth={2.2} />
               </View>
               <View style={styles.resultCopy}>
                 <Text style={styles.resultTitle}>{item.title}</Text>
@@ -131,7 +131,7 @@ export const PostServiceHealthReportScreen = ({ navigation }: any) => (
     </ScrollView>
 
     <Pressable style={styles.chatButton} accessibilityLabel="WhatsApp help">
-      <MessageCircle color="#FFFFFF" size={19} strokeWidth={2.2} />
+      <MessageCircle color="#FFFFFF" size={20} strokeWidth={2.2} />
     </Pressable>
 
     <View style={styles.footer}>
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   },
   scoreText: { color: '#22C55E', fontSize: 16, fontWeight: '900' },
   scoreCopy: { flex: 1 },
-  scoreTitle: { color: '#111827', fontSize: 12.5, fontWeight: '900', marginBottom: 8 },
+  scoreTitle: { color: '#111827', fontSize: 13, fontWeight: '900', marginBottom: 8 },
   scoreBadge: {
     alignSelf: 'flex-start',
     borderRadius: 999,
@@ -190,9 +190,9 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', justifyContent: 'space-between' },
   metaItem: { flex: 1 },
   metaRight: { alignItems: 'flex-end' },
-  metaLabel: { color: '#7C6F5F', fontSize: 8.5, fontWeight: '900', letterSpacing: 0.8, marginBottom: 4 },
+  metaLabel: { color: '#7C6F5F', fontSize: 10, fontWeight: '900', letterSpacing: 0.8, marginBottom: 4 },
   metaValue: { color: '#020617', fontSize: 11, fontWeight: '900' },
-  sectionLabel: { color: '#8B7254', fontSize: 10.5, fontWeight: '900', letterSpacing: 2.1, marginBottom: 10 },
+  sectionLabel: { color: '#8B7254', fontSize: 11, fontWeight: '900', letterSpacing: 2.1, marginBottom: 10 },
   resultsCard: {
     borderRadius: 13,
     backgroundColor: '#FFFFFF',
@@ -214,16 +214,16 @@ const styles = StyleSheet.create({
   healthyIcon: { backgroundColor: '#DCFCE7' },
   attentionIcon: { backgroundColor: '#FFF1CC' },
   resultCopy: { flex: 1, paddingRight: 8 },
-  resultTitle: { color: '#111827', fontSize: 11.5, fontWeight: '900', marginBottom: 3 },
-  resultNote: { color: '#334155', fontSize: 9.5, lineHeight: 12, fontWeight: '600' },
+  resultTitle: { color: '#111827', fontSize: 12, fontWeight: '900', marginBottom: 3 },
+  resultNote: { color: '#334155', fontSize: 10, lineHeight: 12, fontWeight: '600' },
   resultValueWrap: { alignItems: 'flex-end', minWidth: 82 },
-  resultValue: { fontSize: 11.5, fontWeight: '900', marginBottom: 5 },
+  resultValue: { fontSize: 12, fontWeight: '900', marginBottom: 5 },
   healthyText: { color: '#16A34A' },
   attentionText: { color: '#F59E0B' },
   statusPill: { borderRadius: 999, paddingHorizontal: 6, paddingVertical: 2 },
   healthyPill: { backgroundColor: '#DFF8E9' },
   attentionPill: { backgroundColor: '#FFF1CC' },
-  statusText: { fontSize: 8.5, fontWeight: '900' },
+  statusText: { fontSize: 10, fontWeight: '900' },
   recommendations: { gap: 9 },
   recommendationRow: {
     minHeight: 41,
@@ -246,8 +246,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 10
   },
-  recommendationNumberText: { color: '#F5A400', fontSize: 9, fontWeight: '900' },
-  recommendationText: { flex: 1, color: '#172031', fontSize: 10.5, lineHeight: 14, fontWeight: '700' },
+  recommendationNumberText: { color: '#F5A400', fontSize: 10, fontWeight: '900' },
+  recommendationText: { flex: 1, color: '#172031', fontSize: 11, lineHeight: 14, fontWeight: '700' },
   chatButton: {
     position: 'absolute',
     right: 17,
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center'
   },
-  membershipText: { color: '#111827', fontSize: 12.5, fontWeight: '900' },
+  membershipText: { color: '#111827', fontSize: 13, fontWeight: '900' },
   downloadButton: {
     height: 39,
     borderRadius: 11,
@@ -294,5 +294,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8
   },
-  downloadText: { color: '#172031', fontSize: 11.5, fontWeight: '900' }
+  downloadText: { color: '#172031', fontSize: 12, fontWeight: '900' }
 });

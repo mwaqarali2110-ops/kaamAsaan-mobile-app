@@ -22,7 +22,7 @@ module.exports = {
         xl2: '22px'
       },
       fontFamily: {
-        sans: ['System']
+        sans: ['Roboto', 'System', 'sans-serif']
       }
     }
   },
