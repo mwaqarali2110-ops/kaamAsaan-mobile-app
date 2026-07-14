@@ -1,8 +1,9 @@
 import 'react-native-gesture-handler';
 import './global.css';
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import * as NativeSplashScreen from 'expo-splash-screen';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from '@/mobile/navigation/RootNavigator';
@@ -10,17 +11,28 @@ import { I18nProvider } from '@/i18n/I18nProvider';
 
 const queryClient = new QueryClient();
 
+if (Platform.OS !== 'web') {
+  void NativeSplashScreen.preventAutoHideAsync().catch(() => undefined);
+}
+
 export default function App() {
   const { width } = useWindowDimensions();
+  const handleRootLayout = useCallback(() => {
+    if (Platform.OS !== 'web') {
+      void NativeSplashScreen.hideAsync().catch(() => undefined);
+    }
+  }, []);
   const app = (
-    <QueryClientProvider client={queryClient}>
-      <I18nProvider>
-        <SafeAreaProvider>
-          <StatusBar style="dark" />
-          <RootNavigator />
-        </SafeAreaProvider>
-      </I18nProvider>
-    </QueryClientProvider>
+    <View style={styles.appRoot} onLayout={handleRootLayout}>
+      <QueryClientProvider client={queryClient}>
+        <I18nProvider>
+          <SafeAreaProvider>
+            <StatusBar style="dark" />
+            <RootNavigator />
+          </SafeAreaProvider>
+        </I18nProvider>
+      </QueryClientProvider>
+    </View>
   );
 
   if (Platform.OS !== 'web') return app;
@@ -35,6 +47,10 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  appRoot: {
+    flex: 1,
+    backgroundColor: '#FFF4DC'
+  },
   webStage: {
     minHeight: '100%',
     width: '100%',

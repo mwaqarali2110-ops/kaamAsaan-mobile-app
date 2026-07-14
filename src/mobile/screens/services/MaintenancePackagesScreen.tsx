@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, ArrowRight, Check, MessageCircle, Star } from 'lucide-react-native';
 
 type PackageId = 'basic' | 'smart' | 'complete';
@@ -36,6 +36,8 @@ const packages: Array<{
 const trustItems = ['Certified Technicians', 'PKR Fixed Price', '30-Day Guarantee'];
 
 export const MaintenancePackagesScreen = ({ navigation }: any) => {
+  const insets = useSafeAreaInsets();
+  const safeBottom = insets.bottom || 16;
   const [selected, setSelected] = useState<PackageId>('smart');
 
   return (
@@ -48,7 +50,7 @@ export const MaintenancePackagesScreen = ({ navigation }: any) => {
         <View style={styles.topSpacer} />
       </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: 124 + safeBottom }]} showsVerticalScrollIndicator={false}>
         <Text style={styles.intro}>Select a package based on your system's needs. All visits include a certified KaamAsaan technician.</Text>
 
         <View style={styles.cards}>
@@ -101,11 +103,11 @@ export const MaintenancePackagesScreen = ({ navigation }: any) => {
         </View>
       </ScrollView>
 
-      <Pressable style={styles.chatButton} accessibilityLabel="WhatsApp help">
+      <Pressable style={[styles.chatButton, { bottom: 70 + safeBottom }]} accessibilityLabel="WhatsApp help">
         <MessageCircle color="#FFFFFF" size={19} strokeWidth={2.2} />
       </Pressable>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: 10 + safeBottom }]}>
         <Pressable style={styles.proceedButton} onPress={() => navigation.navigate('BookSurvey')}>
           <Text style={styles.proceedText}>Proceed to Booking</Text>
           <ArrowRight color="#111827" size={18} strokeWidth={2.5} />

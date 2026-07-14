@@ -24,13 +24,14 @@ import Reanimated, {
   withTiming,
 } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useIsFocused } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   ArrowRight,
   Bell,
   Calculator,
+  Check,
   ChevronRight,
   ClipboardCheck,
   Home as HomeIcon,
@@ -43,7 +44,9 @@ import {
   Zap,
 } from 'lucide-react-native';
 import { useActiveSurveyJourney } from '@/hooks/useSurveyJourney';
-import { formatSurveyReference, SurveyJourneyBooking } from '@/services/journey.api';
+import { useLatestUnreadWelcomeNotification, useMarkNotificationRead, useUnreadNotificationsCount } from '@/hooks/useNotifications';
+import { activeSurveyBookingStatuses, formatSurveyReference, SurveyJourneyBooking } from '@/services/journey.api';
+import { openSupportWhatsApp, WELCOME_NOTIFICATION_CTA } from '@/services/notifications.api';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useSystemStore } from '@/store/useSystemStore';
 
@@ -99,6 +102,11 @@ const SERVICES = [
 const WHY_ITEMS = ['home.whyAccurate', 'home.whyPricing', 'home.whySupport'];
 const CTA_CURRENT_DURATION = 2800;
 const CONTINUE_PLAN_DISMISS_KEY = 'kaamasaan.home.continue-plan.dismissed';
+const EXPERT_WHATSAPP_MESSAGE = 'Assalam-o-Alaikum, I need expert guidance to choose the right solar system for my home through the KaamAsaan app.';
+
+if (__DEV__) {
+  console.log('[ANDROID COMPONENT] HomeScreen shared file loaded: src/mobile/screens/home/HomeScreen.tsx');
+}
 
 /* ─── Helpers ─── */
 const navigateToCategory = (navigation: any, id: string) => {
@@ -159,6 +167,15 @@ const SectionHeader = ({ title, action, onPress }: { title: string; action?: str
         <Text style={s.viewAll}>{action}</Text>
       </Pressable>
     ) : null}
+  </View>
+);
+
+const ExpertBenefitRow = ({ label }: { label: string }) => (
+  <View style={s.benefitRow}>
+    <View style={s.checkContainer}>
+      <Check color="#B07800" size={14} strokeWidth={3} />
+    </View>
+    <Text style={s.benefitText}>{label}</Text>
   </View>
 );
 
@@ -299,11 +316,14 @@ const ContinuePlanBar = ({
 const journeyStatusCopy = {
   pending: { subtitleKey: 'home.surveyPending', labelKey: 'home.pendingConfirmation', progress: 12, tone: '#F5A623' },
   confirmed: { subtitleKey: 'home.surveyConfirmedShort', labelKey: 'home.confirmed', progress: 24, tone: '#2563EB' },
-  survey_scheduled: { subtitleKey: 'home.surveyScheduled', labelKey: 'home.surveyScheduledLabel', progress: 36, tone: '#2563EB' },
+  assigned: { subtitleKey: 'home.surveyConfirmedShort', labelKey: 'home.confirmed', progress: 28, tone: '#2563EB' },
+  scheduled: { subtitleKey: 'home.surveyScheduled', labelKey: 'home.surveyScheduledLabel', progress: 36, tone: '#2563EB' },
+  survey_in_progress: { subtitleKey: 'home.surveyScheduled', labelKey: 'home.surveyScheduledLabel', progress: 44, tone: '#0F8B8D' },
   survey_completed: { subtitleKey: 'home.surveyCompleted', labelKey: 'home.surveyCompletedLabel', progress: 50, tone: '#168A4A' },
-  proposal_preparation: { subtitleKey: 'home.proposalPreparing', labelKey: 'home.proposalPreparation', progress: 62, tone: '#E87916' },
-  quotation_shared: { subtitleKey: 'home.quotationShared', labelKey: 'home.quotationSharedLabel', progress: 74, tone: '#7C3AED' },
-  installation_planning: { subtitleKey: 'home.installationPlanning', labelKey: 'home.installationPlanningLabel', progress: 88, tone: '#0F8B8D' }
+  design_in_progress: { subtitleKey: 'home.proposalPreparing', labelKey: 'home.proposalPreparation', progress: 62, tone: '#E87916' },
+  quotation_ready: { subtitleKey: 'home.quotationShared', labelKey: 'home.quotationSharedLabel', progress: 74, tone: '#7C3AED' },
+  installation_scheduled: { subtitleKey: 'home.installationPlanning', labelKey: 'home.installationPlanningLabel', progress: 82, tone: '#0F8B8D' },
+  installation_in_progress: { subtitleKey: 'home.installationPlanning', labelKey: 'home.installationPlanningLabel', progress: 88, tone: '#0F8B8D' }
 } as const;
 
 const ActiveJourneyBar = ({ booking, navigation, bottomOffset }: { booking: SurveyJourneyBooking; navigation: any; bottomOffset: number }) => {
@@ -354,9 +374,12 @@ const HomeMenuModal = ({
   const drawerWidth = Math.round(width * 0.8);
   const drawerItems = [
     { label: 'Home', route: 'Home' },
+    { label: 'How it works', route: 'HowItWorks' },
     { label: 'Marketplace', route: 'Marketplace' },
     { label: 'Design System', route: 'DesignSystem' },
     { label: 'My Project', route: 'MyProject' },
+    { label: 'Complaint', route: 'Complaint' },
+    { label: 'Help Center', route: 'HelpCenter' },
     { label: 'Profile', route: 'Profile' },
   ];
   const secondaryItems = [
@@ -367,9 +390,12 @@ const HomeMenuModal = ({
   const navigateToCorrectRoute = (route: string) => {
     const routeMap: Record<string, () => void> = {
       Home: () => navigation.navigate('Home'),
+      HowItWorks: () => navigation.navigate('HowItWorks'),
       Marketplace: () => navigation.navigate('Marketplace'),
       DesignSystem: () => navigation.navigate('DesignFlow'),
       MyProject: () => navigation.navigate('MyProject'),
+      Complaint: () => navigation.navigate('Complaint'),
+      HelpCenter: () => navigation.navigate('HelpCenter'),
       Profile: () => navigation.navigate('Profile'),
       Settings: () => navigation.navigate('Profile'),
       SolarCare: () => navigation.navigate('PreventiveMaintenance'),
@@ -450,9 +476,13 @@ export const HomeScreen = ({ navigation }: any) => {
   const userId = useAuthStore((state) => state.session?.user.id);
   const isFocused = useIsFocused();
   const journeyQuery = useActiveSurveyJourney(userId);
+  const unreadNotificationsQuery = useUnreadNotificationsCount(userId);
+  const welcomeNotificationQuery = useLatestUnreadWelcomeNotification(userId);
+  const markNotificationRead = useMarkNotificationRead(userId);
   const [menuOpen, setMenuOpen] = useState(false);
   const [continuePlanDismissed, setContinuePlanDismissed] = useState(false);
-  const unreadNotifications = 0;
+  const [expertOpinionPressed, setExpertOpinionPressed] = useState(false);
+  const unreadNotifications = unreadNotificationsQuery.data ?? 0;
   const appliances = useSystemStore((state) => state.appliances);
   const backupAppliances = useSystemStore((state) => state.backupAppliances);
   const recommendedSolarKw = useSystemStore((state) => state.recommendedSolarKw);
@@ -467,13 +497,28 @@ export const HomeScreen = ({ navigation }: any) => {
     if (isFocused && userId) void journeyQuery.refetch();
   }, [isFocused, journeyQuery.refetch, userId]);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      if (userId) void journeyQuery.refetch();
+    }, [journeyQuery.refetch, userId])
+  );
+
+  useEffect(() => {
+    if (!isFocused || !userId) return;
+    void unreadNotificationsQuery.refetch();
+    void welcomeNotificationQuery.refetch();
+  }, [isFocused, unreadNotificationsQuery.refetch, userId, welcomeNotificationQuery.refetch]);
+
   useEffect(() => {
     void AsyncStorage.getItem(CONTINUE_PLAN_DISMISS_KEY).then((value) => {
       setContinuePlanDismissed(value === 'true');
     });
   }, []);
 
-  const activeJourney = journeyQuery.data;
+  const activeJourney = journeyQuery.data && activeSurveyBookingStatuses.includes(journeyQuery.data.status)
+    ? journeyQuery.data
+    : null;
+  const shouldShowJourneyCard = Boolean(activeJourney);
   const designProgress = useMemo(() => {
     const hasLoad = appliances.some((item) => item.quantity > 0);
     const hasBackupLoad = backupAppliances.some((item) => item.quantity > 0);
@@ -509,7 +554,7 @@ export const HomeScreen = ({ navigation }: any) => {
   ]);
   const showContinuePlan = !activeJourney && designProgress.started && !designProgress.completed && !continuePlanDismissed;
   const floatingBottom = Math.max(10, insets.bottom + 10);
-  const scrollBottomPadding = (activeJourney ? 154 : showContinuePlan ? 126 : 34) + insets.bottom;
+  const scrollBottomPadding = (shouldShowJourneyCard ? 154 : showContinuePlan ? 126 : 34) + insets.bottom;
 
   const dismissContinuePlan = () => {
     setContinuePlanDismissed(true);
@@ -518,6 +563,17 @@ export const HomeScreen = ({ navigation }: any) => {
 
   const openMenu = () => {
     setMenuOpen(true);
+  };
+
+  const openWelcomeNotification = async () => {
+    const notification = welcomeNotificationQuery.data;
+    if (!notification) return;
+    if (!notification.isRead) await markNotificationRead.mutateAsync(notification.id);
+    await openSupportWhatsApp(notification.actionValue ?? undefined);
+  };
+
+  const handleExpertOpinion = () => {
+    void openSupportWhatsApp(EXPERT_WHATSAPP_MESSAGE);
   };
 
   return (
@@ -578,6 +634,20 @@ export const HomeScreen = ({ navigation }: any) => {
       </View>
 
       {/* 2 ── Trusted Brands */}
+      {welcomeNotificationQuery.data ? (
+        <Pressable style={({ pressed }) => [s.welcomeBanner, pressed && s.welcomeBannerPressed]} onPress={() => void openWelcomeNotification()}>
+          <View style={s.welcomeIcon}>
+            <Bell color="#B07800" size={18} strokeWidth={2.4} />
+            <View style={s.welcomeUnreadDot} />
+          </View>
+          <View style={s.welcomeCopy}>
+            <Text style={s.welcomeTitle} numberOfLines={1}>{welcomeNotificationQuery.data.title}</Text>
+            <Text style={s.welcomeText} numberOfLines={2}>{welcomeNotificationQuery.data.message}</Text>
+          </View>
+          <Text style={s.welcomeCta} numberOfLines={1}>{WELCOME_NOTIFICATION_CTA}</Text>
+        </Pressable>
+      ) : null}
+
       <BrandMarquee />
 
       {/* 3 ── Smart Tools */}
@@ -632,28 +702,37 @@ export const HomeScreen = ({ navigation }: any) => {
         ))}
       </ScrollView>
 
-      {/* 7 ── Why KaamAsaan */}
-      <View style={s.whyCard}>
-        <Text style={s.whyTitle}>{t('home.whyTitle')}</Text>
-        <Text style={s.whyCopy}>{t('home.whyCopy')}</Text>
-        <View style={s.whyList}>
-          {WHY_ITEMS.map((item) => (
-            <View key={item} style={s.whyItem}>
-              <View style={s.whyCheck}>
-                <Text style={s.whyCheckMark}>✓</Text>
-              </View>
-              <Text style={s.whyItemText}>{t(item)}</Text>
-            </View>
-          ))}
+      {/* 7 ── Expert consultation */}
+      <View style={s.expertCardWrap}>
+        <View style={s.expertCard}>
+          <Text style={s.expertTitle}>{t('home.whyTitle')}</Text>
+          <Text style={s.expertDescription}>{t('home.whyCopy')}</Text>
+
+          <View style={s.benefitsContainer}>
+            {WHY_ITEMS.map((item) => (
+              <ExpertBenefitRow key={item} label={t(item)} />
+            ))}
+          </View>
+
+          <Pressable
+            onPress={handleExpertOpinion}
+            onPressIn={() => setExpertOpinionPressed(true)}
+            onPressOut={() => setExpertOpinionPressed(false)}
+            style={[
+              s.expertOpinionButton,
+              expertOpinionPressed && s.expertOpinionButtonPressed,
+            ]}
+            accessibilityRole="button"
+          >
+            <Text style={s.expertOpinionButtonText}>Get Expert Opinion</Text>
+            <ArrowRight size={18} color="#10233F" strokeWidth={2.5} />
+          </Pressable>
         </View>
-        <Pressable style={s.whyBtn} onPress={() => navigation.navigate('DesignFlow')}>
-          <Text style={s.whyBtnText}>{t('home.getExpertOpinion')}</Text>
-        </Pressable>
       </View>
     </ScrollView>
 
     {/* ══ Continue Plan Floating Bar ══ */}
-    {activeJourney ? (
+    {shouldShowJourneyCard && activeJourney ? (
       <ActiveJourneyBar booking={activeJourney} navigation={navigation} bottomOffset={floatingBottom} />
     ) : showContinuePlan ? (
       <ContinuePlanBar navigation={navigation} progress={designProgress} onDismiss={dismissContinuePlan} bottomOffset={floatingBottom} />
@@ -698,6 +777,49 @@ const s = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#FFFFFF',
   },
+  welcomeBanner: {
+    marginTop: 12,
+    marginHorizontal: 18,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#F0D69A',
+    backgroundColor: '#FFF9EA',
+    paddingHorizontal: 13,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    shadowColor: '#7A4E00',
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 2,
+  },
+  welcomeBannerPressed: { opacity: 0.88 },
+  welcomeIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F1DCA8',
+    position: 'relative',
+  },
+  welcomeUnreadDot: {
+    position: 'absolute',
+    right: 5,
+    top: 5,
+    width: 7,
+    height: 7,
+    borderRadius: 7,
+    backgroundColor: '#FF6B35',
+  },
+  welcomeCopy: { flex: 1 },
+  welcomeTitle: { color: '#10213A', fontSize: 13, fontWeight: '900' },
+  welcomeText: { marginTop: 2, color: '#64748B', fontSize: 11, fontWeight: '700', lineHeight: 15 },
+  welcomeCta: { maxWidth: 92, color: '#128C4A', fontSize: 11, fontWeight: '900', textAlign: 'right' },
   logoWrap: {
     position: 'absolute',
     left: 0,
@@ -1059,48 +1181,84 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(245,166,35,0.13)',
   },
 
-  /* Why KaamAsaan */
-  whyCard: {
+  /* Expert consultation */
+  expertCardWrap: {
     marginHorizontal: 14,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(247,181,0,0.16)',
+    marginTop: 18,
+    marginBottom: 20,
+  },
+  expertCard: {
+    width: '100%',
     backgroundColor: '#FFFFFF',
-    gap: 8,
-    shadowColor: '#78520A',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 22,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#E8D9B6',
+    padding: 16,
     elevation: 2,
   },
-  whyTitle: { color: '#111827', fontSize: 15, fontWeight: '800', lineHeight: 19 },
-  whyCopy: { color: '#6B7280', fontSize: 12, lineHeight: 16 },
-  whyList: { gap: 6 },
-  whyItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  whyCheck: {
-    width: 18,
-    height: 18,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(247,181,0,0.16)',
+  expertTitle: {
+    color: '#10233F',
+    fontSize: 18,
+    lineHeight: 23,
+    fontWeight: '800',
   },
-  whyCheckMark: { color: '#B77900', fontSize: 12, fontWeight: '900' },
-  whyItemText: { color: '#111827', fontSize: 11.5, fontWeight: '700' },
-  whyBtn: {
-    height: 40,
+  expertDescription: {
+    color: '#687386',
+    fontSize: 13.5,
+    lineHeight: 19,
+    marginTop: 6,
+  },
+  benefitsContainer: {
+    marginTop: 14,
+  },
+  benefitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 34,
+    marginBottom: 6,
+  },
+  checkContainer: {
+    width: 28,
+    height: 28,
     borderRadius: 14,
-    backgroundColor: '#F7B500',
+    backgroundColor: '#FFF5CF',
+    borderWidth: 1,
+    borderColor: '#E7C548',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#F7B500',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.24,
-    shadowRadius: 18,
-    elevation: 3,
+    flexShrink: 0,
   },
-  whyBtnText: { color: '#17212F', fontSize: 12, fontWeight: '700' },
+  benefitText: {
+    marginLeft: 10,
+    color: '#10233F',
+    fontSize: 14,
+    lineHeight: 19,
+    fontWeight: '600',
+    flexShrink: 1,
+  },
+  expertOpinionButton: {
+    width: '100%',
+    minHeight: 46,
+    marginTop: 14,
+    borderRadius: 13,
+    backgroundColor: '#F7B801',
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  expertOpinionButtonText: {
+    color: '#10233F',
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '800',
+    marginRight: 8,
+    textAlign: 'center',
+  },
+  expertOpinionButtonPressed: {
+    opacity: 0.85,
+  },
 
   /* Continue Plan Bar */
   planBar: {

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AirVent, ArrowLeft, ArrowRight, ChevronUp, Home, Lightbulb, MessageCircle, Plus, Refrigerator, Shirt, Sun, Zap } from 'lucide-react-native';
 import type { Appliance } from '@/types/system.types';
 import { calculateLoadKw, recommendSolarKw } from '@/utils/calculations';
@@ -29,6 +30,8 @@ const iconMap: Record<string, any> = {
 };
 
 export const SolarSizeToolScreen = ({ navigation }: any) => {
+  const insets = useSafeAreaInsets();
+  const safeBottom = insets.bottom || 16;
   const [appliances, setAppliances] = useState(starterAppliances);
   const [showResult, setShowResult] = useState(false);
   const setRecommendedSolarKw = useSystemStore((state) => state.setRecommendedSolarKw);
@@ -72,7 +75,7 @@ export const SolarSizeToolScreen = ({ navigation }: any) => {
         />
       ) : (
         <>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingBottom: 96 + safeBottom }]}>
         <View style={styles.headingBlock}>
           <Text style={styles.heading}>Which appliances{'\n'}do you use <Text style={styles.headingAccent}>during the day?</Text></Text>
           <Text style={styles.subtitle}>Select the appliances that apply to you</Text>
@@ -96,7 +99,7 @@ export const SolarSizeToolScreen = ({ navigation }: any) => {
 
           </ScrollView>
 
-          <View style={styles.footer}>
+          <View style={[styles.footer, { paddingBottom: 12 + safeBottom }]}>
             <Pressable style={styles.calculateButton} onPress={calculateLoad}>
               <Text style={styles.calculateText}>Calculate Load</Text>
             </Pressable>

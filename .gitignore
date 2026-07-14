@@ -4,3 +4,8 @@ node_modules/
 .expo/
 node_modules/
 Mobile App.zip
+
+.env
+.env.local
+.env*.local
+.env.*.local

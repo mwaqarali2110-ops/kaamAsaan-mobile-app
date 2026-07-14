@@ -81,6 +81,20 @@ export const ProfileScreen = ({ navigation }: any) => {
     setMessage(t('profile.languageChanged'));
   };
 
+  const handleSignOut = async () => {
+    setError('');
+    try {
+      await signOut();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : t('errors.logoutFailed'));
+    } finally {
+      rootNavigation?.reset({
+        index: 0,
+        routes: [{ name: 'Login' }]
+      });
+    }
+  };
+
   if (!session) {
     return (
       <SafeAreaView style={styles.safe}>
@@ -121,7 +135,7 @@ export const ProfileScreen = ({ navigation }: any) => {
               <Text style={[styles.eyebrow, rtl && styles.rtlText]}>{t('profile.eyebrow')}</Text>
               <Text style={[styles.title, rtl && styles.rtlText]}>{t('profile.title')}</Text>
             </View>
-            <Pressable disabled={loading} onPress={() => void signOut()} style={styles.logoutIcon} accessibilityLabel={t('profile.logout')}>
+            <Pressable disabled={loading} onPress={() => void handleSignOut()} style={styles.logoutIcon} accessibilityLabel={t('profile.logout')}>
               <LogOut color="#8A6A16" size={19} strokeWidth={2.3} />
             </Pressable>
           </View>

@@ -13,10 +13,16 @@
     },
     "android": {
       "softwareKeyboardLayoutMode": "pan",
+      "backgroundColor": "#FFFBF2",
       "adaptiveIcon": {
         "backgroundColor": "#FFF7E6"
       },
       "package": "com.kaamasaan.mobile"
+    },
+    "androidStatusBar": {
+      "backgroundColor": "#FFFBF2",
+      "barStyle": "dark-content",
+      "translucent": false
     },
     "web": {
       "bundler": "metro"
@@ -29,7 +35,26 @@
     "owner": "mwaqarali2110s-organization",
     "plugins": [
       "expo-video",
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-navigation-bar",
+        {
+          "style": "dark"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./src/assets/onboarding/Splash-Screen-Cart-1-transparent.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#FFF4DC",
+          "dark": {
+            "image": "./src/assets/onboarding/Splash-Screen-Cart-1-transparent.png",
+            "backgroundColor": "#FFF4DC"
+          }
+        }
+      ]
     ]
   }
 }

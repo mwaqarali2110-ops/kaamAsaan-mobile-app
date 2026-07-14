@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, ArrowRight, Building2, CalendarDays, Clock3, Home, Phone, User } from 'lucide-react-native';
 import { useMaintenanceBookingStore } from '@/store/useMaintenanceBookingStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -38,6 +38,8 @@ const Field = ({
 );
 
 export const MaintenanceBookingScreen = ({ navigation, route }: any) => {
+  const insets = useSafeAreaInsets();
+  const safeBottom = insets.bottom || 16;
   const userId = useAuthStore((state) => state.session?.user.id);
   const storedPlan = useMaintenanceBookingStore((state) => state.selectedPlan);
   const createBooking = useMaintenanceBookingStore((state) => state.createBooking);
@@ -100,7 +102,7 @@ export const MaintenanceBookingScreen = ({ navigation, route }: any) => {
       </View>
 
       <KeyboardAvoidingView style={styles.keyboard} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: 112 + safeBottom }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           {plan ? (
             <View style={styles.planStrip}>
               <Text style={styles.planTitle}>{plan.title}</Text>
@@ -118,7 +120,7 @@ export const MaintenanceBookingScreen = ({ navigation, route }: any) => {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: 14 + safeBottom }]}>
         <Pressable style={[styles.primaryButton, submitting && styles.primaryButtonDisabled]} onPress={submit} disabled={submitting} accessibilityRole="button">
           <Text style={styles.primaryButtonText}>{submitting ? 'Booking...' : 'Book Maintenance'}</Text>
           <ArrowRight color="#10213A" size={18} strokeWidth={2.5} />

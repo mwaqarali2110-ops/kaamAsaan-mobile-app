@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, ArrowRight, Check, ShieldCheck } from 'lucide-react-native';
 import { formatMaintenancePrice } from '@/data/maintenancePlans';
 import { useMaintenanceBookingStore } from '@/store/useMaintenanceBookingStore';
@@ -9,6 +9,8 @@ import type { MaintenancePlanSelection } from '@/types/maintenance.types';
 const includedServices = ['Cleaning', 'Inspection', 'Thermal Scan', 'Service Report'];
 
 export const MaintenancePlanDetailsScreen = ({ navigation, route }: any) => {
+  const insets = useSafeAreaInsets();
+  const safeBottom = insets.bottom || 16;
   const storedPlan = useMaintenanceBookingStore((state) => state.selectedPlan);
   const setSelectedPlan = useMaintenanceBookingStore((state) => state.setSelectedPlan);
   const plan = (route.params?.plan ?? storedPlan) as MaintenancePlanSelection | undefined;
@@ -53,7 +55,7 @@ export const MaintenancePlanDetailsScreen = ({ navigation, route }: any) => {
         <View style={styles.topSpacer} />
       </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: 112 + safeBottom }]} showsVerticalScrollIndicator={false}>
         <View style={styles.planCard}>
           <View style={styles.planIcon}>
             <ShieldCheck color="#E8A000" size={28} strokeWidth={2.3} />
@@ -76,7 +78,7 @@ export const MaintenancePlanDetailsScreen = ({ navigation, route }: any) => {
         </View>
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: 14 + safeBottom }]}>
         <Pressable style={styles.primaryButton} onPress={continueToBooking} accessibilityRole="button">
           <Text style={styles.primaryButtonText}>Continue to Booking</Text>
           <ArrowRight color="#10213A" size={18} strokeWidth={2.5} />

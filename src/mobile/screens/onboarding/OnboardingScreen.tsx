@@ -20,7 +20,10 @@ export const OnboardingScreen = ({ navigation }: any) => {
 
   const finish = () => {
     setHasSeenOnboarding(true);
-    navigation.replace('MainTabs');
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }]
+    });
   };
 
   const handleGetStarted = () => {

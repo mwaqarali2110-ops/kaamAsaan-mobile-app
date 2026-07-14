@@ -22,6 +22,9 @@ import { ProfileScreen } from '@/mobile/screens/profile/ProfileScreen';
 import { BookSurveyScreen } from '@/mobile/screens/survey/BookSurveyScreen';
 import { SurveyConfirmationScreen } from '@/mobile/screens/survey/SurveyConfirmationScreen';
 import { MySolarJourneyScreen } from '@/mobile/screens/survey/MySolarJourneyScreen';
+import { ComplaintScreen } from '@/mobile/screens/support/ComplaintScreen';
+import { HelpCenterScreen } from '@/mobile/screens/support/HelpCenterScreen';
+import { HowItWorksScreen } from '@/mobile/screens/support/HowItWorksScreen';
 import { PreventiveMaintenanceScreen } from '@/mobile/screens/services/PreventiveMaintenanceScreen';
 import { ElectricalWorkBookingScreen, ElectricalWorkServicesScreen } from '@/mobile/screens/services/ElectricalWorkServicesScreen';
 import { MaintenancePackagesScreen } from '@/mobile/screens/services/MaintenancePackagesScreen';
@@ -71,9 +74,27 @@ const ProtectedBookSurveyScreen = (props: any) => {
   return <BookSurveyScreen {...props} />;
 };
 
+const ProtectedMainTabs = (props: any) => {
+  const initialized = useAuthStore((state) => state.initialized);
+  const session = useAuthStore((state) => state.session);
+
+  useEffect(() => {
+    if (initialized && !session) {
+      props.navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }]
+      });
+    }
+  }, [initialized, props.navigation, session]);
+
+  if (!initialized || !session) return <AuthLoadingScreen />;
+  return <MainTabs />;
+};
+
 const MainTabs = () => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const safeBottom = insets.bottom || 10;
   return (
     <Tabs.Navigator
       screenOptions={{
@@ -81,8 +102,8 @@ const MainTabs = () => {
         tabBarActiveTintColor: colors.amber,
         tabBarInactiveTintColor: colors.muted,
         tabBarStyle: {
-          height: 60 + insets.bottom,
-          paddingBottom: Math.max(6, insets.bottom),
+          height: 64 + safeBottom,
+          paddingBottom: safeBottom,
           paddingTop: 5,
           backgroundColor: colors.card,
           borderTopColor: colors.line,
@@ -102,23 +123,34 @@ const MainTabs = () => {
 };
 
 export const RootNavigator = () => {
-  const [showSplash, setShowSplash] = useState(true);
+  const [splashAnimationComplete, setSplashAnimationComplete] = useState(false);
   const hasSeenOnboarding = useAppStore((state) => state.hasSeenOnboarding);
+  const hasHydrated = useAppStore((state) => state.hasHydrated);
+  const initialized = useAuthStore((state) => state.initialized);
+  const session = useAuthStore((state) => state.session);
   const initializeAuth = useAuthStore((state) => state.initialize);
-  const onSplashDone = useCallback(() => setShowSplash(false), []);
+  const onSplashDone = useCallback(() => setSplashAnimationComplete(true), []);
 
   useEffect(() => {
     void initializeAuth();
     return bindSupabaseAutoRefresh();
   }, [initializeAuth]);
 
-  if (showSplash) return <SplashScreen onDone={onSplashDone} />;
+  if (!splashAnimationComplete || !hasHydrated || !initialized) {
+    return <SplashScreen onDone={onSplashDone} />;
+  }
+
+  const initialRouteName: keyof RootStackParamList = session
+    ? 'MainTabs'
+    : hasSeenOnboarding
+      ? 'Login'
+      : 'Onboarding';
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!hasSeenOnboarding ? <Stack.Screen name="Onboarding" component={OnboardingScreen} /> : null}
-        <Stack.Screen name="MainTabs" component={MainTabs} />
+      <Stack.Navigator initialRouteName={initialRouteName} screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+        <Stack.Screen name="MainTabs" component={ProtectedMainTabs} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Signup" component={SignupScreen} />
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
@@ -129,6 +161,9 @@ export const RootNavigator = () => {
         <Stack.Screen name="BookSurvey" component={ProtectedBookSurveyScreen} />
         <Stack.Screen name="SurveyConfirmation" component={SurveyConfirmationScreen} />
         <Stack.Screen name="MySolarJourney" component={MySolarJourneyScreen} />
+        <Stack.Screen name="Complaint" component={ComplaintScreen} />
+        <Stack.Screen name="HelpCenter" component={HelpCenterScreen} />
+        <Stack.Screen name="HowItWorks" component={HowItWorksScreen} />
         <Stack.Screen name="PreventiveMaintenance" component={PreventiveMaintenanceScreen} />
         <Stack.Screen name="ElectricalWorkServices" component={ElectricalWorkServicesScreen} />
         <Stack.Screen name="ElectricalWorkBooking" component={ElectricalWorkBookingScreen} />

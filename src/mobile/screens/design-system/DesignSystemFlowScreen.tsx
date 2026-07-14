@@ -1,21 +1,22 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { BackHandler, Image, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, BackHandler, Easing, Image, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AirVent, Award, BatteryCharging, Check, ChevronDown, Grid3X3, Headphones, Refrigerator, ArrowLeft, ArrowRight, Fan, Lightbulb, MessageCircle, Plus, RotateCcw, ShieldCheck, ShoppingCart, Star, Sun, X, Zap } from 'lucide-react-native';
-import Svg, { Circle, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Defs, Line, LinearGradient, Path, Polygon, Rect, Stop, Text as SvgText } from 'react-native-svg';
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
 import { AppText } from '@/components/ui/AppText';
 import { AppButton } from '@/components/ui/AppButton';
 import { InfoCard } from '@/components/cards/InfoCard';
 import { PanelLayoutPreview } from '@/components/solar-tools/PanelLayoutPreview';
-import { useProducts } from '@/hooks/useProducts';
+import { usePackageCompatibility, usePackageInventory, useProducts } from '@/hooks/useProducts';
 import { designSystemSteps, useSystemStore } from '@/store/useSystemStore';
 import { calculateLoadKw, calculatePanelCount, calculatePanelLayout, calculateRoofSpace, type PanelOrientation } from '@/utils/calculations';
 import { formatKw, formatPkr } from '@/utils/formatters';
 import type { Product } from '@/types/product.types';
-import { buildRecommendedPackages, findBestPanelByWattage, getAvailablePanelWattages, getProductWatt, isOutOfStock, type RecommendedPackage } from '@/utils/packageBuilder';
+import { extractPanelWattage, generateRecommendedPackages, getProductBrandName, getProductWatt, isOutOfStock, isPanelProduct, normalizeBrandName, type RecommendedPackage } from '@/utils/packageBuilder';
 
+const AnimatedRect = Animated.createAnimatedComponent(Rect);
 const steps = designSystemSteps;
 type Step = typeof steps[number];
 
@@ -58,42 +59,16 @@ const getInverterSizeKw = (solarKw: number) => (solarKw > 0 ? Math.max(3, Math.c
 const batteryImage = require('../../../assets/home/battery.webp');
 const batteryBackupHeroImage = require('../../../assets/design-system/battery-backup-screen.png');
 const recommendedSystemImage = require('../../../assets/design-system/recommended-system.png');
-const packageVisuals = {
-  FOX: require('../../../../Fox Package.png'),
-  Solis: require('../../../../Solis Package.png'),
-  GoodWe: require('../../../../Goodwe Package.png')
+const approvedPackageVisuals = {
+  fox: require('../../../../Fox Package.png'),
+  solis: require('../../../../Solis Package.png'),
+  goodwe: require('../../../../Goodwe Package.png')
 };
-const packageBrandLogos = {
-  FOX: require('../../../assets/home/brand-fox-ess.png'),
-  Solis: require('../../../assets/home/brand-solis.png')
+const approvedPackageBrandLogos = {
+  fox: require('../../../assets/home/brand-fox-ess.png'),
+  solis: require('../../../assets/home/brand-solis.png')
 };
-
-const compactPackageMeta = {
-  FOX: {
-    badge: 'Most Balanced',
-    badgeTone: 'gold',
-    title: 'FOX Complete Package',
-    inverterWarranty: '10 Years',
-    batteryWarranty: '10 Years',
-    displayPrice: 'PKR 1,050,000'
-  },
-  Solis: {
-    badge: 'High Performance',
-    badgeTone: 'blue',
-    title: 'Solis + Pylontech Package',
-    inverterWarranty: '5 Years',
-    batteryWarranty: '10 Years',
-    displayPrice: 'PKR 1,070,000'
-  },
-  GoodWe: {
-    badge: 'Best Warranty',
-    badgeTone: 'purple',
-    title: 'GoodWe Complete Package',
-    inverterWarranty: '10 Years',
-    batteryWarranty: '10 Years',
-    displayPrice: 'PKR 1,210,000'
-  }
-} as const;
+const packageBrandKey = (brand: string) => normalizeBrandName(brand);
 
 export const DesignSystemFlowScreen = ({ navigation, route }: any) => {
   const initialStep = steps.includes(route?.params?.screen) ? route.params.screen : 'appliances';
@@ -117,6 +92,11 @@ export const DesignSystemFlowScreen = ({ navigation, route }: any) => {
 
   const next = () => {
     if (step === 'appliances') {
+      const selectedQuantity = store.appliances.reduce(
+        (total: number, item: any) => total + Math.max(0, Number(item.quantity) || 0),
+        0
+      );
+      if (selectedQuantity <= 0) return;
       store.calculateRecommendation();
       setStep('solar');
     } else if (step === 'solar') {
@@ -125,7 +105,14 @@ export const DesignSystemFlowScreen = ({ navigation, route }: any) => {
     }
     else if (step === 'roof') setStep('backupNeed');
     else if (step === 'backupNeed') setStep(store.backupDecision === 'yes' ? 'backupAppliances' : 'recommended');
-    else if (step === 'backupAppliances') setStep('backupPlan');
+    else if (step === 'backupAppliances') {
+      const selectedBackupQuantity = store.backupAppliances.reduce(
+        (total: number, item: any) => total + Math.max(0, Number(item.quantity) || 0),
+        0
+      );
+      if (selectedBackupQuantity <= 0) return;
+      setStep('backupPlan');
+    }
     else if (step === 'backupPlan') setStep('recommended');
     else if (step === 'recommended') setStep('packages');
     else navigation.navigate('SystemSummary');
@@ -217,6 +204,7 @@ export const DesignSystemFlowScreen = ({ navigation, route }: any) => {
         onSelectPackage={store.setPackageName}
         onBack={goToPreviousStep}
         onReviewSystem={next}
+        onExpertOpinion={() => navigation.navigate('BookSurvey')}
       />
     );
   }
@@ -237,52 +225,52 @@ const RecommendedPackagesStepScreen = ({
   selectedPackage,
   onSelectPackage,
   onBack,
-  onReviewSystem
+  onReviewSystem,
+  onExpertOpinion
 }: {
   store: any;
   selectedPackage: string;
   onSelectPackage: (name: string) => void;
   onBack: () => void;
   onReviewSystem: () => void;
+  onExpertOpinion: () => void;
 }) => {
   const [detailsPackage, setDetailsPackage] = useState<RecommendedPackage | null>(null);
   const insets = useSafeAreaInsets();
-  const productsQuery = useProducts();
+  const safeBottom = insets.bottom || 16;
+  const productsQuery = usePackageInventory();
+  const compatibilityQuery = usePackageCompatibility();
   const allProducts = productsQuery.data ?? [];
   const requiredSolarKw = Math.max(1, Number(store.recommendedSolarKw || 3));
   const requiredInverterKw = getInverterSizeKw(requiredSolarKw);
   const requiredBatteryKwh = Number(store.selectedBatteryKwh || 0);
-  const selectedPanelProduct = useMemo(() => {
-    const selectedPanels = store.selectedPanels as Product | null;
-    if (selectedPanels?.category === 'panel' && getProductWatt(selectedPanels) === Number(store.panelWattage)) {
-      return selectedPanels;
-    }
-    return findBestPanelByWattage(Number(store.panelWattage), allProducts);
-  }, [allProducts, store.panelWattage, store.selectedPanels]);
   const recommendedPackages = useMemo(
-    () => buildRecommendedPackages({ requiredSolarKw, requiredInverterKw, requiredBatteryKwh }, selectedPanelProduct, allProducts),
-    [allProducts, requiredBatteryKwh, requiredInverterKw, requiredSolarKw, selectedPanelProduct]
+    () => generateRecommendedPackages({
+      requiredPanelKw: requiredSolarKw,
+      requiredInverterKw,
+      requiredBatteryKwh,
+      products: allProducts,
+      compatibilityRules: compatibilityQuery.data ?? [],
+      selectedPanelWattage: Number(store.panelWattage) || undefined
+    }),
+    [allProducts, compatibilityQuery.data, requiredBatteryKwh, requiredInverterKw, requiredSolarKw, store.panelWattage]
   );
-  const compactPackages = useMemo(() => {
-    const order = ['FOX', 'Solis', 'GoodWe'];
-    const byBrand = order
-      .map((brand) => recommendedPackages.find((pkg) => pkg.packageBrand === brand))
-      .filter(Boolean) as RecommendedPackage[];
-    const extras = recommendedPackages.filter((pkg) => !order.includes(pkg.packageBrand));
-    return [...byBrand, ...extras].slice(0, 3);
-  }, [recommendedPackages]);
+
   useEffect(() => {
-    if (compactPackages[0] && (!selectedPackage || selectedPackage === 'Balanced')) {
-      onSelectPackage(compactPackages[0].id);
+    if (recommendedPackages[0] && !recommendedPackages.some((pkg) => pkg.id === selectedPackage)) {
+      onSelectPackage(recommendedPackages[0].id);
     }
-  }, [compactPackages, onSelectPackage, selectedPackage]);
+  }, [onSelectPackage, recommendedPackages, selectedPackage]);
 
   return (
     <SafeAreaView style={packagesStyles.screen}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={productsQuery.isRefetching} onRefresh={() => void productsQuery.refetch()} />}
-        contentContainerStyle={packagesStyles.content}
+        refreshControl={<RefreshControl refreshing={productsQuery.isRefetching} onRefresh={() => {
+          void productsQuery.refetch();
+          void compatibilityQuery.refetch();
+        }} />}
+        contentContainerStyle={[packagesStyles.content, { paddingBottom: 132 + safeBottom }]}
       >
         <View style={packagesStyles.packageTopChip}>
           <Star color="#D99A00" size={12} strokeWidth={2.5} />
@@ -295,18 +283,23 @@ const RecommendedPackagesStepScreen = ({
           <View style={packagesStyles.emptyPackageCard}><Text style={packagesStyles.emptyPackageTitle}>Loading live products...</Text></View>
         ) : productsQuery.isError ? (
           <View style={packagesStyles.emptyPackageCard}><Text style={packagesStyles.emptyPackageTitle}>Unable to load live products. Please try again.</Text></View>
-        ) : !selectedPanelProduct ? (
-          <View style={packagesStyles.emptyPackageCard}><Text style={packagesStyles.emptyPackageTitle}>No visible {store.panelWattage}W panel product found for package generation.</Text></View>
-        ) : compactPackages.length === 0 ? (
-          <View style={packagesStyles.emptyPackageCard}><Text style={packagesStyles.emptyPackageTitle}>No compatible recommended packages found from available products.</Text></View>
+        ) : recommendedPackages.length === 0 ? (
+          <View style={packagesStyles.emptyPackageCard}>
+            <Text style={packagesStyles.emptyPackageHeading}>No complete package available</Text>
+            <Text style={packagesStyles.emptyPackageTitle}>Products matching your recommended system are currently unavailable. You can request expert support and our team will suggest the closest available option.</Text>
+            <Pressable style={packagesStyles.emptyPackageButton} onPress={onExpertOpinion}>
+              <Headphones color="#10213A" size={17} strokeWidth={2.4} />
+              <Text style={packagesStyles.emptyPackageButtonText}>Get Expert Opinion</Text>
+            </Pressable>
+          </View>
         ) : (
           <View style={packagesStyles.cards}>
-            {compactPackages.map((pkg, index) => {
+            {recommendedPackages.map((pkg, index) => {
               const packageKey = [
                 pkg.packageBrand,
-                pkg.inverter?.product?.id,
-                pkg.battery?.product?.id,
-                pkg.panel?.id,
+                pkg.inverter.product.id,
+                pkg.battery.product.id,
+                pkg.panel.id,
                 pkg.batteryBrand,
                 index
               ].filter(Boolean).join('-');
@@ -315,19 +308,19 @@ const RecommendedPackagesStepScreen = ({
                 <RecommendedPackageCard
                   key={packageKey}
                   pkg={pkg}
-                  selected={selectedPackage === pkg.id || (index === 0 && (!selectedPackage || selectedPackage === 'Balanced'))}
+                  selected={selectedPackage === pkg.id || (index === 0 && !recommendedPackages.some((item) => item.id === selectedPackage))}
                   onViewDetails={() => {
                     onSelectPackage(pkg.id);
                     setDetailsPackage(pkg);
                   }}
-                  onSelect={() => !pkg.outOfStock && onSelectPackage(pkg.id)}
+                  onSelect={() => onSelectPackage(pkg.id)}
                 />
               );
             })}
           </View>
         )}
 
-        <View style={packagesStyles.trustCard}>
+        {recommendedPackages.length > 0 ? <View style={packagesStyles.trustCard}>
           <View style={packagesStyles.trustIcon}>
             <ShieldCheck color="#009A61" size={22} strokeWidth={2.3} />
           </View>
@@ -336,15 +329,15 @@ const RecommendedPackagesStepScreen = ({
             <Text style={packagesStyles.trustText}>All components are perfectly matched to avoid compatibility issues.</Text>
           </View>
           <ChevronDown color="#007C52" size={20} strokeWidth={2.3} style={packagesStyles.trustArrow} />
-        </View>
+        </View> : null}
       </ScrollView>
 
-      <View style={[packagesStyles.footer, { paddingBottom: Math.max(8, insets.bottom + 8) }]}>
+      <View style={[packagesStyles.footer, { paddingBottom: 8 + safeBottom }]}>
         <Pressable style={packagesStyles.reviewButton} onPress={onReviewSystem}>
           <ShoppingCart color="#10213A" size={16} strokeWidth={2.4} />
           <Text style={packagesStyles.reviewText}>Review My System</Text>
         </Pressable>
-        <Pressable style={packagesStyles.expertButton}>
+        <Pressable style={packagesStyles.expertButton} onPress={onExpertOpinion}>
           <Headphones color="#10213A" size={16} strokeWidth={2.4} />
           <Text style={packagesStyles.expertText}>Get Expert Opinion</Text>
         </Pressable>
@@ -355,7 +348,7 @@ const RecommendedPackagesStepScreen = ({
         visible={Boolean(detailsPackage)}
         onClose={() => setDetailsPackage(null)}
         onSelect={() => {
-          if (detailsPackage && !detailsPackage.outOfStock) {
+          if (detailsPackage) {
             onSelectPackage(detailsPackage.id);
             setDetailsPackage(null);
           }
@@ -398,74 +391,72 @@ const RecommendedPackageCard = ({
   onViewDetails: () => void;
   onSelect: () => void;
 }) => {
-  const meta = compactPackageMeta[pkg.packageBrand as keyof typeof compactPackageMeta] ?? {
-    badge: pkg.bestMatch ? 'Best Match' : 'Recommended',
-    badgeTone: 'gold',
-    title: pkg.packageName,
-    inverterWarranty: pkg.inverter?.product?.warranty || 'Warranty',
-    batteryWarranty: pkg.battery?.product?.warranty || 'Warranty'
-  };
-  const visual = packageVisuals[pkg.packageBrand as keyof typeof packageVisuals];
-  const brandLogo = packageBrandLogos[pkg.packageBrand as keyof typeof packageBrandLogos];
-  const displayPrice = 'displayPrice' in meta ? meta.displayPrice : formatPkr(pkg.totalPrice);
+  const brandKey = packageBrandKey(pkg.packageBrand);
+  const approvedVisual = approvedPackageVisuals[brandKey as keyof typeof approvedPackageVisuals];
+  const approvedBrandLogo = approvedPackageBrandLogos[brandKey as keyof typeof approvedPackageBrandLogos];
+  const visualSource = approvedVisual ?? (pkg.image ? { uri: pkg.image } : batteryImage);
 
   return (
-    <Pressable
-      style={({ pressed }) => [
-        packagesStyles.compactPackageCard,
-        selected && packagesStyles.compactPackageCardSelected,
-        pressed && packagesStyles.compactPackageCardPressed
-      ]}
-      onPress={onSelect}
-      disabled={pkg.outOfStock}
-    >
-      <View style={[packagesStyles.packageBadge, meta.badgeTone === 'blue' && packagesStyles.packageBadgeBlue, meta.badgeTone === 'purple' && packagesStyles.packageBadgePurple]}>
-        {meta.badgeTone === 'blue'
-          ? <Award color="#1D4ED8" size={10} strokeWidth={2.5} />
-          : meta.badgeTone === 'purple'
-          ? <ShieldCheck color="#7C3AED" size={10} strokeWidth={2.5} />
-          : <Star color="#B77900" size={10} strokeWidth={2.5} />
-        }
-        <Text style={[packagesStyles.packageBadgeText, meta.badgeTone === 'blue' && packagesStyles.packageBadgeTextBlue, meta.badgeTone === 'purple' && packagesStyles.packageBadgeTextPurple]}>{meta.badge}</Text>
-      </View>
+    <View style={[packagesStyles.compactPackageCardShell, selected && packagesStyles.compactPackageCardShellSelected]}>
+      <Pressable
+        style={({ pressed }) => [
+          packagesStyles.compactPackageCard,
+          selected && packagesStyles.compactPackageCardSelectedFirst,
+          selected && packagesStyles.compactPackageCardSelected,
+          pressed && packagesStyles.compactPackageCardPressed
+        ]}
+        onPress={onSelect}
+      >
+        <View style={[packagesStyles.packageBadge, pkg.badgeTone === 'blue' && packagesStyles.packageBadgeBlue, pkg.badgeTone === 'purple' && packagesStyles.packageBadgePurple]}>
+          {pkg.badgeTone === 'blue'
+            ? <Award color="#1D4ED8" size={10} strokeWidth={2.5} />
+            : pkg.badgeTone === 'purple'
+            ? <ShieldCheck color="#7C3AED" size={10} strokeWidth={2.5} />
+            : <Star color="#B77900" size={10} strokeWidth={2.5} />
+          }
+          <Text style={[packagesStyles.packageBadgeText, pkg.badgeTone === 'blue' && packagesStyles.packageBadgeTextBlue, pkg.badgeTone === 'purple' && packagesStyles.packageBadgeTextPurple]}>{pkg.badge}</Text>
+        </View>
 
-      <View style={packagesStyles.compactPackageBody}>
-        <View style={packagesStyles.compactVisualWrap}>
-          {visual ? <Image source={visual} style={packagesStyles.compactPackageImage} resizeMode="contain" /> : null}
-        </View>
-        <View style={packagesStyles.compactPackageInfo}>
-          <View style={packagesStyles.compactBrandSlot}>
-            {brandLogo ? (
-              <Image source={brandLogo} style={packagesStyles.compactBrandLogo} resizeMode="contain" />
-            ) : (
-              <Text style={packagesStyles.goodweLogo}>GOODWE</Text>
-            )}
+        <View style={packagesStyles.compactPackageBody}>
+          <View style={packagesStyles.compactVisualWrap}>
+            <Image source={visualSource} style={packagesStyles.compactPackageImage} resizeMode="contain" />
           </View>
-          <Text style={packagesStyles.compactPackageTitle} numberOfLines={2}>{meta.title}</Text>
-          <View style={packagesStyles.compactWarrantyRow}>
-            <View style={packagesStyles.compactWarrantyChip}>
-              <Text style={packagesStyles.compactWarrantyYears}>{meta.inverterWarranty}</Text>
-              <Text style={packagesStyles.compactWarrantyLabel}>Inverter Warranty</Text>
+          <View style={packagesStyles.compactPackageInfo}>
+            <View style={packagesStyles.compactBrandSlot}>
+              {approvedBrandLogo ? (
+                <Image source={approvedBrandLogo} style={packagesStyles.compactBrandLogo} resizeMode="contain" />
+              ) : brandKey === 'goodwe' ? (
+                <Text style={packagesStyles.goodweLogo}>GOODWE</Text>
+              ) : (
+                <Text style={packagesStyles.compactBrandText} numberOfLines={1}>{pkg.packageBrand}</Text>
+              )}
             </View>
-            <View style={packagesStyles.compactWarrantyChip}>
-              <Text style={packagesStyles.compactWarrantyYears}>{meta.batteryWarranty}</Text>
-              <Text style={packagesStyles.compactWarrantyLabel}>Battery Warranty</Text>
+            <Text style={packagesStyles.compactPackageTitle} numberOfLines={2}>{pkg.title}</Text>
+            <View style={packagesStyles.compactWarrantyRow}>
+              <View style={packagesStyles.compactWarrantyChip}>
+                <Text style={packagesStyles.compactWarrantyYears} numberOfLines={1}>{pkg.inverterWarranty}</Text>
+                <Text style={packagesStyles.compactWarrantyLabel}>Inverter Warranty</Text>
+              </View>
+              <View style={packagesStyles.compactWarrantyChip}>
+                <Text style={packagesStyles.compactWarrantyYears} numberOfLines={1}>{pkg.batteryWarranty}</Text>
+                <Text style={packagesStyles.compactWarrantyLabel}>Battery Warranty</Text>
+              </View>
             </View>
           </View>
         </View>
-      </View>
 
-      <View style={packagesStyles.compactPriceRow}>
-        <View>
-          <Text style={packagesStyles.priceLabel}>Estimated Price</Text>
-          <Text style={packagesStyles.priceValue}>{displayPrice}</Text>
+        <View style={packagesStyles.compactPriceRow}>
+          <View>
+            <Text style={packagesStyles.priceLabel}>Estimated Price</Text>
+            <Text style={packagesStyles.priceValue}>{formatPkr(pkg.totalPrice)}</Text>
+          </View>
+          <Pressable style={packagesStyles.detailsButton} onPress={onViewDetails}>
+            <Text style={packagesStyles.detailsText}>View Details</Text>
+            <ArrowRight color="#10213A" size={15} strokeWidth={2.5} />
+          </Pressable>
         </View>
-        <Pressable style={packagesStyles.detailsButton} onPress={onViewDetails}>
-          <Text style={packagesStyles.detailsText}>View Details</Text>
-          <ArrowRight color="#10213A" size={15} strokeWidth={2.5} />
-        </Pressable>
-      </View>
-    </Pressable>
+      </Pressable>
+    </View>
   );
 };
 
@@ -481,7 +472,6 @@ const PackageDetailsModal = ({
   onSelect: () => void;
 }) => {
   if (!pkg) return null;
-  const meta = compactPackageMeta[pkg.packageBrand as keyof typeof compactPackageMeta];
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -489,8 +479,8 @@ const PackageDetailsModal = ({
         <View style={packagesStyles.detailsSheet}>
           <View style={packagesStyles.detailsSheetHeader}>
             <View>
-              <Text style={packagesStyles.detailsEyebrow}>{meta?.badge || 'Package Details'}</Text>
-              <Text style={packagesStyles.detailsTitle}>{meta?.title || pkg.packageName}</Text>
+              <Text style={packagesStyles.detailsEyebrow}>{pkg.badge || 'Package Details'}</Text>
+              <Text style={packagesStyles.detailsTitle}>{pkg.title}</Text>
             </View>
             <Pressable style={packagesStyles.detailsClose} onPress={onClose}>
               <X color="#10213A" size={18} strokeWidth={2.5} />
@@ -511,10 +501,8 @@ const PackageDetailsModal = ({
             <PriceRow label="Total package price" value={pkg.totalPrice} strong />
           </View>
 
-          <Pressable style={[packagesStyles.selectButton, packagesStyles.detailsSelectButton, pkg.outOfStock && packagesStyles.selectButtonDisabled]} onPress={onSelect} disabled={pkg.outOfStock}>
-            <Text style={[packagesStyles.selectButtonText, pkg.outOfStock && packagesStyles.selectButtonTextDisabled]}>
-              {pkg.outOfStock ? 'Currently Unavailable' : 'Select Package'}
-            </Text>
+          <Pressable style={[packagesStyles.selectButton, packagesStyles.detailsSelectButton]} onPress={onSelect}>
+            <Text style={packagesStyles.selectButtonText}>Select Package</Text>
           </Pressable>
         </View>
       </View>
@@ -528,9 +516,9 @@ const packagesStyles = StyleSheet.create({
     backgroundColor: '#F8F3E8'
   },
   content: {
-    paddingHorizontal: 0,
-    paddingTop: 10,
-    paddingBottom: 132
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 148
   },
   packageTopChip: {
     alignSelf: 'flex-start',
@@ -543,7 +531,7 @@ const packagesStyles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 11,
-    marginHorizontal: 12
+    marginHorizontal: 0
   },
   packageTopChipText: {
     color: '#7A5600',
@@ -557,7 +545,7 @@ const packagesStyles = StyleSheet.create({
     fontWeight: '900',
     marginTop: 14,
     marginBottom: 10,
-    marginHorizontal: 12
+    marginHorizontal: 0
   },
   topRow: {
     flexDirection: 'row',
@@ -662,30 +650,36 @@ const packagesStyles = StyleSheet.create({
     lineHeight: 18
   },
   cards: {
-    gap: 0
+    gap: 10
+  },
+  compactPackageCardShell: {
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#6B5B43',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.075,
+    shadowRadius: 12,
+    elevation: 3
+  },
+  compactPackageCardShellSelected: {
+    shadowColor: '#F5A400',
+    shadowOpacity: 0.12,
+    elevation: 4
   },
   compactPackageCard: {
-    minHeight: 132,
-    maxHeight: 150,
-    marginHorizontal: 12,
-    marginBottom: 10,
-    borderRadius: 14,
+    minHeight: 138,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#E8DED0',
     backgroundColor: '#FFFFFF',
-    overflow: 'hidden',
-    shadowColor: '#6B5B43',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.07,
-    shadowRadius: 10,
-    elevation: 2
+    overflow: 'hidden'
+  },
+  compactPackageCardSelectedFirst: {
+    borderColor: '#F5A400',
+    borderWidth: 1.6
   },
   compactPackageCardSelected: {
-    borderColor: '#F5A400',
-    borderWidth: 1.5,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#F5A400',
-    shadowOpacity: 0.12
+    backgroundColor: '#FFFFFF'
   },
   compactPackageCardPressed: {
     backgroundColor: '#FFFFFF',
@@ -854,17 +848,40 @@ const packagesStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(232,217,190,0.88)',
     backgroundColor: '#FFFFFF',
-    padding: 16
+    padding: 18
+  },
+  emptyPackageHeading: {
+    color: '#10213A',
+    fontSize: 16,
+    lineHeight: 21,
+    fontWeight: '900',
+    marginBottom: 7
   },
   emptyPackageTitle: {
     color: '#64748B',
     fontSize: 13,
-    fontWeight: '800',
-    lineHeight: 18
+    fontWeight: '700',
+    lineHeight: 19
+  },
+  emptyPackageButton: {
+    width: '100%',
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: '#F5B400',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 16
+  },
+  emptyPackageButtonText: {
+    color: '#10213A',
+    fontSize: 13,
+    fontWeight: '900'
   },
   packageBadge: {
     alignSelf: 'flex-start',
-    height: 22,
+    minHeight: 22,
     borderBottomRightRadius: 10,
     flexDirection: 'row',
     alignItems: 'center',
@@ -880,7 +897,7 @@ const packagesStyles = StyleSheet.create({
   },
   packageBadgeText: {
     color: '#7A5600',
-    fontSize: 10,
+    fontSize: 9.4,
     fontWeight: '900'
   },
   packageBadgeTextBlue: {
@@ -892,20 +909,24 @@ const packagesStyles = StyleSheet.create({
   compactPackageBody: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingTop: 8,
     paddingBottom: 6
   },
   compactVisualWrap: {
-    width: 92,
-    height: 62,
+    width: 94,
+    height: 58,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'transparent'
+    backgroundColor: '#FFF9EC',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#F3E6D0',
+    overflow: 'hidden'
   },
   compactPackageImage: {
-    width: '100%',
-    height: '100%'
+    width: '94%',
+    height: '94%'
   },
   compactPackageInfo: {
     flex: 1,
@@ -915,24 +936,36 @@ const packagesStyles = StyleSheet.create({
     marginLeft: 10
   },
   compactBrandSlot: {
-    height: 18,
+    height: 15,
     minWidth: 58,
     alignItems: 'flex-start',
     justifyContent: 'center',
     marginBottom: 2
   },
+  compactBrandText: {
+    color: '#D99A00',
+    fontSize: 10,
+    lineHeight: 13,
+    fontWeight: '900'
+  },
   compactBrandLogo: {
-    width: 54,
-    height: 18,
+    width: 50,
+    height: 15,
     alignSelf: 'flex-start'
   },
   compactPackageTitle: {
     color: '#10213A',
-    fontSize: 13.2,
-    lineHeight: 15,
+    fontSize: 12.2,
+    lineHeight: 14,
     fontWeight: '900',
     textAlign: 'left',
     alignSelf: 'stretch'
+  },
+  compactUnavailableText: {
+    marginTop: 3,
+    color: '#C2410C',
+    fontSize: 8.5,
+    fontWeight: '800'
   },
   compactWarrantyRow: {
     flexDirection: 'row',
@@ -942,22 +975,23 @@ const packagesStyles = StyleSheet.create({
   },
   compactWarrantyChip: {
     flex: 1,
-    height: 24,
-    borderRadius: 8,
+    minHeight: 22,
+    borderRadius: 9,
     backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'flex-start',
-    paddingHorizontal: 6
+    paddingHorizontal: 6,
+    paddingVertical: 3
   },
   compactWarrantyYears: {
     color: '#10213A',
-    fontSize: 9,
-    lineHeight: 10,
+    fontSize: 8.4,
+    lineHeight: 9.5,
     fontWeight: '900'
   },
   compactWarrantyLabel: {
     color: '#64748B',
-    fontSize: 7.2,
+    fontSize: 6.8,
     lineHeight: 8,
     fontWeight: '800'
   },
@@ -967,8 +1001,8 @@ const packagesStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    minHeight: 43,
-    paddingHorizontal: 12,
+    minHeight: 44,
+    paddingHorizontal: 10,
     paddingVertical: 6,
     gap: 10
   },
@@ -1053,18 +1087,18 @@ const packagesStyles = StyleSheet.create({
   },
   priceLabel: {
     color: '#64748B',
-    fontSize: 10,
+    fontSize: 8.8,
     fontWeight: '800'
   },
   priceValue: {
     color: '#0F172A',
-    fontSize: 18,
+    fontSize: 15.8,
     fontWeight: '900',
     marginTop: 2
   },
   detailsButton: {
-    minWidth: 100,
-    height: 34,
+    minWidth: 92,
+    height: 31,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#CBD5E1',
@@ -1082,10 +1116,10 @@ const packagesStyles = StyleSheet.create({
   },
   trustCard: {
     minHeight: 64,
-    marginHorizontal: 12,
-    marginTop: 0,
+    marginHorizontal: 0,
+    marginTop: 2,
     marginBottom: 10,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#A7F3D0',
     backgroundColor: '#ECFDF5',
@@ -1222,13 +1256,33 @@ const packagesStyles = StyleSheet.create({
 });
 
 const ApplianceStepScreen = ({ store, onPrevious, onContinue }: { store: any; onPrevious: () => void; onContinue: () => void }) => {
+  const insets = useSafeAreaInsets();
+  const safeBottom = insets.bottom || 16;
   const [addOtherOpen, setAddOtherOpen] = useState(false);
+  const [validationError, setValidationError] = useState('');
+  const selectedQuantity = store.appliances.reduce(
+    (total: number, item: any) => total + Math.max(0, Number(item.quantity) || 0),
+    0
+  );
+  const hasSelectedAppliance = selectedQuantity > 0;
   const defaultIds = new Set(applianceGroups.flatMap((group) => group.ids));
   const customAppliances = store.appliances.filter((item: any) => !defaultIds.has(item.id));
   const addAppliance = (item: { id: string; name: string; watts: number }) => {
     store.addAppliance({ ...item, quantity: 1, hours: 4 });
     setAddOtherOpen(false);
   };
+  const handleContinue = () => {
+    if (!hasSelectedAppliance) {
+      setValidationError('Please select at least one appliance to calculate your load.');
+      return;
+    }
+    setValidationError('');
+    onContinue();
+  };
+
+  useEffect(() => {
+    if (hasSelectedAppliance && validationError) setValidationError('');
+  }, [hasSelectedAppliance, validationError]);
 
   return (
     <SafeAreaView style={applianceStyles.shell} edges={['top']}>
@@ -1244,7 +1298,7 @@ const ApplianceStepScreen = ({ store, onPrevious, onContinue }: { store: any; on
 
       <ScrollView
         style={applianceStyles.scroll}
-        contentContainerStyle={applianceStyles.scrollContent}
+        contentContainerStyle={[applianceStyles.scrollContent, { paddingBottom: 178 + safeBottom }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={applianceStyles.questionBlock}>
@@ -1301,8 +1355,12 @@ const ApplianceStepScreen = ({ store, onPrevious, onContinue }: { store: any; on
         </Pressable>
       </ScrollView>
 
-      <View style={applianceStyles.bottomPanel}>
-        <Pressable style={applianceStyles.primaryButton} onPress={onContinue}>
+      <View style={[applianceStyles.bottomPanel, { paddingBottom: 8 + safeBottom }]}>
+        {validationError ? <Text style={applianceStyles.validationText}>{validationError}</Text> : null}
+        <Pressable
+          style={[applianceStyles.primaryButton, !hasSelectedAppliance && applianceStyles.primaryButtonDisabled]}
+          onPress={handleContinue}
+        >
           <Text style={applianceStyles.primaryButtonText}>Calculate Load</Text>
         </Pressable>
       </View>
@@ -1409,6 +1467,8 @@ const islamabadSolarProductionCurves = {
 } as const;
 
 const SolarRecommendationStepScreen = ({ navigation, store, onPrevious, onContinue }: { navigation: any; store: any; onPrevious: () => void; onContinue: () => void }) => {
+  const insets = useSafeAreaInsets();
+  const safeBottom = insets.bottom || 16;
   const [season, setSeason] = useState<'summer' | 'winter'>('summer');
   const runningLoadKw = calculateLoadKw(store.appliances);
   const recommendedKw = Math.max(3, Math.ceil(runningLoadKw * 1.5));
@@ -1438,7 +1498,7 @@ const SolarRecommendationStepScreen = ({ navigation, store, onPrevious, onContin
         ))}
       </View>
 
-      <ScrollView style={solarStyles.scroll} contentContainerStyle={solarStyles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView style={solarStyles.scroll} contentContainerStyle={[solarStyles.scrollContent, { paddingBottom: 178 + safeBottom }]} showsVerticalScrollIndicator={false}>
         <View style={solarStyles.titleBlock}>
           <Text style={solarStyles.title}>Your Solar Recommendation ☀️</Text>
           <Text style={solarStyles.subtitle}>Ideal system size for your daytime usage</Text>
@@ -1516,11 +1576,11 @@ const SolarRecommendationStepScreen = ({ navigation, store, onPrevious, onContin
 
       </ScrollView>
 
-      <Pressable style={solarStyles.chatButton} accessibilityLabel="Help">
+      <Pressable style={[solarStyles.chatButton, { bottom: 78 + safeBottom }]} accessibilityLabel="Help">
         <MessageCircle color="#FFFFFF" size={18} strokeWidth={2.2} />
       </Pressable>
 
-      <View style={solarStyles.footer}>
+      <View style={[solarStyles.footer, { paddingBottom: 10 + safeBottom }]}>
         <Pressable style={solarStyles.secondaryButton} onPress={onPrevious}>
           <Text style={solarStyles.secondaryButtonText}>Previous Step</Text>
         </Pressable>
@@ -1534,8 +1594,7 @@ const SolarRecommendationStepScreen = ({ navigation, store, onPrevious, onContin
 };
 
 const SolarProductionChart = ({ pvSizeKw, runningLoadKw, season }: { pvSizeKw: number; runningLoadKw: number; season: 'summer' | 'winter' }) => {
-  const [selectedPointIndex, setSelectedPointIndex] = useState(5);
-  const chart = { left: 36, right: 326, top: 18, bottom: 118 };
+  const chart = { left: 40, right: 322, top: 22, bottom: 142 };
   const width = chart.right - chart.left;
   const height = chart.bottom - chart.top;
   const productionCurve = islamabadSolarProductionCurves[season].points;
@@ -1552,45 +1611,119 @@ const SolarProductionChart = ({ pvSizeKw, runningLoadKw, season }: { pvSizeKw: n
     const y = valueToY(solarKW);
     return { time: point.time, solarKW, x, y };
   });
-  const selectedPoint = productionData[Math.min(selectedPointIndex, productionData.length - 1)];
-  const path = `M ${productionData.map((point) => `${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(' L ')}`;
+  const peakPoint = productionData.reduce((peak, point) => (point.solarKW > peak.solarKW ? point : peak), productionData[0]);
+  const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+  const smoothPath = productionData.slice(0, -1).reduce((path, point, index) => {
+    const currentPoint = point;
+    const nextPoint = productionData[index + 1];
+    const previousPoint = productionData[Math.max(0, index - 1)];
+    const followingPoint = productionData[Math.min(productionData.length - 1, index + 2)];
+    const controlTension = 0.18;
+    const minY = Math.min(currentPoint.y, nextPoint.y);
+    const maxY = Math.max(currentPoint.y, nextPoint.y);
+    const controlOneX = clamp(currentPoint.x + (nextPoint.x - previousPoint.x) * controlTension, currentPoint.x, nextPoint.x);
+    const controlOneY = clamp(currentPoint.y + (nextPoint.y - previousPoint.y) * controlTension, minY, maxY);
+    const controlTwoX = clamp(nextPoint.x - (followingPoint.x - currentPoint.x) * controlTension, currentPoint.x, nextPoint.x);
+    const controlTwoY = clamp(nextPoint.y - (followingPoint.y - currentPoint.y) * controlTension, minY, maxY);
+
+    return `${path} C ${controlOneX.toFixed(1)} ${controlOneY.toFixed(1)}, ${controlTwoX.toFixed(1)} ${controlTwoY.toFixed(1)}, ${nextPoint.x.toFixed(1)} ${nextPoint.y.toFixed(1)}`;
+  }, `M ${productionData[0].x.toFixed(1)} ${productionData[0].y.toFixed(1)}`);
+  const firstPoint = productionData[0];
+  const lastPoint = productionData[productionData.length - 1];
+  const areaPath = `${smoothPath} L ${lastPoint.x.toFixed(1)} ${chart.bottom} L ${firstPoint.x.toFixed(1)} ${chart.bottom} Z`;
   const runningLoadY = valueToY(runningLoadKw);
   const yAxisLabels = [0, maxKw * 0.25, maxKw * 0.5, maxKw * 0.75, maxKw];
   const formatAxisLabel = (value: number) => Number.isInteger(value) ? `${value}` : value.toFixed(1);
-  const tooltipWidth = 70;
-  const tooltipHeight = 34;
-  const tooltipX = Math.min(340 - tooltipWidth - 4, Math.max(4, selectedPoint.x - tooltipWidth / 2));
-  const tooltipY = Math.max(4, selectedPoint.y - tooltipHeight - 10);
+  const xAxisLabels = ['9 AM', '11 AM', '1 PM', '3 PM', '5 PM'];
+  const tooltipWidth = 66;
+  const tooltipHeight = 28;
+  const tooltipX = Math.min(340 - tooltipWidth - 7, Math.max(8, peakPoint.x - tooltipWidth / 2));
+  const tooltipY = Math.max(6, peakPoint.y - tooltipHeight - 14);
+  const runningLoadLabelWidth = 112;
+  const runningLoadLabelHeight = 28;
+  const runningLoadLabelX = chart.right - runningLoadLabelWidth - 6;
+  const runningLoadLabelY =
+    runningLoadY < chart.top + runningLoadLabelHeight + 6
+      ? runningLoadY + 7
+      : Math.max(chart.top + 4, runningLoadY - runningLoadLabelHeight - 7);
+  const runningLoadAnchorY =
+    runningLoadLabelY > runningLoadY
+      ? runningLoadLabelY
+      : runningLoadLabelY + runningLoadLabelHeight;
 
   return (
-    <Svg width="100%" height={144} viewBox="0 0 340 144">
+    <Svg width="100%" height={184} viewBox="0 0 340 184">
+      <Defs>
+        <LinearGradient id="solarAreaFill" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#F5B400" stopOpacity="0.28" />
+          <Stop offset="0.52" stopColor="#FBD46A" stopOpacity="0.13" />
+          <Stop offset="1" stopColor="#FFF6DB" stopOpacity="0.02" />
+        </LinearGradient>
+      </Defs>
+      <Rect x="34" y="14" width="294" height="142" rx="16" fill="#FFFFFF" />
       {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
         const y = chart.bottom - ratio * height;
-        return <Line key={ratio} x1={chart.left - 10} y1={y} x2={chart.right} y2={y} stroke={ratio === 0 ? '#E8DFD2' : '#F1E8DC'} strokeWidth="1" />;
+        return (
+          <Line
+            key={ratio}
+            x1={chart.left}
+            y1={y}
+            x2={chart.right}
+            y2={y}
+            stroke={ratio === 0 ? '#E8DFD2' : '#EEF2F6'}
+            strokeWidth="1"
+            strokeDasharray={ratio === 0 ? undefined : '3 6'}
+          />
+        );
       })}
-      <Line x1={chart.left} y1={runningLoadY} x2={chart.right - 9} y2={runningLoadY} stroke="#6D7280" strokeWidth="1.2" strokeDasharray="4 4" opacity="0.75" />
-      <SvgText x="4" y={chart.bottom + 3} fontSize="10" fill="#94A3B8">{formatAxisLabel(yAxisLabels[0])}</SvgText>
-      <SvgText x="0" y={valueToY(yAxisLabels[1]) + 3} fontSize="10" fill="#94A3B8">{formatAxisLabel(yAxisLabels[1])}</SvgText>
-      <SvgText x="0" y={valueToY(yAxisLabels[2]) + 3} fontSize="10" fill="#94A3B8">{formatAxisLabel(yAxisLabels[2])}</SvgText>
-      <SvgText x="0" y={valueToY(yAxisLabels[3]) + 3} fontSize="10" fill="#94A3B8">{formatAxisLabel(yAxisLabels[3])}</SvgText>
-      <SvgText x="0" y={chart.top + 3} fontSize="10" fill="#94A3B8">{formatAxisLabel(yAxisLabels[4])}</SvgText>
-      <Path d={path} fill="none" stroke="#FFA51D" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-      <Line x1={selectedPoint.x} y1={selectedPoint.y} x2={selectedPoint.x} y2={chart.bottom} stroke="#F5A400" strokeWidth="1.2" opacity="0.8" />
+      <SvgText x="14" y={chart.top - 6} fontSize="9.5" fontWeight="800" fill="#98A2B3">kW</SvgText>
+      <Line x1={chart.left} y1={runningLoadY} x2={chart.right} y2={runningLoadY} stroke="#344054" strokeWidth="1.35" strokeDasharray="5 5" opacity="0.78" />
+      <Path d={areaPath} fill="url(#solarAreaFill)" />
+      <Path d={smoothPath} fill="none" stroke="#F5A400" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
+      {yAxisLabels.map((label) => (
+        <SvgText key={`axis-${label}`} x="5" y={valueToY(label) + 3} fontSize="9.5" fill="#98A2B3">{formatAxisLabel(label)}</SvgText>
+      ))}
       {productionData.map((point, index) => (
         <React.Fragment key={`${point.time}-${point.x}`}>
-          <Circle cx={point.x} cy={point.y} r={index === selectedPointIndex ? 4.4 : 2.4} fill={index === selectedPointIndex ? '#FFFFFF' : '#FFA51D'} stroke="#FFA51D" strokeWidth={index === selectedPointIndex ? 2.2 : 0} />
-          <Circle cx={point.x} cy={point.y} r="11" fill="transparent" onPress={() => setSelectedPointIndex(index)} />
+          <Circle cx={point.x} cy={point.y} r={point.time === peakPoint.time ? 5 : 3.4} fill="#F5A400" stroke="#FFFFFF" strokeWidth="2" />
+          <Circle cx={point.x} cy={point.y} r="10" fill="transparent" />
         </React.Fragment>
       ))}
-      <Rect x={tooltipX} y={tooltipY} width={tooltipWidth} height={tooltipHeight} rx="9" fill="#172031" opacity="0.96" />
-      <SvgText x={tooltipX + tooltipWidth / 2} y={tooltipY + 13} fontSize="9.5" fontWeight="700" fill="#FFFFFF" textAnchor="middle">{selectedPoint.time}</SvgText>
-      <SvgText x={tooltipX + tooltipWidth / 2} y={tooltipY + 27} fontSize="11" fontWeight="900" fill="#F5B700" textAnchor="middle">{selectedPoint.solarKW.toFixed(1)} kW</SvgText>
-      <SvgText x="24" y="136" fontSize="10" fill="#94A3B8">8 AM</SvgText>
-      <SvgText x="92" y="136" fontSize="10" fill="#94A3B8">10 AM</SvgText>
-      <SvgText x="166" y="136" fontSize="10" fill="#94A3B8">12 PM</SvgText>
-      <SvgText x="238" y="136" fontSize="10" fill="#94A3B8">2 PM</SvgText>
-      <SvgText x="310" y="136" fontSize="10" fill="#94A3B8">5 PM</SvgText>
-      <SvgText x="236" y={Math.max(12, runningLoadY - 6)} fontSize="10" fill="#7B808A">Running Load</SvgText>
+      <Rect x={tooltipX + 1} y={tooltipY + 2} width={tooltipWidth} height={tooltipHeight} rx="9" fill="#0F172A" opacity="0.08" />
+      <Rect x={tooltipX} y={tooltipY} width={tooltipWidth} height={tooltipHeight} rx="9" fill="#FFFFFF" stroke="#E8DED0" strokeWidth="1" />
+      <Polygon
+        points={`${peakPoint.x - 5},${tooltipY + tooltipHeight - 1} ${peakPoint.x + 5},${tooltipY + tooltipHeight - 1} ${peakPoint.x},${tooltipY + tooltipHeight + 7}`}
+        fill="#FFFFFF"
+        stroke="#E8DED0"
+        strokeWidth="1"
+      />
+      <SvgText x={tooltipX + tooltipWidth / 2} y={tooltipY + 18} fontSize="12" fontWeight="900" fill="#101828" textAnchor="middle">{peakPoint.solarKW.toFixed(1)} kW</SvgText>
+      {xAxisLabels.map((label) => {
+        const point = productionData.find((item) => item.time === label);
+        if (!point) return null;
+        return <SvgText key={label} x={point.x} y="169" fontSize="9.5" fill="#98A2B3" textAnchor="middle">{label}</SvgText>;
+      })}
+      <Line
+        x1={runningLoadLabelX + runningLoadLabelWidth - 13}
+        y1={runningLoadAnchorY}
+        x2={runningLoadLabelX + runningLoadLabelWidth - 13}
+        y2={runningLoadY}
+        stroke="#475467"
+        strokeWidth="1"
+        opacity="0.38"
+      />
+      <Rect
+        x={runningLoadLabelX}
+        y={runningLoadLabelY}
+        width={runningLoadLabelWidth}
+        height={runningLoadLabelHeight}
+        rx="10"
+        fill="#FFFDF7"
+        stroke="#E6D9C8"
+        strokeWidth="1"
+      />
+      <SvgText x={runningLoadLabelX + 10} y={runningLoadLabelY + 12} fontSize="8.3" fontWeight="800" fill="#667085">Running Load</SvgText>
+      <SvgText x={runningLoadLabelX + 10} y={runningLoadLabelY + 24} fontSize="10.5" fontWeight="900" fill="#101828">{runningLoadKw.toFixed(1)} kW</SvgText>
     </Svg>
   );
 };
@@ -1611,11 +1744,189 @@ const StepHeader = ({ step, active, onBack }: { step: string; active: number; on
   </>
 );
 
-const ChatButton = () => (
-  <Pressable style={flowStyles.chatButton} accessibilityLabel="Help">
-    <MessageCircle color="#FFFFFF" size={18} strokeWidth={2.2} />
-  </Pressable>
+type RoofPanelLayout = ReturnType<typeof calculatePanelLayout>;
+
+const preferredPanelBrandOrder = ['ja', 'astro', 'canadian', 'jinko'];
+
+const panelBrandRank = (brand?: string | null) => {
+  const normalized = normalizeBrandName(brand);
+  const rank = preferredPanelBrandOrder.indexOf(normalized);
+  return rank === -1 ? preferredPanelBrandOrder.length : rank;
+};
+
+const selectDefaultPanelProduct = (panelProducts: Product[], requestedPanelWattage: number) => [...panelProducts]
+  .filter((product) => extractPanelWattage(product) > 0)
+  .sort((left, right) => {
+    const leftWattage = extractPanelWattage(left);
+    const rightWattage = extractPanelWattage(right);
+    return panelBrandRank(getProductBrandName(left)) - panelBrandRank(getProductBrandName(right)) ||
+      Math.abs(leftWattage - requestedPanelWattage) - Math.abs(rightWattage - requestedPanelWattage) ||
+      rightWattage - leftWattage ||
+      left.name.localeCompare(right.name);
+  })[0] ?? null;
+
+const panelOptionLabel = (product: Product) => `${getProductBrandName(product)} ${extractPanelWattage(product)}W`;
+
+const SolarPanelTile = ({ index, width, height }: { index: number; width: number; height: number }) => (
+  <View style={[roofStyles.panelTile, { width, height }]}>
+    <View style={roofStyles.panelTileShine} />
+    {[1, 2, 3].map((line) => (
+      <View key={`v-${index}-${line}`} style={[roofStyles.panelGridLineVertical, { left: `${line * 25}%` }]} />
+    ))}
+    {[1, 2].map((line) => (
+      <View key={`h-${index}-${line}`} style={[roofStyles.panelGridLineHorizontal, { top: `${line * 33.33}%` }]} />
+    ))}
+  </View>
 );
+
+const PanelLayoutIllustration = ({ panelCount, layout }: { panelCount: number; layout: RoofPanelLayout }) => {
+  const borderProgress = useRef(new Animated.Value(0)).current;
+  const normalizedPanelCount = Math.max(1, Math.ceil(panelCount || 1));
+  const columns = Math.max(1, layout.columns);
+  const rows = Math.max(1, layout.rows);
+  const gapFt = Math.max(0.08, layout.gapFt || 0.08);
+  const totalWidthFt = layout.width;
+  const totalHeightFt = layout.height;
+  const availableWidth = 184;
+  const availableHeight = 146;
+  const scale = Math.min(availableWidth / totalWidthFt, availableHeight / totalHeightFt);
+  const panelPixelWidth = Math.max(20, layout.panelWidth * scale);
+  const panelPixelHeight = Math.max(20, layout.panelHeight * scale);
+  const gapPixel = Math.max(3, gapFt * scale);
+  const gridPixelWidth = columns * panelPixelWidth + Math.max(0, columns - 1) * gapPixel;
+  const gridPixelHeight = rows * panelPixelHeight + Math.max(0, rows - 1) * gapPixel;
+  const gridLeft = 34 + (availableWidth - gridPixelWidth) / 2;
+  const gridTop = 42 + (availableHeight - gridPixelHeight) / 2;
+  const formattedWidth = totalWidthFt.toFixed(1);
+  const formattedHeight = totalHeightFt.toFixed(1);
+  const containerWidth = 280;
+  const containerHeight = 246;
+  const borderInset = 3;
+  const borderWidth = containerWidth - borderInset * 2;
+  const borderHeight = containerHeight - borderInset * 2;
+  const borderPathLength = 2 * (borderWidth + borderHeight);
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.timing(borderProgress, {
+        toValue: 1,
+        duration: 2600,
+        easing: Easing.linear,
+        useNativeDriver: false
+      })
+    );
+
+    animation.start();
+    return () => animation.stop();
+  }, [borderProgress]);
+
+  const borderDashOffset = borderProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -borderPathLength]
+  });
+
+  return (
+    <View style={roofStyles.animatedLayoutBox}>
+      <Svg width="100%" height="100%" viewBox={`0 0 ${containerWidth} ${containerHeight}`} style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Rect x={borderInset} y={borderInset} width={borderWidth} height={borderHeight} rx="18" fill="none" stroke="#DDE6EE" strokeWidth="1.2" />
+        <Rect x={borderInset} y={borderInset} width={borderWidth} height={borderHeight} rx="18" fill="none" stroke="#35C8FF" strokeWidth="6" opacity="0.08" />
+        <AnimatedRect
+          x={borderInset}
+          y={borderInset}
+          width={borderWidth}
+          height={borderHeight}
+          rx="18"
+          fill="none"
+          stroke="#2CB7FF"
+          strokeWidth="2.7"
+          strokeLinecap="round"
+          strokeDasharray={`${Math.round(borderPathLength * 0.28)} ${Math.round(borderPathLength)}`}
+          strokeDashoffset={borderDashOffset as unknown as number}
+          opacity="0.95"
+        />
+      </Svg>
+
+      <View style={roofStyles.dimensionBadge}>
+        <Text style={roofStyles.dimensionBadgeText}>{formattedWidth}' × {formattedHeight}'</Text>
+      </View>
+
+      <View
+        style={[
+          roofStyles.realPanelGrid,
+          {
+            left: gridLeft,
+            top: gridTop,
+            width: gridPixelWidth,
+            height: gridPixelHeight
+          }
+        ]}
+      >
+        {Array.from({ length: rows }).map((_, row) => (
+          <View key={`panel-row-${row}`} style={[roofStyles.realPanelRow, { gap: gapPixel }]}>
+            {Array.from({ length: columns }).map((__, column) => {
+              const panelIndex = row * columns + column;
+              if (panelIndex >= normalizedPanelCount) {
+                return <View key={`empty-${row}-${column}`} style={{ width: panelPixelWidth, height: panelPixelHeight }} />;
+              }
+              return <SolarPanelTile key={`panel-${row}-${column}`} index={panelIndex} width={panelPixelWidth} height={panelPixelHeight} />;
+            })}
+          </View>
+        ))}
+      </View>
+
+      <View
+        style={[
+          roofStyles.verticalDimension,
+          {
+            top: gridTop,
+            right: Math.max(14, containerWidth - gridLeft - gridPixelWidth - 42),
+            height: gridPixelHeight
+          }
+        ]}
+      >
+        <Svg width="28" height={gridPixelHeight} viewBox={`0 0 28 ${gridPixelHeight}`} pointerEvents="none">
+          <Line x1="14" y1="9" x2="14" y2={gridPixelHeight - 9} stroke="#7B8794" strokeWidth="1.2" />
+          <Path d="M14 2 L9 11 H19 Z" fill="#7B8794" />
+          <Path d={`M14 ${gridPixelHeight - 2} L9 ${gridPixelHeight - 11} H19 Z`} fill="#7B8794" />
+          <Line x1="4" y1="9" x2="24" y2="9" stroke="#CBD5E1" strokeWidth="1" />
+          <Line x1="4" y1={gridPixelHeight - 9} x2="24" y2={gridPixelHeight - 9} stroke="#CBD5E1" strokeWidth="1" />
+        </Svg>
+        <Text style={roofStyles.verticalDimensionText}>{formattedHeight} ft</Text>
+      </View>
+
+      <View
+        style={[
+          roofStyles.horizontalDimension,
+          {
+            left: gridLeft,
+            bottom: 24,
+            width: gridPixelWidth
+          }
+        ]}
+      >
+        <Text style={roofStyles.horizontalDimensionText}>{formattedWidth} ft</Text>
+        <Svg width={gridPixelWidth} height="24" viewBox={`0 0 ${gridPixelWidth} 24`} pointerEvents="none">
+          <Line x1="13" y1="13" x2={gridPixelWidth - 13} y2="13" stroke="#7B8794" strokeWidth="1.2" />
+          <Path d="M3 13 L14 7 V19 Z" fill="#7B8794" />
+          <Path d={`M${gridPixelWidth - 3} 13 L${gridPixelWidth - 14} 7 V19 Z`} fill="#7B8794" />
+          <Line x1="13" y1="4" x2="13" y2="22" stroke="#CBD5E1" strokeWidth="1" />
+          <Line x1={gridPixelWidth - 13} y1="4" x2={gridPixelWidth - 13} y2="22" stroke="#CBD5E1" strokeWidth="1" />
+        </Svg>
+      </View>
+    </View>
+  );
+};
+
+const ChatButton = () => {
+  const insets = useSafeAreaInsets();
+  const safeBottom = insets.bottom || 16;
+
+  return (
+    <Pressable style={[flowStyles.chatButton, { bottom: 78 + safeBottom }]} accessibilityLabel="Help">
+      <MessageCircle color="#FFFFFF" size={18} strokeWidth={2.2} />
+    </Pressable>
+  );
+};
 
 const RecommendedSystemStepScreen = ({
   solarKw,
@@ -1628,6 +1939,8 @@ const RecommendedSystemStepScreen = ({
   onPrevious: () => void;
   onContinue: () => void;
 }) => {
+  const insets = useSafeAreaInsets();
+  const safeBottom = insets.bottom || 16;
   const solarSize = Math.round(solarKw || 3);
   const inverterSize = getInverterSizeKw(solarSize);
   const batterySize = batteryKwh;
@@ -1635,7 +1948,7 @@ const RecommendedSystemStepScreen = ({
   return (
     <SafeAreaView style={flowStyles.shell} edges={['top']}>
       <StepHeader step="Step 7 of 8" active={7} onBack={onPrevious} />
-      <ScrollView style={flowStyles.scroll} contentContainerStyle={recommendedStyles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={flowStyles.scroll} contentContainerStyle={[recommendedStyles.content, { paddingBottom: 178 + safeBottom }]} showsVerticalScrollIndicator={false}>
         <View style={recommendedStyles.titleBlock}>
           <Text style={recommendedStyles.title}>Your Recommended Solar System is Ready <Text style={recommendedStyles.flash}>⚡</Text></Text>
           <Text style={recommendedStyles.subtitle}>Based on your selected appliances, load and usage</Text>
@@ -1679,7 +1992,7 @@ const RecommendedSystemStepScreen = ({
         <Text style={recommendedStyles.trustText}>ⓘ 100% Safe · Genuine Products · Expert Support</Text>
       </ScrollView>
       <ChatButton />
-      <View style={recommendedStyles.footer}>
+      <View style={[recommendedStyles.footer, { paddingBottom: 10 + safeBottom }]}>
         <Pressable style={recommendedStyles.secondaryButton} onPress={onPrevious}>
           <Text style={recommendedStyles.secondaryButtonText}>Previous Step</Text>
         </Pressable>
@@ -1705,14 +2018,22 @@ const RoofSpaceStepScreen = ({
   onPrevious: () => void;
   onContinue: () => void;
 }) => {
+  const insets = useSafeAreaInsets();
+  const safeBottom = insets.bottom || 16;
   const selectedPVSizeKW = Math.min(20, Math.max(1, Math.round(Number(store.recommendedSolarKw || 3))));
   const requestedPanelWattage = Math.round(Number(store.panelWattage || 610));
   const panelProductsQuery = useProducts('panel');
-  const panelProducts = panelProductsQuery.data ?? [];
-  const wattageOptions = useMemo(() => getAvailablePanelWattages(panelProducts), [panelProducts]);
-  const selectedPanelWattage = wattageOptions.includes(requestedPanelWattage) ? requestedPanelWattage : wattageOptions[0] ?? requestedPanelWattage;
-  const panelCount = calculatePanelCount(selectedPVSizeKW, selectedPanelWattage);
-  const actualSolarKw = (panelCount * selectedPanelWattage) / 1000;
+  const allProducts = panelProductsQuery.data ?? [];
+  const detectedPanelProducts = useMemo(() => allProducts.filter(isPanelProduct), [allProducts]);
+  const panelProducts = useMemo(() => detectedPanelProducts.filter((product) => extractPanelWattage(product) > 0), [detectedPanelProducts]);
+  const storedPanel = panelProducts.find((product) => product.id === store.selectedPanels?.id) ?? null;
+  const defaultPanel = useMemo(
+    () => selectDefaultPanelProduct(panelProducts, requestedPanelWattage),
+    [panelProducts, requestedPanelWattage]
+  );
+  const selectedPanel = storedPanel ?? defaultPanel;
+  const selectedPanelWattage = selectedPanel ? extractPanelWattage(selectedPanel) : 0;
+  const panelCount = selectedPanelWattage > 0 ? calculatePanelCount(selectedPVSizeKW, selectedPanelWattage) : 0;
   const layout = useMemo(
     () => calculatePanelLayout({ panelCount, orientation }),
     [orientation, panelCount]
@@ -1723,61 +2044,58 @@ const RoofSpaceStepScreen = ({
   );
   const columns = layout.columns;
   const rows = layout.rows;
-  const totalSlots = rows * columns;
-  const missingPanels = totalSlots - panelCount;
-  const centerRow = (rows - 1) / 2;
-  const centerColumn = (columns - 1) / 2;
-  const emptySlotIndexes = new Set(
-    Array.from({ length: totalSlots })
-      .map((_, index) => ({
-        index,
-        row: Math.floor(index / columns),
-        column: index % columns
-      }))
-      .sort((a, b) => {
-        const aDistance = Math.abs(a.row - centerRow) + Math.abs(a.column - centerColumn);
-        const bDistance = Math.abs(b.row - centerRow) + Math.abs(b.column - centerColumn);
-        const aLowerCenterBias = a.row >= centerRow ? 0 : 0.25;
-        const bLowerCenterBias = b.row >= centerRow ? 0 : 0.25;
-        return (aDistance + aLowerCenterBias) - (bDistance + bLowerCenterBias);
-      })
-      .slice(0, missingPanels)
-      .map((slot) => slot.index)
-  );
-  const gridRows = Array.from({ length: rows }).map((_, rowIndex) =>
-    Array.from({ length: columns }).map((__, columnIndex) => {
-      const slotIndex = rowIndex * columns + columnIndex;
-      return !emptySlotIndexes.has(slotIndex);
-    })
-  );
-  const footprintWidthFt = layout.width;
-  const footprintHeightFt = layout.height;
-  const roofAreaSqFt = layout.area;
-  const previewWidth = 206;
-  const previewMaxHeight = 170;
-  const gridGap = 4;
-  const gridPadding = 6;
-  const rawCellWidth = Math.max(16, (previewWidth - gridPadding * 2 - gridGap * (columns - 1)) / columns);
-  const rawCellHeight = rawCellWidth * (layout.panelHeight / layout.panelWidth);
-  const rawGridHeight = rows * rawCellHeight + Math.max(0, rows - 1) * gridGap + gridPadding * 2;
-  const previewScale = Math.min(1, previewMaxHeight / rawGridHeight);
-  const cellWidth = Math.max(14, rawCellWidth * previewScale);
-  const cellHeight = Math.max(14, rawCellHeight * previewScale);
-  const previewGridWidth = columns * cellWidth + Math.max(0, columns - 1) * gridGap + gridPadding * 2;
+  const roofAreaSqFt = selectedPanel ? layout.area : 0;
   const inverterSize = Math.max(3, Math.ceil(selectedPVSizeKW));
   const batterySize = store.backupDecision === 'yes' ? store.selectedBatteryKwh : 0;
+  const panelEmptyMessage = panelProductsQuery.isLoading
+    ? 'Loading solar panels...'
+    : panelProductsQuery.isError
+      ? 'Unable to load panel products. Please try again.'
+      : detectedPanelProducts.length > 0
+        ? 'Panel wattage not detected. Please add wattage/capacity for panel products in Admin Dashboard.'
+        : 'No solar panel products found. Please add solar panels in Admin Dashboard.';
 
   useEffect(() => {
-    if (panelProductsQuery.isLoading || panelProductsQuery.isError || wattageOptions.length === 0) return;
-    if (store.panelWattage !== selectedPanelWattage) store.setPanelWattage(selectedPanelWattage);
-    const bestPanel = findBestPanelByWattage(selectedPanelWattage, panelProducts);
-    if (bestPanel && store.selectedPanels?.id !== bestPanel.id) store.setSelectedProduct(bestPanel);
-  }, [panelProducts, panelProductsQuery.isError, panelProductsQuery.isLoading, selectedPanelWattage, store, wattageOptions.length]);
+    if (!__DEV__) return;
+    if (panelProductsQuery.isLoading) {
+      console.log('Step 3 loading products...');
+      return;
+    }
+    console.log('Step 3 products response:', allProducts);
+    console.log('Step 3 products error:', panelProductsQuery.error ?? null);
+    if (panelProductsQuery.error && typeof panelProductsQuery.error === 'object') {
+      const supabaseError = panelProductsQuery.error as { message?: string; details?: string; code?: string };
+      console.log('Step 3 Supabase error:', {
+        message: supabaseError.message,
+        details: supabaseError.details,
+        code: supabaseError.code
+      });
+    }
+    console.log('Step 3 product count:', allProducts?.length);
+    console.log('Step 3 detected panel products:', detectedPanelProducts);
+    console.log('Step 3 panel categories:', allProducts?.map((product) => product.category));
+    console.log('Step 3 panel wattages:', detectedPanelProducts?.map((product) => ({
+      name: product.name,
+      brand: getProductBrandName(product),
+      category: product.category,
+      wattage: extractPanelWattage(product),
+      specifications: product.specifications
+    })));
+  }, [allProducts, detectedPanelProducts, panelProductsQuery.error, panelProductsQuery.isLoading]);
 
-  const handleWattageSelect = (wattage: number) => {
+  useEffect(() => {
+    if (panelProductsQuery.isLoading || panelProductsQuery.isError || !selectedPanel || selectedPanelWattage <= 0) return;
+    if (store.panelWattage !== selectedPanelWattage) store.setPanelWattage(selectedPanelWattage);
+    if (store.selectedPanels?.id !== selectedPanel.id) store.setSelectedProduct(selectedPanel);
+    if (store.selectedPanelBrand !== getProductBrandName(selectedPanel)) store.setSelectedPanelBrand(getProductBrandName(selectedPanel));
+  }, [panelProductsQuery.isError, panelProductsQuery.isLoading, selectedPanel, selectedPanelWattage, store]);
+
+  const handlePanelSelect = (panel: Product) => {
+    const wattage = extractPanelWattage(panel);
+    if (wattage <= 0) return;
     store.setPanelWattage(wattage);
-    const bestPanel = findBestPanelByWattage(wattage, panelProducts);
-    if (bestPanel) store.setSelectedProduct(bestPanel);
+    store.setSelectedPanelBrand(getProductBrandName(panel));
+    store.setSelectedProduct(panel);
   };
 
   return (
@@ -1785,7 +2103,7 @@ const RoofSpaceStepScreen = ({
       <StepHeader step="Step 3 of 8" active={3} onBack={onPrevious} />
       <ScrollView
         style={flowStyles.scroll}
-        contentContainerStyle={roofStyles.content}
+        contentContainerStyle={[roofStyles.content, { paddingBottom: 178 + safeBottom }]}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={panelProductsQuery.isRefetching} onRefresh={() => void panelProductsQuery.refetch()} />}
       >
@@ -1793,7 +2111,9 @@ const RoofSpaceStepScreen = ({
           <View style={roofStyles.layoutHead}>
             <View>
               <Text style={roofStyles.metricLabel}>PANEL LAYOUT</Text>
-              <Text style={roofStyles.layoutTitle}>{panelCount} panels x {selectedPanelWattage}W</Text>
+              <Text style={roofStyles.layoutTitle}>
+                {selectedPanel ? `${panelCount} panels x ${selectedPanelWattage}W` : panelEmptyMessage}
+              </Text>
             </View>
             <View style={roofStyles.areaBadge}>
               <Text style={roofStyles.areaBadgeText}>{roofAreaSqFt} sq ft</Text>
@@ -1829,33 +2149,23 @@ const RoofSpaceStepScreen = ({
               </Text>
             </View>
             <View style={roofStyles.panelPreviewRow}>
-              <View style={[roofStyles.panelGrid, { width: previewGridWidth, padding: gridPadding }]}>
-                {gridRows.map((gridRow, rowIndex) => (
-                  <View key={rowIndex} style={[roofStyles.panelGridRow, { gap: gridGap }]}>
-                    {gridRow.map((filled, panelIndex) => (
-                      <View
-                        key={`${rowIndex}-${panelIndex}`}
-                        style={[
-                          roofStyles.panelCell,
-                          !filled && roofStyles.panelCellEmpty,
-                          { width: cellWidth, height: cellHeight }
-                        ]}
-                      />
-                    ))}
-                  </View>
-                ))}
-              </View>
-            </View>
-            <View style={roofStyles.dimensionLabels}>
-              <Text style={roofStyles.dimensionText}>← {footprintWidthFt.toFixed(1)} ft →</Text>
-              <Text style={roofStyles.dimensionText}>← {footprintHeightFt.toFixed(1)} ft →</Text>
+              {selectedPanel ? (
+                <PanelLayoutIllustration panelCount={panelCount} layout={layout} />
+              ) : (
+                <View style={roofStyles.emptyPanelPreview}>
+                  <Text style={roofStyles.noWattageText}>{panelEmptyMessage}</Text>
+                </View>
+              )}
             </View>
           </View>
         </View>
 
         <View style={roofStyles.metricCard}>
           <Text style={roofStyles.metricLabel}>REQUIRED PANELS</Text>
-          <Text style={roofStyles.metricValue}>{panelCount}</Text>
+          <Text style={roofStyles.metricValue}>{selectedPanel ? panelCount : 0}</Text>
+          {selectedPanel ? (
+            <Text style={roofStyles.selectedPanelText}>Selected Panel: {panelOptionLabel(selectedPanel)}</Text>
+          ) : null}
           <View style={roofStyles.wattageSelector}>
             {panelProductsQuery.isLoading ? (
               [1, 2, 3].map((item) => (
@@ -1863,17 +2173,17 @@ const RoofSpaceStepScreen = ({
                   <Text style={roofStyles.wattagePillText}>...</Text>
                 </View>
               ))
-            ) : wattageOptions.length === 0 ? (
-              <Text style={roofStyles.noWattageText}>No panel wattages available. Please add solar panel products from admin dashboard.</Text>
-            ) : wattageOptions.map((wattage) => {
-              const selected = wattage === selectedPanelWattage;
+            ) : panelProductsQuery.isError || panelProducts.length === 0 ? (
+              <Text style={roofStyles.noWattageText}>{panelEmptyMessage}</Text>
+            ) : panelProducts.map((panel) => {
+              const selected = panel.id === selectedPanel?.id;
               return (
                 <Pressable
-                  key={wattage}
+                  key={panel.id}
                   style={[roofStyles.wattagePill, selected && roofStyles.wattagePillActive]}
-                  onPress={() => handleWattageSelect(wattage)}
+                  onPress={() => handlePanelSelect(panel)}
                 >
-                  <Text style={[roofStyles.wattagePillText, selected && roofStyles.wattagePillTextActive]}>{wattage}W</Text>
+                  <Text style={[roofStyles.wattagePillText, selected && roofStyles.wattagePillTextActive]}>{panelOptionLabel(panel)}</Text>
                 </Pressable>
               );
             })}
@@ -1882,12 +2192,12 @@ const RoofSpaceStepScreen = ({
 
         <View style={roofStyles.heroCard}>
           <Text style={roofStyles.heroTitle}>Total Roof Space</Text>
-          <Text style={roofStyles.heroValue}>~{roofAreaSqFt} sq ft</Text>
+          <Text style={roofStyles.heroValue}>{selectedPanel ? `~${roofAreaSqFt} sq ft` : '--'}</Text>
           <Text style={roofStyles.heroCopy}>AUTO-CALCULATED FOR YOUR {selectedPVSizeKW} KW{'\n'}RECOMMENDATION.</Text>
         </View>
       </ScrollView>
       <ChatButton />
-      <View style={roofStyles.footer}>
+      <View style={[roofStyles.footer, { paddingBottom: 10 + safeBottom }]}>
         <Pressable style={roofStyles.secondaryButton} onPress={onPrevious}>
           <Text style={roofStyles.secondaryButtonText}>Previous Step</Text>
         </Pressable>
@@ -1999,20 +2309,39 @@ const formatDetailKwh = (valueWh: number) => `${(valueWh / 1000).toFixed(1)} kWh
 
 const backupHourOptions = [1, 2, 3, 4, 5, 6, 8];
 const batterySizeOptions = [5, 6, 10];
-const calculateActualBackupLoadKw = (appliances: any[]) =>
+const BATTERY_USABLE_FACTOR = 0.9;
+const calculateBackupRunningLoadKw = (appliances: any[]) =>
+  appliances.reduce((sum, item) => sum + (item.watts * item.quantity), 0) / 1000;
+const calculateRequiredBackupEnergyKwh = (appliances: any[]) =>
   appliances.reduce((sum, item) => sum + (item.watts * item.quantity * (item.hours ?? DEFAULT_BACKUP_HOURS)), 0) / 1000;
-const calculateRequiredBackupKwh = (appliances: any[]) => {
-  const totalWh = calculateActualBackupLoadKw(appliances) * 1000;
-  const safetyMargin = totalWh * 0.25;
-  return (totalWh + safetyMargin) / 1000;
-};
-const getRecommendedBatteryKwh = (requiredKwh: number) =>
-  batterySizeOptions.find((size) => size >= requiredKwh) ?? batterySizeOptions[batterySizeOptions.length - 1];
+const getUsableBatteryKwh = (batteryKwh: number) => batteryKwh * BATTERY_USABLE_FACTOR;
+const getRecommendedBatteryKwh = (requiredBackupEnergyKwh: number) =>
+  requiredBackupEnergyKwh <= 0
+    ? 0
+    : batterySizeOptions.find((size) => getUsableBatteryKwh(size) >= requiredBackupEnergyKwh) ?? batterySizeOptions[batterySizeOptions.length - 1];
+const getBatteryOptionsForRunningLoad = (runningLoadKw: number) =>
+  batterySizeOptions.filter((size) => {
+    if (runningLoadKw <= 5) return true;
+    if (runningLoadKw <= 6) return size >= 6;
+    return size >= 10;
+  });
 const formatBackupLoadKw = (value: number) => {
   const rounded = Math.round(value * 100) / 100;
   return Number.isInteger(rounded) ? `${rounded}` : rounded.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
 };
-const formatBackupHours = (hours: number) => `${hours.toFixed(2)} Hours`;
+const formatBatteryDeltaKwh = (value: number) => {
+  const rounded = Math.max(0, Math.round(value * 10) / 10);
+  return Number.isInteger(rounded) ? `${rounded}` : rounded.toFixed(1);
+};
+const formatEstimatedBackupHours = (hours: number) => {
+  const rounded = Math.max(0, Math.round(hours * 10) / 10);
+  return Number.isInteger(rounded) ? `${rounded}` : rounded.toFixed(1);
+};
+const getBatteryOptionLabel = (size: number, recommendedBatteryKwh: number) => {
+  if (size === recommendedBatteryKwh) return 'Recommended size';
+  if (size < recommendedBatteryKwh) return size <= 5 ? 'Basic backup' : 'Better backup';
+  return 'Longer backup';
+};
 
 const BackupApplianceCard = ({
   id,
@@ -2141,10 +2470,26 @@ const BackupCalculationDetailsCard = ({
 };
 
 const BackupAppliancesStepScreen = ({ store, onPrevious, onContinue }: { store: any; onPrevious: () => void; onContinue: () => void }) => {
+  const insets = useSafeAreaInsets();
+  const safeBottom = insets.bottom || 16;
   const [addOtherOpen, setAddOtherOpen] = useState(false);
   const [hoursPickerId, setHoursPickerId] = useState<string | null>(null);
   const [calculationOpen, setCalculationOpen] = useState(false);
-  const batteryKwh = calculateRequiredBackupKwh(store.backupAppliances);
+  const [validationError, setValidationError] = useState('');
+  const selectedBackupAppliances = store.backupAppliances.filter((item: any) => item.quantity > 0);
+  const selectedBackupQuantity = selectedBackupAppliances.reduce(
+    (total: number, item: any) => total + Math.max(0, Number(item.quantity) || 0),
+    0
+  );
+  const hasSelectedBackupAppliance = selectedBackupQuantity > 0;
+  const runningLoadKw = calculateBackupRunningLoadKw(store.backupAppliances);
+  const requiredBackupEnergyKwh = calculateRequiredBackupEnergyKwh(store.backupAppliances);
+  const batteryKwh = hasSelectedBackupAppliance ? getRecommendedBatteryKwh(requiredBackupEnergyKwh) : 0;
+  const averageBackupHours = (() => {
+    const totalQuantity = selectedBackupAppliances.reduce((sum: number, item: any) => sum + item.quantity, 0);
+    const weightedHours = selectedBackupAppliances.reduce((sum: number, item: any) => sum + (item.hours ?? DEFAULT_BACKUP_HOURS) * item.quantity, 0);
+    return totalQuantity > 0 ? weightedHours / totalQuantity : 0;
+  })();
   const solarKw = Math.min(20, Math.max(1, Math.round(Number(store.recommendedSolarKw || 3))));
   const inverterKw = getInverterSizeKw(solarKw);
   const defaultIds = new Set(applianceGroups.flatMap((group) => group.ids));
@@ -2154,10 +2499,26 @@ const BackupAppliancesStepScreen = ({ store, onPrevious, onContinue }: { store: 
     store.addBackupAppliance({ ...item, quantity: 1, hours: DEFAULT_BACKUP_HOURS });
     setAddOtherOpen(false);
   };
+  const handleContinue = () => {
+    if (!hasSelectedBackupAppliance) {
+      setValidationError('Please select at least one appliance for backup.');
+      return;
+    }
+    setValidationError('');
+    onContinue();
+  };
 
   useEffect(() => {
-    store.setSelectedBatteryKwh(batteryKwh);
-  }, [batteryKwh]);
+    if (hasSelectedBackupAppliance) {
+      store.setSelectedBatteryKwh(batteryKwh);
+    } else if (Number(store.selectedBatteryKwh) !== 0) {
+      store.setSelectedBatteryKwh(0);
+    }
+  }, [batteryKwh, hasSelectedBackupAppliance, store.selectedBatteryKwh]);
+
+  useEffect(() => {
+    if (hasSelectedBackupAppliance && validationError) setValidationError('');
+  }, [hasSelectedBackupAppliance, validationError]);
 
   return (
     <SafeAreaView style={applianceStyles.shell} edges={['top']}>
@@ -2173,7 +2534,7 @@ const BackupAppliancesStepScreen = ({ store, onPrevious, onContinue }: { store: 
 
       <ScrollView
         style={applianceStyles.scroll}
-        contentContainerStyle={applianceStyles.scrollContent}
+        contentContainerStyle={[applianceStyles.scrollContent, { paddingBottom: 296 + safeBottom }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={applianceStyles.questionBlock}>
@@ -2238,8 +2599,45 @@ const BackupAppliancesStepScreen = ({ store, onPrevious, onContinue }: { store: 
         />
       </ScrollView>
 
-      <View style={applianceStyles.bottomPanel}>
-        <Pressable style={applianceStyles.primaryButton} onPress={onContinue}>
+      <View style={[applianceStyles.bottomPanel, { paddingBottom: 8 + safeBottom }]}>
+        <View style={applianceStyles.backupSummaryCard}>
+          <View style={applianceStyles.backupSummaryHeader}>
+            <View style={applianceStyles.backupSummaryTitleRow}>
+              <View style={applianceStyles.backupSummaryIcon}>
+                <Zap color="#10213A" size={14} strokeWidth={2.5} />
+              </View>
+              <Text style={applianceStyles.backupSummaryTitle}>Your Backup Load Summary</Text>
+            </View>
+            <View style={applianceStyles.backupSummaryBadge}>
+              <Text style={applianceStyles.backupSummaryBadgeText}>Updated instantly</Text>
+            </View>
+          </View>
+          <View style={applianceStyles.backupSummaryGrid}>
+            <View style={applianceStyles.backupSummaryMetric}>
+              <Text style={applianceStyles.backupSummaryLabel}>Running Load</Text>
+              <Text style={applianceStyles.backupSummaryValue}>{formatBackupLoadKw(runningLoadKw)} kW</Text>
+            </View>
+            <View style={applianceStyles.backupSummaryMetric}>
+              <Text style={applianceStyles.backupSummaryLabel}>Backup Energy</Text>
+              <Text style={applianceStyles.backupSummaryValue}>{formatBatteryDeltaKwh(requiredBackupEnergyKwh)} kWh</Text>
+            </View>
+            <View style={applianceStyles.backupSummaryMetric}>
+              <Text style={applianceStyles.backupSummaryLabel}>Appliances</Text>
+              <Text style={applianceStyles.backupSummaryValue}>{selectedBackupAppliances.length} selected</Text>
+            </View>
+            <View style={applianceStyles.backupSummaryMetric}>
+              <Text style={applianceStyles.backupSummaryLabel}>Average Backup</Text>
+              <Text style={applianceStyles.backupSummaryValue}>{averageBackupHours > 0 ? `${formatEstimatedBackupHours(averageBackupHours)} hrs` : 'Based on hours'}</Text>
+            </View>
+          </View>
+          <Text style={applianceStyles.backupSummaryHelper}>Battery recommendation will be based on this running load and selected backup hours.</Text>
+        </View>
+        <Text style={applianceStyles.backupSummaryHint}>Review your load summary before continuing.</Text>
+        {validationError ? <Text style={applianceStyles.validationText}>{validationError}</Text> : null}
+        <Pressable
+          style={[applianceStyles.primaryButton, !hasSelectedBackupAppliance && applianceStyles.primaryButtonDisabled]}
+          onPress={handleContinue}
+        >
           <Text style={applianceStyles.primaryButtonText}>Calculate Battery Size</Text>
         </Pressable>
       </View>
@@ -2313,21 +2711,31 @@ const BackupPlanStepScreen = ({
   onPrevious: () => void;
   onContinue: () => void;
 }) => {
-  const actualBackupLoadKw = calculateActualBackupLoadKw(store.backupAppliances);
-  const applianceCount = store.backupAppliances.filter((item: any) => item.quantity > 0).length;
-  const requiredBatteryKwh = calculateRequiredBackupKwh(store.backupAppliances);
-  const recommendedBatteryKwh = getRecommendedBatteryKwh(requiredBatteryKwh);
+  const insets = useSafeAreaInsets();
+  const safeBottom = insets.bottom || 16;
+  const runningLoadKw = calculateBackupRunningLoadKw(store.backupAppliances);
+  const selectedBackupAppliances = store.backupAppliances.filter((item: any) => item.quantity > 0);
+  const applianceCount = selectedBackupAppliances.length;
+  const selectedBackupQuantity = selectedBackupAppliances.reduce(
+    (total: number, item: any) => total + Math.max(0, Number(item.quantity) || 0),
+    0
+  );
+  const hasSelectedBackupAppliance = selectedBackupQuantity > 0;
+  const requiredBackupEnergyKwh = calculateRequiredBackupEnergyKwh(store.backupAppliances);
+  const recommendedBatteryKwh = getRecommendedBatteryKwh(requiredBackupEnergyKwh);
+  const availableBatterySizeOptions = hasSelectedBackupAppliance ? getBatteryOptionsForRunningLoad(runningLoadKw) : [];
   const storedBatteryKwh = Number(store.selectedBatteryKwh || 0);
-  const selectedBatteryKwh = batterySizeOptions.includes(storedBatteryKwh) ? storedBatteryKwh : recommendedBatteryKwh;
+  const selectedBatteryKwh = hasSelectedBackupAppliance
+    ? (availableBatterySizeOptions.includes(storedBatteryKwh) ? storedBatteryKwh : recommendedBatteryKwh)
+    : 0;
   const solarKw = Math.min(20, Math.max(1, Math.round(Number(store.recommendedSolarKw || 3))));
   const inverterKw = getInverterSizeKw(solarKw);
-  const selectedBatteryUsableKwh = selectedBatteryKwh * 0.9;
-  const backupHours = actualBackupLoadKw > 0 ? selectedBatteryUsableKwh / actualBackupLoadKw : 0;
-  const backupOptions = batterySizeOptions.map((size) => ({
+  const backupOptions = availableBatterySizeOptions.map((size) => ({
     size,
-    note: size === recommendedBatteryKwh ? 'Recommended size' : 'Longer backup, more comfort'
+    usableKwh: getUsableBatteryKwh(size),
   }));
-  const formattedLoadKw = formatBackupLoadKw(actualBackupLoadKw);
+  const formattedLoadKw = formatBackupLoadKw(runningLoadKw);
+  const formattedRequiredEnergyKwh = formatBatteryDeltaKwh(requiredBackupEnergyKwh);
 
   useEffect(() => {
     if (storedBatteryKwh !== selectedBatteryKwh) {
@@ -2335,10 +2743,25 @@ const BackupPlanStepScreen = ({
     }
   }, [selectedBatteryKwh, storedBatteryKwh]);
 
+  if (!hasSelectedBackupAppliance) {
+    return (
+      <SafeAreaView style={flowStyles.shell} edges={['top']}>
+        <StepHeader step="Step 6 of 8" active={6} onBack={onPrevious} />
+        <View style={backupPlanStyles.emptySelection}>
+          <Text style={backupPlanStyles.emptySelectionTitle}>Select backup appliances first</Text>
+          <Text style={backupPlanStyles.emptySelectionText}>Please select at least one appliance for backup before calculating a battery recommendation.</Text>
+          <Pressable style={applianceStyles.primaryButton} onPress={onPrevious}>
+            <Text style={applianceStyles.primaryButtonText}>Back to Appliance Selection</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={flowStyles.shell} edges={['top']}>
       <StepHeader step="Step 6 of 8" active={6} onBack={onPrevious} />
-      <ScrollView style={flowStyles.scroll} contentContainerStyle={backupPlanStyles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={flowStyles.scroll} contentContainerStyle={[backupPlanStyles.content, { paddingBottom: 178 + safeBottom }]} showsVerticalScrollIndicator={false}>
         <View style={backupPlanStyles.titleBlock}>
           <Text style={backupPlanStyles.title}>Your Backup Plan is Ready</Text>
           <Text style={backupPlanStyles.subtitle}>Recommended battery capacity for your selected backup load</Text>
@@ -2349,7 +2772,6 @@ const BackupPlanStepScreen = ({
             <View style={backupPlanStyles.heroCopy}>
               <Text style={backupPlanStyles.batteryValue}>{selectedBatteryKwh}<Text style={backupPlanStyles.batteryUnit}> kWh</Text></Text>
               <Text style={backupPlanStyles.batteryLabel}>Battery System</Text>
-              <Text style={backupPlanStyles.loadText}>Runs your <Text style={backupPlanStyles.loadStrong}>{formattedLoadKw} kW</Text> load</Text>
             </View>
             <View style={backupPlanStyles.imageWrap}>
               <Image source={batteryImage} style={backupPlanStyles.batteryImage} resizeMode="contain" />
@@ -2357,9 +2779,15 @@ const BackupPlanStepScreen = ({
           </View>
           <View style={backupPlanStyles.statsRow}>
             <View style={backupPlanStyles.statItem}>
-              <Text style={backupPlanStyles.statLabel}>Backup Time</Text>
-              <Text style={backupPlanStyles.statValue}>{formatBackupHours(backupHours)}</Text>
-              <Text style={backupPlanStyles.statSub}>(at {formattedLoadKw} kW load)</Text>
+              <Text style={backupPlanStyles.statLabel}>Running Load</Text>
+              <Text style={backupPlanStyles.statValue}>{formattedLoadKw} kW</Text>
+              <Text style={backupPlanStyles.statSub}>instant load</Text>
+            </View>
+            <View style={backupPlanStyles.statDivider} />
+            <View style={backupPlanStyles.statItem}>
+              <Text style={backupPlanStyles.statLabel}>Required Backup Energy</Text>
+              <Text style={backupPlanStyles.statValue}>{formattedRequiredEnergyKwh} kWh</Text>
+              <Text style={backupPlanStyles.statSub}>with hours</Text>
             </View>
             <View style={backupPlanStyles.statDivider} />
             <View style={backupPlanStyles.statItem}>
@@ -2368,13 +2796,18 @@ const BackupPlanStepScreen = ({
               <Text style={backupPlanStyles.statSub}>{applianceCount} covered</Text>
             </View>
           </View>
+          <Text style={backupPlanStyles.explanationText}>
+            Your selected appliances require {formattedLoadKw} kW running load and {formattedRequiredEnergyKwh} kWh backup energy. The recommended battery size above is selected to cover this requirement.
+          </Text>
+          <Text style={backupPlanStyles.basedText}>Based on your selected appliances and backup hours.</Text>
         </View>
 
         <Text style={backupPlanStyles.adjustTitle}>Want to adjust your backup?</Text>
         <View style={backupPlanStyles.optionRow}>
           {backupOptions.map((option) => {
             const selected = option.size === selectedBatteryKwh;
-            const optionHours = actualBackupLoadKw > 0 ? (option.size * 0.9) / actualBackupLoadKw : 0;
+            const estimatedBackupHours = runningLoadKw > 0 ? option.usableKwh / runningLoadKw : 0;
+            const optionLabel = getBatteryOptionLabel(option.size, recommendedBatteryKwh);
             return (
               <Pressable
                 key={option.size}
@@ -2383,16 +2816,16 @@ const BackupPlanStepScreen = ({
               >
                 {selected ? <Text style={backupPlanStyles.selectedLabel}>SELECTED</Text> : null}
                 <Text style={backupPlanStyles.optionSize}>{option.size} kWh</Text>
-                <Text style={backupPlanStyles.optionBackup}>Backup: {formatBackupHours(optionHours)}</Text>
-                <Text style={backupPlanStyles.optionNote}>{option.note}</Text>
+                <Text style={backupPlanStyles.optionBackupTime}>Backup: ~{formatEstimatedBackupHours(estimatedBackupHours)} hours</Text>
+                <Text style={[backupPlanStyles.optionNote, option.size === recommendedBatteryKwh && backupPlanStyles.optionNoteRecommended]}>
+                  {optionLabel}
+                </Text>
               </Pressable>
             );
           })}
         </View>
-
-        <Text style={backupPlanStyles.basedText}>Based on your actual usage</Text>
       </ScrollView>
-      <View style={backupPlanStyles.footer}>
+      <View style={[backupPlanStyles.footer, { paddingBottom: 10 + safeBottom }]}>
         <Pressable style={backupPlanStyles.continueButton} onPress={onContinue}>
           <Text style={backupPlanStyles.continueText}>Continue</Text>
           <ArrowRight color="#18202D" size={18} strokeWidth={2.4} />
@@ -2407,6 +2840,28 @@ const BackupPlanStepScreen = ({
 };
 
 const backupPlanStyles = StyleSheet.create({
+  emptySelection: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingBottom: 72
+  },
+  emptySelectionTitle: {
+    color: '#172031',
+    textAlign: 'center',
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: '900'
+  },
+  emptySelectionText: {
+    marginTop: 8,
+    marginBottom: 20,
+    color: '#64748B',
+    textAlign: 'center',
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: '700'
+  },
   content: {
     paddingHorizontal: 16,
     paddingBottom: 178,
@@ -2466,16 +2921,6 @@ const backupPlanStyles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '900'
   },
-  loadText: {
-    marginTop: 7,
-    color: '#64748B',
-    fontSize: 11,
-    fontWeight: '700'
-  },
-  loadStrong: {
-    color: '#172031',
-    fontWeight: '900'
-  },
   imageWrap: {
     width: 106,
     height: 92,
@@ -2505,20 +2950,31 @@ const backupPlanStyles = StyleSheet.create({
   },
   statLabel: {
     color: '#A27500',
-    fontSize: 9,
-    fontWeight: '900'
+    fontSize: 8.3,
+    fontWeight: '900',
+    textAlign: 'center',
+    lineHeight: 11
   },
   statValue: {
     marginTop: 4,
     color: '#172031',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '900'
   },
   statSub: {
     marginTop: 4,
     color: '#64748B',
     fontSize: 8.5,
-    fontWeight: '800'
+    fontWeight: '800',
+    textAlign: 'center'
+  },
+  explanationText: {
+    marginTop: 14,
+    color: '#46566C',
+    fontSize: 10.5,
+    lineHeight: 15,
+    fontWeight: '700',
+    textAlign: 'center'
   },
   adjustTitle: {
     marginTop: -2,
@@ -2533,7 +2989,7 @@ const backupPlanStyles = StyleSheet.create({
   },
   optionCard: {
     flex: 1,
-    minHeight: 74,
+    minHeight: 96,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: 'rgba(218,211,203,0.95)',
@@ -2559,10 +3015,10 @@ const backupPlanStyles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '900'
   },
-  optionBackup: {
+  optionBackupTime: {
     marginTop: 3,
     color: '#C48A00',
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '900',
     textAlign: 'center'
   },
@@ -2573,6 +3029,10 @@ const backupPlanStyles = StyleSheet.create({
     fontWeight: '800',
     lineHeight: 11,
     textAlign: 'center'
+  },
+  optionNoteRecommended: {
+    color: '#16A34A',
+    fontWeight: '900'
   },
   continueButton: {
     height: 54,
@@ -2604,7 +3064,7 @@ const backupPlanStyles = StyleSheet.create({
     fontWeight: '900'
   },
   basedText: {
-    marginTop: -4,
+    marginTop: 8,
     textAlign: 'center',
     color: '#94A3B8',
     fontSize: 10,
@@ -2870,6 +3330,7 @@ const roofStyles = StyleSheet.create({
   metricLabel: { color: '#A27500', fontSize: 11, fontWeight: '900', letterSpacing: 0.4 },
   metricValue: { marginTop: 6, color: '#1F2A3D', fontSize: 23, fontWeight: '900' },
   metricSub: { marginTop: 6, color: '#64748B', fontSize: 12, fontWeight: '500' },
+  selectedPanelText: { marginTop: 8, color: '#475569', fontSize: 12, fontWeight: '800', lineHeight: 16 },
   layoutCard: { borderRadius: 18, backgroundColor: '#FFFFFF', padding: 14, gap: 12 },
   layoutHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   layoutTitle: { marginTop: 5, color: '#1F2A3D', fontSize: 14, fontWeight: '900' },
@@ -2880,7 +3341,7 @@ const roofStyles = StyleSheet.create({
   toggleInactive: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   toggleActiveText: { color: '#111827', fontSize: 12, fontWeight: '900' },
   toggleInactiveText: { color: '#6B7280', fontSize: 12, fontWeight: '800' },
-  orientationCard: { borderRadius: 16, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E5E7EB', padding: 12, gap: 10 },
+  orientationCard: { borderRadius: 16, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E5E7EB', padding: 12, gap: 12 },
   orientationTitle: { color: '#6B7280', fontSize: 11, fontWeight: '900', letterSpacing: 0.8 },
   orientationControls: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   rowsPill: { height: 30, borderRadius: 999, backgroundColor: '#EEF2F7', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, gap: 8 },
@@ -2888,14 +3349,100 @@ const roofStyles = StyleSheet.create({
   rowsText: { color: '#1F2A3D', fontSize: 11, fontWeight: '900' },
   compactText: { color: '#64748B', fontSize: 10, fontWeight: '900' },
   panelPreviewRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
-  panelGrid: { width: 178, borderRadius: 10, borderWidth: 2, borderColor: '#DCE8F6', backgroundColor: '#F8FBFF', padding: 6, gap: 4 },
-  panelGridRow: { flexDirection: 'row', justifyContent: 'center' },
-  panelCell: { width: 78, height: 54, borderRadius: 4, backgroundColor: '#173553', borderWidth: 1, borderColor: '#5B7896' },
-  panelCellEmpty: { backgroundColor: 'transparent', borderColor: 'transparent' },
-  dimensionLabels: { alignItems: 'center', gap: 4 },
-  dimensionText: { color: '#334155', fontSize: 11, fontWeight: '900' },
+  emptyPanelPreview: { minHeight: 220, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18 },
+  animatedLayoutBox: {
+    width: 280,
+    height: 246,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.05,
+    shadowRadius: 14,
+    elevation: 2
+  },
+  dimensionBadge: {
+    position: 'absolute',
+    top: 13,
+    right: 14,
+    zIndex: 3,
+    borderRadius: 999,
+    backgroundColor: '#FFF4D6',
+    borderWidth: 1,
+    borderColor: '#F2D990',
+    paddingHorizontal: 9,
+    paddingVertical: 5
+  },
+  dimensionBadgeText: { color: '#7A5700', fontSize: 10, fontWeight: '900' },
+  realPanelGrid: {
+    position: 'absolute',
+    gap: 0
+  },
+  realPanelRow: {
+    flexDirection: 'row',
+    gap: 0
+  },
+  panelTile: {
+    borderRadius: 5,
+    borderWidth: 1.3,
+    borderColor: '#89A6C8',
+    backgroundColor: '#123A5A',
+    overflow: 'hidden'
+  },
+  panelTileShine: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: 13,
+    backgroundColor: 'rgba(255,255,255,0.09)'
+  },
+  panelGridLineVertical: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 1,
+    backgroundColor: 'rgba(174,207,237,0.55)'
+  },
+  panelGridLineHorizontal: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: 'rgba(174,207,237,0.55)'
+  },
+  horizontalDimension: {
+    position: 'absolute',
+    bottom: 24,
+    alignItems: 'center'
+  },
+  horizontalDimensionText: {
+    color: '#334155',
+    fontSize: 11,
+    fontWeight: '900',
+    marginBottom: -2
+  },
+  verticalDimension: {
+    position: 'absolute',
+    width: 44,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  verticalDimensionText: {
+    position: 'absolute',
+    color: '#334155',
+    fontSize: 11,
+    fontWeight: '900',
+    transform: [{ rotate: '90deg' }],
+    width: 68,
+    textAlign: 'center',
+    backgroundColor: '#FFFFFF'
+  },
   wattageSelector: { marginTop: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
-  wattagePill: { minWidth: 50, height: 30, borderRadius: 999, borderWidth: 1, borderColor: 'rgba(226,221,213,0.9)', backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
+  wattagePill: { minWidth: 50, minHeight: 30, borderRadius: 999, borderWidth: 1, borderColor: 'rgba(226,221,213,0.9)', backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, paddingVertical: 7 },
   wattagePillSkeleton: { opacity: 0.55, backgroundColor: '#F5EFE4' },
   wattagePillActive: { backgroundColor: '#F5B700', borderColor: '#F5B700' },
   wattagePillText: { color: '#334155', fontSize: 11, fontWeight: '900' },
@@ -3203,54 +3750,59 @@ const solarStyles = StyleSheet.create({
     fontWeight: '800'
   },
   chartCard: {
-    borderRadius: 16,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: 'rgba(232,222,208,0.82)',
     backgroundColor: '#FFFFFF',
-    padding: 13,
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 16,
     shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.07,
-    shadowRadius: 14,
-    elevation: 2
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 3
   },
   chartHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: 10
+    gap: 12,
+    marginBottom: 8
   },
   chartTitleWrap: {
     flex: 1
   },
   chartTitle: {
-    color: '#1F2A3D',
-    fontSize: 13,
+    color: '#101828',
+    fontSize: 14.5,
     fontWeight: '900'
   },
   chartSubtitle: {
-    marginTop: 5,
-    color: '#94A3B8',
-    fontSize: 10,
-    lineHeight: 14,
+    marginTop: 6,
+    color: '#667085',
+    fontSize: 10.5,
+    lineHeight: 15,
     fontWeight: '600'
   },
   toggle: {
-    height: 26,
+    height: 30,
     borderRadius: 999,
-    backgroundColor: '#F2F0EC',
+    backgroundColor: '#F3F4F6',
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 2
+    padding: 3
   },
   toggleActive: {
-    height: 22,
-    paddingHorizontal: 11,
+    height: 24,
+    paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: '#F5B700',
+    backgroundColor: '#F5B400',
     alignItems: 'center',
     justifyContent: 'center'
   },
   toggleActiveText: {
-    color: '#172031',
+    color: '#101828',
     fontSize: 10,
     fontWeight: '900'
   },
@@ -3261,11 +3813,13 @@ const solarStyles = StyleSheet.create({
     paddingHorizontal: 10
   },
   chartNote: {
-    color: '#94A3B8',
+    marginTop: 2,
+    color: '#667085',
     textAlign: 'center',
-    fontSize: 9.3,
-    lineHeight: 13,
-    fontWeight: '500'
+    fontSize: 9.8,
+    lineHeight: 14,
+    fontWeight: '600',
+    paddingHorizontal: 4
   },
   runningLoad: {
     color: '#64748B',
@@ -3680,6 +4234,99 @@ const applianceStyles = StyleSheet.create({
     backgroundColor: 'rgba(251,250,246,0.98)',
     gap: 5
   },
+  backupSummaryCard: {
+    borderRadius: 16,
+    backgroundColor: '#FFF7DF',
+    borderWidth: 1,
+    borderColor: '#F3D27A',
+    paddingHorizontal: 11,
+    paddingVertical: 10,
+    shadowColor: '#D79300',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 3
+  },
+  backupSummaryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8
+  },
+  backupSummaryTitleRow: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8
+  },
+  backupSummaryIcon: {
+    width: 27,
+    height: 27,
+    borderRadius: 10,
+    backgroundColor: '#F5B700',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  backupSummaryTitle: {
+    flex: 1,
+    color: '#10213A',
+    fontSize: 11.5,
+    lineHeight: 15,
+    fontWeight: '900'
+  },
+  backupSummaryBadge: {
+    borderRadius: 999,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F3D27A',
+    paddingHorizontal: 7,
+    paddingVertical: 4
+  },
+  backupSummaryBadgeText: {
+    color: '#A66F00',
+    fontSize: 8,
+    fontWeight: '900'
+  },
+  backupSummaryGrid: {
+    marginTop: 8,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6
+  },
+  backupSummaryMetric: {
+    width: '48.8%',
+    borderRadius: 11,
+    backgroundColor: 'rgba(255,255,255,0.78)',
+    borderWidth: 1,
+    borderColor: 'rgba(243,210,122,0.48)',
+    paddingHorizontal: 8,
+    paddingVertical: 6
+  },
+  backupSummaryLabel: {
+    color: '#7A5A10',
+    fontSize: 7.8,
+    fontWeight: '800'
+  },
+  backupSummaryValue: {
+    marginTop: 3,
+    color: '#10213A',
+    fontSize: 10.2,
+    fontWeight: '900'
+  },
+  backupSummaryHelper: {
+    marginTop: 7,
+    color: '#64748B',
+    fontSize: 8.8,
+    lineHeight: 12,
+    fontWeight: '700'
+  },
+  backupSummaryHint: {
+    textAlign: 'center',
+    color: '#7A5A10',
+    fontSize: 8.8,
+    fontWeight: '800'
+  },
   footer: {
     position: 'absolute',
     left: 0,
@@ -3723,10 +4370,20 @@ const applianceStyles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 4
   },
+  primaryButtonDisabled: {
+    opacity: 0.55
+  },
   primaryButtonText: {
     color: '#18202D',
     fontSize: 10.5,
     fontWeight: '900'
+  },
+  validationText: {
+    color: '#C2410C',
+    textAlign: 'center',
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: '800'
   },
   modalBackdrop: {
     flex: 1,
