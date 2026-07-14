@@ -7,6 +7,14 @@ declare const process: { env: Record<string, string | undefined> };
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim();
 const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
+if (__DEV__ && url) {
+  try {
+    console.log('Connected Supabase host:', new URL(url).hostname);
+  } catch {
+    console.log('Connected Supabase host: invalid EXPO_PUBLIC_SUPABASE_URL');
+  }
+}
+
 export const isSupabaseConfigured = Boolean(url && anonKey);
 
 export const supabase = createClient(

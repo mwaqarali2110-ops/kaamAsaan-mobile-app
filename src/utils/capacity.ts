@@ -23,6 +23,12 @@ export const parseCapacityKw = (
   const kwMatch = source.match(/(\d+(?:\.\d+)?)\s*k\s*w/i);
   if (kwMatch) return Number.parseFloat(kwMatch[1]);
 
+  const shortKwMatch = source.match(/(?:^|[^a-z0-9])(\d+(?:\.\d+)?)\s*k(?:[^a-z0-9]|$)/i);
+  if (shortKwMatch) return Number.parseFloat(shortKwMatch[1]);
+
+  const modelKwMatch = source.match(/[a-z]+[-\s]?(\d+(?:\.\d+)?)\s*k(?:\b|(?=\d{2,3}[a-z]))/i);
+  if (modelKwMatch) return Number.parseFloat(modelKwMatch[1]);
+
   const wattMatch = source.match(/(\d+(?:\.\d+)?)\s*w(?:att|atts)?\b/i);
   if (wattMatch) return Number.parseFloat(wattMatch[1]) / 1000;
 
@@ -64,7 +70,15 @@ export const parseCapacityKwh = (
 
   const source = String(productName ?? value ?? '');
   const match = source.match(/(\d+(?:\.\d+)?)\s*k\s*w\s*h/i);
-  return match ? Number.parseFloat(match[1]) : null;
+  if (match) return Number.parseFloat(match[1]);
+
+  const whMatch = source.match(/(\d+(?:\.\d+)?)\s*w\s*h/i);
+  if (whMatch) return Number.parseFloat(whMatch[1]) / 1000;
+
+  const kwLikeBatteryMatch = source.match(/(\d+(?:\.\d+)?)\s*k\s*w/i);
+  if (kwLikeBatteryMatch) return Number.parseFloat(kwLikeBatteryMatch[1]);
+
+  return null;
 };
 
 export const formatCapacityKw = (value: number) => `${Number(value || 0).toFixed(1).replace('.0', '')} kW`;

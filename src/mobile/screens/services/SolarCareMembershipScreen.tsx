@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, ArrowRight, Bell, Check, MessageCircle, Shield, ShieldCheck, Star, Zap } from 'lucide-react-native';
 
 const plans = [
@@ -17,7 +17,11 @@ const benefits = [
   { text: 'Monthly generation reports', Icon: Bell }
 ];
 
-export const SolarCareMembershipScreen = ({ navigation }: any) => (
+export const SolarCareMembershipScreen = ({ navigation }: any) => {
+  const insets = useSafeAreaInsets();
+  const safeBottom = insets.bottom || 16;
+
+  return (
   <SafeAreaView style={styles.shell} edges={['top']}>
     <View style={styles.topBar}>
       <Pressable style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="Back">
@@ -27,7 +31,7 @@ export const SolarCareMembershipScreen = ({ navigation }: any) => (
       <View style={styles.topSpacer} />
     </View>
 
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: 144 + safeBottom }]} showsVerticalScrollIndicator={false}>
       <View style={styles.hero}>
         <View style={styles.heroIcon}>
           <Shield color="#F5A400" size={24} strokeWidth={1.9} />
@@ -81,7 +85,7 @@ export const SolarCareMembershipScreen = ({ navigation }: any) => (
       <MessageCircle color="#FFFFFF" size={20} strokeWidth={2.2} />
     </Pressable>
 
-    <View style={styles.footer}>
+    <View style={[styles.footer, { paddingBottom: 10 + safeBottom }]}>
       <Pressable style={styles.subscribeButton}>
         <Text style={styles.subscribeText}>Subscribe Now</Text>
         <ArrowRight color="#111827" size={16} strokeWidth={2.4} />
@@ -91,7 +95,8 @@ export const SolarCareMembershipScreen = ({ navigation }: any) => (
       </Pressable>
     </View>
   </SafeAreaView>
-);
+  );
+};
 
 const styles = StyleSheet.create({
   shell: { flex: 1, backgroundColor: '#F8F3E8' },

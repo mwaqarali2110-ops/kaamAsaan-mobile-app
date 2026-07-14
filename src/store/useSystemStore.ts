@@ -91,7 +91,14 @@ export const useSystemStore = create<SystemState>()(persist((set, get) => ({
     }
     return { designStarted: true, backupAppliances: [...state.backupAppliances, appliance] };
   }),
-  calculateRecommendation: () => set((state) => ({ designStarted: true, recommendedSolarKw: recommendSolarKw(state.appliances) })),
+  calculateRecommendation: () => set((state) => {
+    const selectedQuantity = state.appliances.reduce(
+      (total, item) => total + Math.max(0, Number(item.quantity) || 0),
+      0
+    );
+    if (selectedQuantity <= 0) return {};
+    return { designStarted: true, recommendedSolarKw: recommendSolarKw(state.appliances) };
+  }),
   setRecommendedSolarKw: (recommendedSolarKw) => set({ designStarted: true, recommendedSolarKw }),
   setSelectedBatteryKwh: (selectedBatteryKwh) => set({ designStarted: true, selectedBatteryKwh }),
   setPanelWattage: (panelWattage) => set({ designStarted: true, panelWattage }),

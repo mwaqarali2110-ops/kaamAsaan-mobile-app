@@ -15,6 +15,20 @@ export const useProducts = (category?: ProductCategory) => useQuery({
   refetchOnWindowFocus: true
 });
 
+export const usePackageInventory = () => useQuery({
+  queryKey: ['package-inventory'],
+  queryFn: marketplaceApi.getPackageInventory,
+  staleTime: 0,
+  refetchOnMount: 'always',
+  refetchOnWindowFocus: true
+});
+
+export const usePackageCompatibility = () => useQuery({
+  queryKey: ['package-compatibility'],
+  queryFn: marketplaceApi.getPackageCompatibility,
+  staleTime: 5 * 60 * 1000
+});
+
 export const useBrands = (category: ProductCategory) => useQuery({
   queryKey: ['brands', category],
   queryFn: () => marketplaceApi.getBrands(category),

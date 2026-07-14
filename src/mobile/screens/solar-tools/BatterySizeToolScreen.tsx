@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AirVent, ArrowLeft, BatteryCharging, Camera, Droplets, Home, Laptop, Lightbulb, Microwave, Monitor, PlugZap, Refrigerator, Shirt, Sun, Wifi, Zap } from 'lucide-react-native';
 import type { Appliance } from '@/types/system.types';
 import { calculateBackupKwh, calculateLoadKw } from '@/utils/calculations';
@@ -47,10 +48,23 @@ const iconMap: Record<string, any> = {
 };
 
 export const BatterySizeToolScreen = ({ navigation }: any) => {
+  const insets = useSafeAreaInsets();
+  const safeBottom = insets.bottom || 16;
   const [appliances, setAppliances] = useState([...starterAppliances, ...extraAppliances]);
   const [showMoreAppliances, setShowMoreAppliances] = useState(false);
   const loadKw = useMemo(() => calculateLoadKw(appliances), [appliances]);
   const backupKwh = useMemo(() => calculateBackupKwh(appliances), [appliances]);
+  const selectedAppliances = useMemo(() => appliances.filter((item) => item.quantity > 0), [appliances]);
+  const backupEnergyKwh = useMemo(
+    () => selectedAppliances.reduce((sum, item) => sum + (item.watts * item.quantity * item.hours) / 1000, 0),
+    [selectedAppliances]
+  );
+  const averageBackupHours = useMemo(() => {
+    if (!selectedAppliances.length) return 0;
+    const totalQuantity = selectedAppliances.reduce((sum, item) => sum + item.quantity, 0);
+    const weightedHours = selectedAppliances.reduce((sum, item) => sum + item.hours * item.quantity, 0);
+    return totalQuantity > 0 ? weightedHours / totalQuantity : 0;
+  }, [selectedAppliances]);
 
   const updateQuantity = (id: string, delta: number) => {
     setAppliances((items) => items.map((item) => item.id === id ? { ...item, quantity: Math.max(0, item.quantity + delta) } : item));
@@ -92,7 +106,7 @@ export const BatterySizeToolScreen = ({ navigation }: any) => {
         </Pressable>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingBottom: 216 + safeBottom }]}>
         <View style={styles.headingBlock}>
           <Text style={styles.heading}>Which appliances do you want on backup?</Text>
           <Text style={styles.subtitle}>Select appliances for battery backup</Text>
@@ -124,7 +138,28 @@ export const BatterySizeToolScreen = ({ navigation }: any) => {
         </View>
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: 12 + safeBottom }]}>
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryHeader}>
+            <View style={styles.summaryTitleRow}>
+              <View style={styles.summaryIcon}>
+                <Zap color="#10213A" size={15} strokeWidth={2.5} />
+              </View>
+              <Text style={styles.summaryTitle}>Your Backup Load Summary</Text>
+            </View>
+            <View style={styles.summaryBadge}>
+              <Text style={styles.summaryBadgeText}>Live Calculation</Text>
+            </View>
+          </View>
+          <View style={styles.summaryGrid}>
+            <SummaryMetric label="Running Load" value={`${loadKw.toFixed(1)} kW`} />
+            <SummaryMetric label="Backup Energy" value={`${backupEnergyKwh.toFixed(1)} kWh`} />
+            <SummaryMetric label="Appliances" value={`${selectedAppliances.length} selected`} />
+            <SummaryMetric label="Average Backup" value={averageBackupHours > 0 ? `${averageBackupHours.toFixed(1)} hrs` : 'Based on hours'} />
+          </View>
+          <Text style={styles.summaryHelper}>Battery recommendation will be based on this running load and selected backup hours.</Text>
+        </View>
+        <Text style={styles.reviewHint}>Review your load summary before continuing.</Text>
         <Pressable style={styles.calculateButton} onPress={handleCalculateBatterySize}>
           <Text style={styles.calculateText}>Calculate Battery Size</Text>
         </Pressable>
@@ -132,7 +167,7 @@ export const BatterySizeToolScreen = ({ navigation }: any) => {
 
       <Modal visible={showMoreAppliances} transparent animationType="slide" onRequestClose={() => setShowMoreAppliances(false)}>
         <Pressable style={styles.modalBackdrop} onPress={() => setShowMoreAppliances(false)}>
-          <Pressable style={styles.bottomSheet}>
+          <Pressable style={[styles.bottomSheet, { paddingBottom: 16 + safeBottom }]}>
             <View style={styles.sheetHandle} />
             <View style={styles.sheetHeader}>
               <View>
@@ -195,6 +230,13 @@ const SystemMetric = ({ Icon, value, label }: { Icon: any; value: string; label:
     <Icon color="#B07800" size={16} strokeWidth={2.3} />
     <Text style={styles.systemValue}>{value}</Text>
     <Text style={styles.systemLabel}>{label}</Text>
+  </View>
+);
+
+const SummaryMetric = ({ label, value }: { label: string; value: string }) => (
+  <View style={styles.summaryMetric}>
+    <Text style={styles.summaryMetricLabel}>{label}</Text>
+    <Text style={styles.summaryMetricValue}>{value}</Text>
   </View>
 );
 
@@ -308,11 +350,106 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     paddingHorizontal: 14,
-    paddingTop: 10,
+    paddingTop: 9,
     paddingBottom: 12,
     backgroundColor: 'rgba(251,248,241,0.98)',
     borderTopWidth: 1,
     borderTopColor: 'rgba(232,217,190,0.72)'
+  },
+  summaryCard: {
+    borderRadius: 18,
+    backgroundColor: '#FFF7DF',
+    borderWidth: 1,
+    borderColor: '#F3D27A',
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+    marginBottom: 8,
+    shadowColor: '#D79300',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 3
+  },
+  summaryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8
+  },
+  summaryTitleRow: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8
+  },
+  summaryIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 10,
+    backgroundColor: '#F5B400',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  summaryTitle: {
+    flex: 1,
+    color: '#10213A',
+    fontSize: 12.5,
+    lineHeight: 16,
+    fontWeight: '900'
+  },
+  summaryBadge: {
+    borderRadius: 999,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F3D27A',
+    paddingHorizontal: 8,
+    paddingVertical: 4
+  },
+  summaryBadgeText: {
+    color: '#A66F00',
+    fontSize: 8.5,
+    fontWeight: '900'
+  },
+  summaryGrid: {
+    marginTop: 10,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 7
+  },
+  summaryMetric: {
+    width: '48.5%',
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.78)',
+    borderWidth: 1,
+    borderColor: 'rgba(243,210,122,0.48)',
+    paddingHorizontal: 9,
+    paddingVertical: 7
+  },
+  summaryMetricLabel: {
+    color: '#7A5A10',
+    fontSize: 8.5,
+    fontWeight: '800'
+  },
+  summaryMetricValue: {
+    marginTop: 3,
+    color: '#10213A',
+    fontSize: 11,
+    fontWeight: '900'
+  },
+  summaryHelper: {
+    marginTop: 8,
+    color: '#64748B',
+    fontSize: 9.5,
+    lineHeight: 13,
+    fontWeight: '700'
+  },
+  reviewHint: {
+    marginBottom: 7,
+    textAlign: 'center',
+    color: '#7A5A10',
+    fontSize: 9.5,
+    fontWeight: '800'
   },
   calculateButton: {
     height: 47,

@@ -8,15 +8,22 @@ export type SurveyBookingStatus =
   | 'survey_confirmed'
   | 'site_visit_scheduled'
   | 'site_survey_scheduled'
+  | 'assigned'
+  | 'scheduled'
+  | 'survey_in_progress'
   | 'pending'
   | 'confirmed'
   | 'survey_scheduled'
   | 'survey_completed'
+  | 'design_in_progress'
   | 'proposal_preparation'
   | 'quotation_pending'
+  | 'quotation_ready'
   | 'quotation_shared'
+  | 'installation_scheduled'
   | 'installation_pending'
   | 'installation_planning'
+  | 'installation_started'
   | 'installation_in_progress'
   | 'installation_completed'
   | 'project_in_progress'
@@ -27,23 +34,16 @@ export type SurveyBookingStatus =
   | 'completed';
 
 export const activeSurveyBookingStatuses: SurveyBookingStatus[] = [
-  'survey_requested',
-  'survey_booked',
-  'survey_pending',
-  'survey_confirmed',
-  'site_visit_scheduled',
-  'site_survey_scheduled',
   'pending',
   'confirmed',
-  'survey_scheduled',
+  'assigned',
+  'scheduled',
+  'survey_in_progress',
   'survey_completed',
-  'proposal_preparation',
-  'quotation_pending',
-  'quotation_shared',
-  'installation_pending',
-  'installation_planning',
+  'design_in_progress',
+  'quotation_ready',
+  'installation_scheduled',
   'installation_in_progress',
-  'project_in_progress'
 ];
 
 export const completedSurveyBookingStatuses: SurveyBookingStatus[] = [
@@ -67,9 +67,25 @@ export type SurveyJourneyBooking = {
   preferred_time_slot: string | null;
   status: SurveyBookingStatus;
   notes?: string | null;
+  cancellation_reason?: string | null;
+  cancellation_note?: string | null;
+  cancelled_at?: string | null;
+  cancelled_by?: string | null;
   created_at: string;
   updated_at?: string | null;
 };
+
+export type CancelSurveyBookingResult =
+  | {
+      success: true;
+      booking: SurveyJourneyBooking;
+    }
+  | {
+      success: false;
+      booking: null;
+      message: string;
+      code?: string;
+    };
 
 export const formatSurveyReference = (booking: Pick<SurveyJourneyBooking, 'id' | 'reference_code'>) =>
   booking.reference_code || `KA-${booking.id.replace(/-/g, '').slice(0, 8).toUpperCase()}`;
@@ -93,7 +109,9 @@ const getLocalActiveSurveyBooking = async (userId: string) => {
 
   try {
     const booking = JSON.parse(cached) as SurveyJourneyBooking;
-    return isActiveLocalBooking(booking, userId) ? booking : null;
+    if (isActiveLocalBooking(booking, userId)) return booking;
+    await AsyncStorage.removeItem(localActiveSurveyKey(userId));
+    return null;
   } catch {
     await AsyncStorage.removeItem(localActiveSurveyKey(userId));
     return null;
@@ -103,6 +121,25 @@ const getLocalActiveSurveyBooking = async (userId: string) => {
 export const saveLocalActiveSurveyBooking = async (booking: SurveyJourneyBooking) => {
   if (!isActiveLocalBooking(booking)) return;
   await AsyncStorage.setItem(localActiveSurveyKey(booking.user_id), JSON.stringify(booking));
+};
+
+export const removeLocalActiveSurveyBooking = async (userId: string) => {
+  await AsyncStorage.removeItem(localActiveSurveyKey(userId));
+};
+
+export const verifyCancellationSchema = async () => {
+  const { error } = await supabase
+    .from('survey_bookings')
+    .select('id,cancellation_reason,cancellation_note,cancelled_at,cancelled_by')
+    .limit(1);
+
+  if (__DEV__) {
+    console.log('Cancellation schema verification:', {
+      success: !error,
+      code: error?.code,
+      message: error?.message,
+    });
+  }
 };
 
 export const journeyApi = {
@@ -174,5 +211,98 @@ export const journeyApi = {
       throw error;
     }
     return data as SurveyJourneyBooking;
+  },
+
+  cancelSurveyBooking: async ({
+    bookingId,
+    userId,
+    cancellationReason,
+    cancellationNote
+  }: {
+    bookingId: string;
+    userId: string;
+    cancellationReason: string;
+    cancellationNote?: string | null;
+  }): Promise<CancelSurveyBookingResult> => {
+    if (!bookingId) {
+      return {
+        success: false,
+        booking: null,
+        message: 'Survey booking information is unavailable. Please refresh and try again.'
+      };
+    }
+
+    if (!userId) {
+      return {
+        success: false,
+        booking: null,
+        message: 'Your session has expired. Please sign in again.'
+      };
+    }
+
+    const reason = cancellationReason.trim();
+    const note = cancellationNote?.trim() || null;
+
+    if (!reason) {
+      return {
+        success: false,
+        booking: null,
+        message: 'Please select a cancellation reason.'
+      };
+    }
+
+    const cancellationPayload = {
+      status: 'cancelled',
+      cancellation_reason: reason,
+      cancellation_note: reason === 'Other' ? note : null,
+      cancelled_at: new Date().toISOString(),
+      cancelled_by: 'customer',
+      updated_at: new Date().toISOString()
+    };
+
+    const { data, error } = await supabase
+      .from('survey_bookings')
+      .update(cancellationPayload)
+      .eq('id', bookingId)
+      .eq('user_id', userId)
+      .select('*')
+      .maybeSingle();
+
+    if (error) {
+      if (__DEV__) {
+        console.log('Supabase cancellation response', {
+          success: false,
+          code: error.code,
+          message: error.message,
+        });
+      }
+      return {
+        success: false,
+        booking: null,
+        message: error.message,
+        code: error.code,
+      };
+    }
+
+    if (!data) {
+      if (__DEV__) {
+        console.log('Supabase cancellation returned zero rows', {
+          bookingId,
+          userId,
+        });
+      }
+      return {
+        success: false,
+        booking: null,
+        message: 'No survey booking was updated. Check the booking ID, ownership column, or RLS policy.',
+      };
+    }
+
+    const booking = data as SurveyJourneyBooking;
+    await removeLocalActiveSurveyBooking(booking.user_id);
+    return {
+      success: true,
+      booking,
+    };
   }
 };

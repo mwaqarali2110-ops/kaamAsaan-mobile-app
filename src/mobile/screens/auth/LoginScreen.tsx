@@ -139,7 +139,10 @@ export const LoginScreen = ({ navigation, route }: any) => {
     try {
       const { email, password } = result.data;
       await signIn(email, password);
-      navigation.replace(route.params?.redirectTo ?? 'MainTabs');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: route.params?.redirectTo ?? 'MainTabs' }]
+      });
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : t('auth.login.invalid'));
     }

@@ -26,9 +26,18 @@ export const SignupScreen = ({ navigation, route }: any) => {
     try {
       const result = await signUp(values);
       if (result.needsEmailConfirmation) {
-        navigation.replace('Login', { redirectTo: route.params?.redirectTo, message: t('auth.signup.createdCheckEmail') });
+        navigation.reset({
+          index: 0,
+          routes: [{
+            name: 'Login',
+            params: { redirectTo: route.params?.redirectTo, message: t('auth.signup.createdCheckEmail') }
+          }]
+        });
       } else {
-        navigation.replace(route.params?.redirectTo ?? 'MainTabs');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: route.params?.redirectTo ?? 'MainTabs' }]
+        });
       }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : t('auth.signup.unable'));

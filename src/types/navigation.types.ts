@@ -26,6 +26,9 @@ export type RootStackParamList = {
   } | undefined;
   SurveyConfirmation: { bookingId?: string };
   MySolarJourney: { bookingId: string };
+  Complaint: undefined;
+  HelpCenter: undefined;
+  HowItWorks: undefined;
   PreventiveMaintenance: undefined;
   ElectricalWorkServices: undefined;
   ElectricalWorkBooking: {

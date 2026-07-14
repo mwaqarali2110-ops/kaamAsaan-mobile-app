@@ -13,3 +13,8 @@ credentials/
 
 *.log
 Mobile App.zip
+
+.env
+.env.local
+.env*.local
+.env.*.local
