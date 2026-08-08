@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
@@ -218,6 +218,7 @@ const buildROIReportHtml = (data: ROIReportData) => {
 };
 
 export const ROICalculatorScreen = ({ navigation }: any) => {
+  const insets = useSafeAreaInsets();
   const [systemSize, setSystemSize] = useState('');
   const [batterySize, setBatterySize] = useState('');
   const [totalCost, setTotalCost] = useState('');
@@ -241,7 +242,7 @@ export const ROICalculatorScreen = ({ navigation }: any) => {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingBottom: Math.max(42, insets.bottom + 24) }]}>
         <View style={styles.topBar}>
           <Pressable style={styles.topIconButton} onPress={() => navigation.goBack()} accessibilityLabel="Back">
             <ArrowLeft color="#10213A" size={20} strokeWidth={2.4} />
@@ -310,6 +311,7 @@ export const ROICalculatorScreen = ({ navigation }: any) => {
 };
 
 export const ROIResultScreen = ({ navigation, route }: any) => {
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const [isPreparingReport, setIsPreparingReport] = useState(false);
   const chartWidth = Math.max(240, Math.min(width - 64, 380));
@@ -418,7 +420,7 @@ export const ROIResultScreen = ({ navigation, route }: any) => {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.resultContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.resultContent, { paddingBottom: Math.max(42, insets.bottom + 24) }]} showsVerticalScrollIndicator={false}>
         <View style={styles.resultTop}>
           <Pressable style={styles.backButtonLight} onPress={() => navigation.goBack()} accessibilityLabel="Back">
             <ArrowLeft color="#10213A" size={20} strokeWidth={2.4} />

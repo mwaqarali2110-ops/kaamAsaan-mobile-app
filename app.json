@@ -3,19 +3,21 @@
     "name": "KaamAsaan",
     "slug": "kaamasaan",
     "version": "0.1.0",
+    "icon": "./assets/branding/kaamasaan-app-icon.png",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": false
     },
     "android": {
+      "versionCode": 5,
+      "icon": "./assets/branding/kaamasaan-app-icon.png",
       "softwareKeyboardLayoutMode": "pan",
       "backgroundColor": "#FFFBF2",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFF7E6"
+        "foregroundImage": "./assets/branding/kaamasaan-adaptive-foreground.png",
+        "backgroundColor": "#FFF5DE"
       },
       "package": "com.kaamasaan.mobile"
     },
@@ -26,7 +28,7 @@
     },
     "web": {
       "bundler": "metro",
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/branding/kaamasaan-favicon.png"
     },
     "extra": {
       "eas": {
@@ -46,14 +48,10 @@
       [
         "expo-splash-screen",
         {
-          "image": "./src/assets/onboarding/Splash-Screen-Cart-1-transparent.png",
-          "imageWidth": 180,
-          "resizeMode": "contain",
-          "backgroundColor": "#FFF4DC",
-          "dark": {
-            "image": "./src/assets/onboarding/Splash-Screen-Cart-1-transparent.png",
-            "backgroundColor": "#FFF4DC"
-          }
+          "image": "./assets/branding/kaamasaan-native-splash-logo.png",
+          "backgroundColor": "#FFF5DE",
+          "imageWidth": 220,
+          "resizeMode": "contain"
         }
       ]
     ]

@@ -1,4 +1,6 @@
 import type { Product } from './product.types';
+import type { RecommendedPackage } from '@/utils/packageBuilder';
+import type { BatteryConfiguration } from '@/utils/batteryRecommendation';
 
 export type Appliance = {
   id: string;
@@ -19,6 +21,9 @@ export type SystemSummary = {
   panels?: Product | null;
   accessories: Product[];
   packageName?: string;
+  selectedRecommendedPackageId?: string | null;
+  selectedRecommendedPackage?: RecommendedPackage | null;
+  selectedBatteryConfiguration?: BatteryConfiguration | null;
 };
 
 export type BackupDecision = 'yes' | 'no' | null;

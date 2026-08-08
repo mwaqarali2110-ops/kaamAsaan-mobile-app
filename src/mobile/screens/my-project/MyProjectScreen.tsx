@@ -1,28 +1,34 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, ClipboardCheck, Home, PanelsTopLeft, ShoppingBag, ShieldCheck, Sun, X } from 'lucide-react-native';
+import { ArrowRight, ClipboardCheck, Home, PanelsTopLeft, ShoppingBag, Sun, X } from 'lucide-react-native';
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
 import { useActiveSurveyJourney, useLatestSurveyJourney } from '@/hooks/useSurveyJourney';
+import { useAppStore } from '@/store/useAppStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useMaintenanceBookingStore } from '@/store/useMaintenanceBookingStore';
 import { MySolarJourneyScreen } from '@/mobile/screens/survey/MySolarJourneyScreen';
+import { PremiumCareProgressScreen } from '@/mobile/screens/services/PremiumCareProgressScreen';
+import { useMaintenanceLifecycle } from '@/hooks/useMaintenanceLifecycle';
+import { getPrimaryActiveProject } from '@/utils/activeProject';
+
+const myProjectImage = require('../../../../my project.png');
 
 const EmptyProjectScreen = ({ navigation }: any) => (
-  <Screen>
+  <Screen includeBottomInset={false}>
+    <Header title="My Project" subtitle="Start your solar journey" />
     <View style={styles.emptyHero}>
       <View style={styles.illustrationWrap}>
-        <View style={styles.sunGlow} />
-        <Image source={require('../../../assets/home/hero-house.png')} style={styles.houseImage} />
+        <Image source={myProjectImage} style={styles.projectImage} resizeMode="contain" />
       </View>
 
       <View style={styles.emptyCopy}>
         <Text style={styles.emptyEyebrow}>My Project</Text>
-        <Text style={styles.emptyTitle}>No Active Project Yet</Text>
+        <Text style={styles.emptyTitle}>Ready to Start Your Solar Journey?</Text>
         <Text style={styles.emptySubtitle}>
-          Start by designing your solar system. Once your survey is booked, your project progress will appear here automatically.
+          Design your solar system and book a survey to get started.
         </Text>
       </View>
 
@@ -43,7 +49,13 @@ const EmptyProjectScreen = ({ navigation }: any) => (
 
 const CancelledSurveyMotivationCard = ({ navigation, onDismiss }: { navigation: any; onDismiss: () => void }) => (
   <View style={styles.motivationCard}>
-    <Pressable style={styles.motivationClose} onPress={onDismiss} hitSlop={12} accessibilityLabel="Close survey reminder">
+    <Pressable
+      style={styles.motivationClose}
+      onPress={onDismiss}
+      hitSlop={12}
+      accessibilityRole="button"
+      accessibilityLabel="Dismiss cancelled survey message"
+    >
       <X color="#6B7280" size={17} strokeWidth={2.5} />
     </Pressable>
     <View style={styles.motivationIconWrap}>
@@ -70,9 +82,14 @@ export const MyProjectScreen = ({ navigation }: any) => {
   const isFocused = useIsFocused();
   const activeJourney = useActiveSurveyJourney(userId);
   const latestJourney = useLatestSurveyJourney(userId);
-  const latestMaintenanceBooking = useMaintenanceBookingStore((state) => state.latestBooking);
+  const appHasHydrated = useAppStore((state) => state.hasHydrated);
+  const dismissedCancelledSurveyIds = useAppStore((state) => state.dismissedCancelledSurveyIds);
+  const dismissCancelledSurveyPrompt = useAppStore((state) => state.dismissCancelledSurveyPrompt);
+  const maintenanceHasHydrated = useMaintenanceBookingStore((state) => state.hydrated);
   const hydrateMaintenanceBookings = useMaintenanceBookingStore((state) => state.hydrate);
-  const [motivationDismissed, setMotivationDismissed] = useState(false);
+  // This hook only discovers which project should be shown. The rendered progress
+  // screen owns the plan and visit realtime channels, avoiding duplicate topics.
+  const activeMaintenancePlan = useMaintenanceLifecycle({ activeUserId: userId }, { realtime: false });
 
   useEffect(() => {
     if (!isFocused || !userId) return;
@@ -81,72 +98,57 @@ export const MyProjectScreen = ({ navigation }: any) => {
   }, [activeJourney.refetch, isFocused, latestJourney.refetch, userId]);
 
   useEffect(() => {
-    if (isFocused) void hydrateMaintenanceBookings();
+    if (isFocused) void hydrateMaintenanceBookings(true);
   }, [hydrateMaintenanceBookings, isFocused]);
 
-  const hasActiveSolarProject = Boolean(activeJourney.data);
-  const shouldShowCancelledMotivation = !hasActiveSolarProject
+  const primaryProject = useMemo(() => getPrimaryActiveProject({
+    solarProjects: activeJourney.data ? [activeJourney.data] : [],
+    maintenanceRequests: [],
+    userId
+  }), [activeJourney.data, userId]);
+  const shouldShowCancelledMotivation = !primaryProject && !activeMaintenancePlan.data
+    && appHasHydrated
     && latestJourney.data?.status === 'cancelled'
-    && !motivationDismissed;
-  const subtitle = latestMaintenanceBooking ? 'Your active service request' : 'No active solar project';
+    && !dismissedCancelledSurveyIds.includes(latestJourney.data.id);
 
   const dismissMotivation = () => {
-    setMotivationDismissed(true);
-    navigation.navigate('Home');
+    const cancelledSurveyId = latestJourney.data?.id;
+    if (cancelledSurveyId) dismissCancelledSurveyPrompt(cancelledSurveyId);
   };
 
-  if (activeJourney.isLoading || latestJourney.isLoading) {
+  if (activeJourney.isLoading || latestJourney.isLoading || activeMaintenancePlan.isLoading || !appHasHydrated || !maintenanceHasHydrated) {
     return (
-      <Screen scroll={false} className="flex-1 items-center justify-center">
+      <Screen scroll={false} includeBottomInset={false} className="flex-1 items-center justify-center">
         <ActivityIndicator color="#F5A623" size="large" />
         <Text style={styles.loadingText}>{t('project.loading')}</Text>
       </Screen>
     );
   }
 
-  if (hasActiveSolarProject && activeJourney.data) {
+  if (primaryProject?.type === 'solar_survey') {
     return (
       <MySolarJourneyScreen
         navigation={navigation}
-        route={{ params: { bookingId: activeJourney.data.id, fromTab: true } }}
+        route={{ params: { bookingId: primaryProject.project.id, fromTab: true } }}
       />
     );
   }
 
-  if (latestMaintenanceBooking || shouldShowCancelledMotivation) {
+  if (activeMaintenancePlan.data) {
+    const maintenanceRequest = activeMaintenancePlan.data.request;
     return (
-      <Screen>
-        <Header title={t('project.title')} subtitle={subtitle} />
-        {shouldShowCancelledMotivation ? (
-          <CancelledSurveyMotivationCard navigation={navigation} onDismiss={dismissMotivation} />
-        ) : null}
-        {latestMaintenanceBooking ? (
-          <>
-            <View style={styles.maintenanceCard}>
-              <View style={styles.maintenanceIcon}>
-                <ShieldCheck color="#E8A000" size={22} strokeWidth={2.4} />
-              </View>
-              <View style={styles.maintenanceCopy}>
-                <Text style={styles.maintenanceTitle}>{latestMaintenanceBooking.plan.title} Maintenance</Text>
-                <Text style={styles.maintenanceMeta}>{latestMaintenanceBooking.referenceNumber}</Text>
-                <Text style={styles.maintenanceStatus}>Request received. Our team will contact you shortly.</Text>
-              </View>
-            </View>
-            <View style={styles.emptyActionWrap}>
-              <Pressable
-                style={styles.bookButton}
-                onPress={() => navigation.navigate('MaintenanceBookingConfirmation', { booking: latestMaintenanceBooking })}
-              >
-                <ClipboardCheck color="#10213A" size={18} strokeWidth={2.4} />
-                <Text style={styles.bookButtonText}>View Request</Text>
-              </Pressable>
-            </View>
-          </>
-        ) : (
-          <View style={styles.emptyFallback}>
-            <Text style={styles.emptyFallbackText}>No active solar project is currently in progress.</Text>
-          </View>
-        )}
+      <PremiumCareProgressScreen
+        navigation={navigation}
+        identity={{ planId: activeMaintenancePlan.data.plan.id, requestId: maintenanceRequest?.id }}
+      />
+    );
+  }
+
+  if (shouldShowCancelledMotivation) {
+    return (
+      <Screen includeBottomInset={false}>
+        <Header title={t('project.title')} subtitle="Start your solar journey" />
+        <CancelledSurveyMotivationCard navigation={navigation} onDismiss={dismissMotivation} />
       </Screen>
     );
   }
@@ -171,28 +173,18 @@ const styles = StyleSheet.create({
   },
   illustrationWrap: {
     width: '100%',
-    height: 210,
-    borderRadius: 24,
-    backgroundColor: '#FFF8EA',
+    aspectRatio: 1402 / 1122,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#EFE3D3',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden'
   },
-  sunGlow: {
-    position: 'absolute',
-    top: 26,
-    right: 36,
-    width: 104,
-    height: 104,
-    borderRadius: 52,
-    backgroundColor: '#FFF0BF'
-  },
-  houseImage: {
-    width: '92%',
-    height: 185,
-    resizeMode: 'contain'
+  projectImage: {
+    width: '100%',
+    height: '100%'
   },
   emptyCopy: {
     marginTop: 22,

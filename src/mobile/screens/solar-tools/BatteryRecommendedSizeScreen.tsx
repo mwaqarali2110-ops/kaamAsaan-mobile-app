@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, ArrowRight, BatteryCharging, CheckCircle2, Clock3, RefreshCw, ShieldCheck, TrendingUp, Zap } from 'lucide-react-native';
 import type { Appliance } from '@/types/system.types';
 

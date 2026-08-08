@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AirVent, ArrowLeft, ArrowRight, BatteryCharging, Camera, Droplets, Home, Laptop, Lightbulb, Microwave, Monitor, PlugZap, Refrigerator, Shirt, Sun, Wifi, Zap } from 'lucide-react-native';
 import type { Appliance } from '@/types/system.types';
 

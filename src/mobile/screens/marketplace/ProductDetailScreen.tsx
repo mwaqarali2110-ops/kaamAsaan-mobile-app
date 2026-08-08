@@ -1,13 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { ArrowLeft, ArrowRight, Award, BatteryCharging, Bookmark, Box, Calculator, Check, ChevronDown, ChevronRight, ClipboardList, Clock3, HelpCircle, Info, MessageCircle, Package, PenLine, Settings, Share2, ShieldCheck, Star, Sun, Tag, Wrench, X, Zap } from 'lucide-react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ArrowLeft, ArrowRight, Award, BatteryCharging, Bookmark, Box, Calculator, Check, ChevronDown, ChevronRight, ClipboardList, Clock3, HelpCircle, Info, MessageCircle, Package, PenLine, Settings, Share2, ShieldCheck, ShoppingCart, Star, Sun, Tag, Wrench, X, Zap } from 'lucide-react-native';
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
 import { AppButton } from '@/components/ui/AppButton';
 import { InfoCard } from '@/components/cards/InfoCard';
 import { SafeImage } from '@/components/ui/SafeImage';
+import { SafeBottomActionBar, getFixedFooterContentPadding, getSafeBottomPadding } from '@/components/ui/SafeAreaLayout';
 import { useBrands, useCompatibleBatteryBrands, useProduct, useProducts } from '@/hooks/useProducts';
 import { useSystemStore } from '@/store/useSystemStore';
+import { useMarketplaceStore } from '@/store/useMarketplaceStore';
 import type { Product } from '@/types/product.types';
 import { formatPkr } from '@/utils/formatters';
 
@@ -77,11 +80,10 @@ const detailSpecRows = (product: Product) => {
 
   return [
     ['Category', 'Solar Accessory'],
-    ['Type', product.brand],
-    ['Spec 1', product.specs[0] ?? 'Install Ready'],
-    ['Spec 2', product.specs[1] ?? 'Durable'],
-    ['Warranty', product.specs[2] ?? 'On request'],
-    ['Best For', 'Solar Installations']
+    ['Type', product.accessorySubcategory?.replace(/_/g, ' ') ?? 'Accessory'],
+    ...Object.entries(product.specifications ?? {}).slice(0, 4).map(([key, value]) => [key, String(value)]),
+    ['Warranty', product.warranty ?? 'On request'],
+    ['Best For', product.secondarySpec ?? 'Solar installations']
   ];
 };
 
@@ -134,6 +136,7 @@ const ProductListPicker = ({ title, subtitle, options, onSelect }: { title: stri
 );
 
 export const ProductDetailScreen = ({ route, navigation }: any) => {
+  const insets = useSafeAreaInsets();
   const productQuery = useProduct(route.params.productId);
   const { data: product } = productQuery;
   const productsQuery = useProducts();
@@ -143,6 +146,7 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
   const setPanelWattage = useSystemStore((state) => state.setPanelWattage);
   const setSelectedPanelBrand = useSystemStore((state) => state.setSelectedPanelBrand);
   const setBackupDecision = useSystemStore((state) => state.setBackupDecision);
+  const addToCart = useMarketplaceStore((state) => state.addToCart);
   const selectedInverter = useSystemStore((state) => state.selectedInverter);
   const selectedPanels = useSystemStore((state) => state.selectedPanels);
   const selectedBattery = useSystemStore((state) => state.selectedBattery);
@@ -162,6 +166,7 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
   const [phone, setPhone] = useState('+923351351472');
   const [serviceOption, setServiceOption] = useState<'product-only' | 'product-installation'>('product-only');
   const [submitted, setSubmitted] = useState(false);
+  const [cartConfirmation, setCartConfirmation] = useState(false);
 
   const inverterOptions = useMemo(() => (productsQuery.data ?? []).filter((item) => item.category === 'inverter'), [productsQuery.data]);
   const compatibleBatteryBrandsQuery = useCompatibleBatteryBrands(selectedInverter?.brand);
@@ -184,10 +189,16 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
   const goSummary = () => navigation.navigate('SystemSummary');
 
   const startAddToSystem = () => {
+    if (product.category === 'accessory') {
+      if (product.stockStatus === 'out_of_stock') return;
+      addToCart(product);
+      setCartConfirmation(true);
+      setTimeout(() => setCartConfirmation(false), 1800);
+      return;
+    }
     setSelectedProduct(product);
     if (product.category === 'battery') setBackupDecision('yes');
-    if (product.category === 'accessory') goSummary();
-    else setGuidedVisible(true);
+    setGuidedVisible(true);
   };
 
   const handleGuidedChoice = (target: 'panels' | 'inverter' | 'batteries' | 'summary') => {
@@ -219,7 +230,7 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
     const changeOrderQuantity = (delta: number) => setQuantity(String(Math.max(1, orderQuantity + delta)));
 
     return (
-      <SafeAreaView style={orderStyles.screen}>
+      <SafeAreaView style={orderStyles.screen} edges={['top', 'left', 'right']}>
         <View style={orderStyles.header}>
           <Pressable style={orderStyles.headerButton} onPress={() => setStep(null)}>
             <ArrowLeft size={22} color="#10213A" strokeWidth={2.4} />
@@ -233,7 +244,14 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
           </Pressable>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={orderStyles.content}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            orderStyles.content,
+            { paddingBottom: getFixedFooterContentPadding(60, insets.bottom) }
+          ]}
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={orderStyles.productCard}>
             <View style={orderStyles.productVisual}>
               <ProductVisual product={product} />
@@ -312,12 +330,12 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
           ) : null}
         </ScrollView>
 
-        <View style={orderStyles.footer}>
+        <SafeBottomActionBar style={orderStyles.footer}>
           <Pressable style={orderStyles.continueButton} onPress={submitOrder}>
             <Text style={orderStyles.continueText}>Continue to System Summary</Text>
             <ArrowRight size={20} color="#111827" strokeWidth={2.7} />
           </Pressable>
-        </View>
+        </SafeBottomActionBar>
       </SafeAreaView>
     );
   }
@@ -350,7 +368,7 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
     const ctaTitle = 'Continue';
 
     return (
-      <SafeAreaView style={solarSizeStyles.screen}>
+      <SafeAreaView style={solarSizeStyles.screen} edges={['top', 'left', 'right']}>
         <View style={solarSizeStyles.header}>
           <Pressable style={solarSizeStyles.backButton} onPress={() => setStep(null)}>
             <ArrowLeft size={22} color="#0F172A" />
@@ -365,7 +383,14 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
           </Pressable>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={solarSizeStyles.content}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            solarSizeStyles.content,
+            { paddingBottom: getFixedFooterContentPadding(66, insets.bottom) }
+          ]}
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={solarSizeStyles.mainCard}>
             <View style={solarSizeStyles.controlSection}>
               <View style={solarSizeStyles.sectionHeader}>
@@ -522,7 +547,7 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
           </View>
         </ScrollView>
 
-        <View style={solarSizeStyles.footer}>
+        <SafeBottomActionBar style={solarSizeStyles.footer} minimumBottomPadding={16}>
           <Pressable
             disabled={!validCustomSolarSize}
             style={[solarSizeStyles.ctaButton, !validCustomSolarSize && solarSizeStyles.ctaButtonDisabled]}
@@ -538,7 +563,7 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
             <Text style={solarSizeStyles.ctaText}>{ctaTitle}</Text>
             <ArrowRight size={22} color="#111827" />
           </Pressable>
-        </View>
+        </SafeBottomActionBar>
       </SafeAreaView>
     );
   }
@@ -599,7 +624,7 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
     const backupEstimate = selectedChoice.capacity && Number.parseFloat(selectedChoice.capacity) >= 10 ? '7-8 hours' : selectedChoice.capacity && Number.parseFloat(selectedChoice.capacity) < 5 ? '2-3 hours' : '3-4 hours';
 
     return (
-      <SafeAreaView style={batterySelectStyles.screen}>
+      <SafeAreaView style={batterySelectStyles.screen} edges={['top', 'left', 'right']}>
         <View style={batterySelectStyles.header}>
           <Pressable style={batterySelectStyles.headerButton} onPress={() => setStep('batteryDecision')}>
             <ArrowLeft size={22} color="#10213A" strokeWidth={2.4} />
@@ -613,7 +638,13 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
           </Pressable>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={batterySelectStyles.content}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            batterySelectStyles.content,
+            { paddingBottom: getFixedFooterContentPadding(60, insets.bottom) }
+          ]}
+        >
           <View style={batterySelectStyles.infoCard}>
             <View style={batterySelectStyles.infoIcon}>
               <Info size={20} color="#F5A400" strokeWidth={2.4} />
@@ -676,7 +707,7 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
           </View>
         </ScrollView>
 
-        <View style={batterySelectStyles.footer}>
+        <SafeBottomActionBar style={batterySelectStyles.footer}>
           <Pressable
             style={batterySelectStyles.continueButton}
             onPress={() => {
@@ -688,7 +719,7 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
             <Text style={batterySelectStyles.continueText}>Continue</Text>
             <ArrowRight size={20} color="#111827" strokeWidth={2.7} />
           </Pressable>
-        </View>
+        </SafeBottomActionBar>
       </SafeAreaView>
     );
   }
@@ -697,7 +728,7 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
   const benefits = detailBenefits(product);
 
   return (
-    <SafeAreaView style={detailStyles.screen}>
+    <SafeAreaView style={detailStyles.screen} edges={['top', 'left', 'right']}>
       <View style={detailStyles.topBar}>
         <Pressable style={detailStyles.backButton} onPress={() => navigation.goBack()}>
           <ArrowLeft color="#10213A" size={18} strokeWidth={2.4} />
@@ -714,10 +745,18 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={detailStyles.content}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          detailStyles.content,
+          { paddingBottom: getFixedFooterContentPadding(60, insets.bottom) }
+        ]}
+      >
         <View style={detailStyles.hero}>
           <ProductVisual product={product} />
         </View>
+
+        {product.galleryImages?.length ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 9, paddingBottom: 4 }}>{product.galleryImages.map((image, index) => <View key={`${image}-${index}`} style={{ width: 72, height: 72, borderRadius: 13, overflow: 'hidden', borderWidth: 1, borderColor: '#E8D9BE', backgroundColor: '#FFFFFF' }}><SafeImage source={{ uri: image }} resizeMode="contain" style={{ width: '100%', height: '100%' }} /></View>)}</ScrollView> : null}
 
         <Text style={detailStyles.categoryLabel}>{productCategoryLabel[product.category]}</Text>
         <Text style={detailStyles.productTitle}>{product.name}</Text>
@@ -729,7 +768,7 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
             <Text style={detailStyles.priceSub}>Per unit · Ex-warehouse Pakistan</Text>
           </View>
           <View style={detailStyles.stockBadge}>
-            <Text style={detailStyles.stockText}>In Stock</Text>
+            <Text style={detailStyles.stockText}>{product.stockStatus === 'out_of_stock' ? 'Out of Stock' : product.stockStatus === 'on_request' ? 'On Request' : 'In Stock'}</Text>
           </View>
         </View>
 
@@ -749,6 +788,10 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
           ))}
         </View>
 
+        {product.category === 'accessory' && product.description ? <><Text style={detailStyles.sectionTitle}>Description</Text><View style={detailStyles.benefitsCard}><Text style={detailStyles.benefitText}>{product.description}</Text></View></> : null}
+        {product.category === 'accessory' && product.usageInstructions ? <><Text style={detailStyles.sectionTitle}>Usage Instructions</Text><View style={detailStyles.benefitsCard}><Text style={detailStyles.benefitText}>{product.usageInstructions}</Text></View></> : null}
+        {product.category === 'accessory' && product.packageContents ? <><Text style={detailStyles.sectionTitle}>Package Contents</Text><View style={detailStyles.benefitsCard}><Text style={detailStyles.benefitText}>{product.packageContents}</Text></View></> : null}
+
         <Text style={detailStyles.sectionTitle}>Benefits</Text>
         <View style={detailStyles.benefitsCard}>
           {benefits.map((item) => (
@@ -761,11 +804,11 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
           ))}
         </View>
 
-        <Text style={detailStyles.sectionTitle}>Compatible with</Text>
+        {product.category !== 'accessory' ? <><Text style={detailStyles.sectionTitle}>Compatible with</Text>
         <View style={detailStyles.compatWrap}>
           <Text style={detailStyles.compatChip}>Works with 10kW system using about 19 panels</Text>
           <Text style={detailStyles.compatChip}>Hybrid ready for residential systems</Text>
-        </View>
+        </View></> : null}
 
         <View style={detailStyles.installCard}>
           <View style={detailStyles.installCopy}>
@@ -778,11 +821,11 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
         </View>
       </ScrollView>
 
-      <Pressable style={detailStyles.chatButton}>
+      <Pressable style={[detailStyles.chatButton, { bottom: 74 + getSafeBottomPadding(insets.bottom) }]}>
         <MessageCircle color="#FFFFFF" size={18} strokeWidth={2.2} />
       </Pressable>
 
-      <GuidedAddSheet
+      {product.category !== 'accessory' ? <GuidedAddSheet
         visible={guidedVisible}
         product={product}
         hasPanels={Boolean(selectedPanels || product.category === 'panel')}
@@ -790,16 +833,19 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
         hasBattery={Boolean(selectedBattery || product.category === 'battery')}
         onClose={() => setGuidedVisible(false)}
         onChoose={handleGuidedChoice}
-      />
+      /> : null}
 
-      <View style={detailStyles.footer}>
-        <Pressable style={detailStyles.addButton} onPress={startAddToSystem}>
-          <Text style={detailStyles.addText}>Add to My System</Text>
+      {cartConfirmation ? <View pointerEvents="none" style={{ position: 'absolute', top: 78, alignSelf: 'center', zIndex: 20, borderRadius: 16, backgroundColor: '#ECFDF3', paddingHorizontal: 16, height: 40, flexDirection: 'row', alignItems: 'center', gap: 7 }}><Check color="#15803D" size={16} /><Text style={{ color: '#166534', fontWeight: '800', fontSize: 12 }}>Added to cart</Text></View> : null}
+
+      <SafeBottomActionBar style={detailStyles.footer}>
+        <Pressable disabled={product.category === 'accessory' && product.stockStatus === 'out_of_stock'} style={[detailStyles.addButton, product.category === 'accessory' && product.stockStatus === 'out_of_stock' && { opacity: 0.45 }]} onPress={startAddToSystem}>
+          {product.category === 'accessory' ? <ShoppingCart color="#10213A" size={17} /> : null}
+          <Text style={detailStyles.addText}>{product.category === 'accessory' ? product.stockStatus === 'on_request' ? 'Request Product' : product.stockStatus === 'out_of_stock' ? 'Out of Stock' : 'Add to Cart' : 'Add to My System'}</Text>
         </Pressable>
         <Pressable style={detailStyles.orderButton} onPress={() => setStep('orderProduct')}>
           <Text style={detailStyles.orderText}>Order Product</Text>
         </Pressable>
-      </View>
+      </SafeBottomActionBar>
     </SafeAreaView>
   );
 };
@@ -905,6 +951,7 @@ const GuidedAddSheet = ({
   onClose: () => void;
   onChoose: (target: 'panels' | 'inverter' | 'batteries' | 'summary') => void;
 }) => {
+  const insets = useSafeAreaInsets();
   const options = product.category === 'battery'
     ? [
         { target: 'panels' as const, Icon: Sun, title: 'Select Panels', helper: 'Choose solar panels that match your battery backup.' },
@@ -925,7 +972,7 @@ const GuidedAddSheet = ({
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={guidedStyles.backdrop}>
         <Pressable style={guidedStyles.scrim} onPress={onClose} />
-        <View style={guidedStyles.sheet}>
+        <View style={[guidedStyles.sheet, { paddingBottom: getSafeBottomPadding(insets.bottom, 22) }]}>
           <View style={guidedStyles.handle} />
           <View style={guidedStyles.header}>
             <View>
@@ -978,6 +1025,7 @@ const guidedStyles = StyleSheet.create({
   backdrop: { flex: 1, justifyContent: 'flex-end' },
   scrim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,23,42,0.34)' },
   sheet: {
+    maxHeight: '90%',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     backgroundColor: '#F8F3E8',

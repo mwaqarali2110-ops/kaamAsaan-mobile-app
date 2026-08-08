@@ -8,13 +8,24 @@ type ScreenProps = {
   className?: string;
   refreshing?: boolean;
   onRefresh?: () => void;
+  includeBottomInset?: boolean;
 };
 
-export const Screen = ({ children, scroll = true, className = '', refreshing = false, onRefresh }: ScreenProps) => {
+export const Screen = ({
+  children,
+  scroll = true,
+  className = '',
+  refreshing = false,
+  onRefresh,
+  includeBottomInset = true
+}: ScreenProps) => {
   const content = <View className={`px-4 pb-8 ${className}`}>{children}</View>;
 
   return (
-    <SafeAreaView className="flex-1 bg-kaam-cream" edges={['top', 'left', 'right']}>
+    <SafeAreaView
+      className="flex-1 bg-kaam-cream"
+      edges={includeBottomInset ? ['top', 'right', 'bottom', 'left'] : ['top', 'left', 'right']}
+    >
       {scroll ? (
         <ScrollView
           showsVerticalScrollIndicator={false}

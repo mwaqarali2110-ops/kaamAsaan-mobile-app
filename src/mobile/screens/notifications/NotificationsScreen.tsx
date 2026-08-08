@@ -5,14 +5,16 @@ import { ArrowLeft, Bell, RefreshCw } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { NotificationCard, type NotificationItem } from '@/components/notifications/NotificationCard';
 import { useMarkNotificationRead, useNotifications } from '@/hooks/useNotifications';
-import { CustomerNotification, openSupportWhatsApp } from '@/services/notifications.api';
+import { CustomerNotification } from '@/services/notifications.api';
 import { useAuthStore } from '@/store/useAuthStore';
+import { performNotificationAction } from '@/utils/notificationActions';
 
 const cartImage = require('../../../assets/onboarding/Splash-Screen-Cart-1-transparent.png');
 
 const toNotificationItem = (notification: CustomerNotification): NotificationItem => ({
   id: notification.id,
   notification_key: notification.notificationKey,
+  survey_booking_id: notification.surveyBookingId,
   type: notification.type,
   title: notification.title,
   message: notification.type === 'survey_welcome'
@@ -77,13 +79,12 @@ export const NotificationsScreen = ({ navigation }: any) => {
 
   const handleNotificationActionPress = async (notification: NotificationItem) => {
     await markNotificationRead(notification);
-    if (notification.type === 'survey_cancelled') {
-      navigation.navigate('BookSurvey');
-      return;
-    }
-    if (notification.type === 'survey_welcome' || notification.action_type === 'whatsapp') {
-      await openSupportWhatsApp(notification.action_value ?? undefined);
-    }
+    await performNotificationAction({
+      type: notification.type,
+      actionType: notification.action_type ?? null,
+      actionValue: notification.action_value ?? null,
+      surveyBookingId: notification.survey_booking_id ?? null,
+    }, navigation);
   };
 
   const renderNotification = ({ item }: { item: NotificationItem }) => (

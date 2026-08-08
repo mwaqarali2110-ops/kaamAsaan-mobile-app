@@ -3,7 +3,7 @@ import { RootNavigator } from "@/mobile/navigation/RootNavigator";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as NativeSplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { Platform, StyleSheet, useWindowDimensions, View } from "react-native";
 import "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -13,22 +13,46 @@ const queryClient = new QueryClient();
 
 if (Platform.OS !== "web") {
   void NativeSplashScreen.preventAutoHideAsync().catch(() => undefined);
+  NativeSplashScreen.setOptions({ duration: 400, fade: true });
 }
 
 export default function App() {
   const { width } = useWindowDimensions();
-  const handleRootLayout = useCallback(() => {
-    if (Platform.OS !== "web") {
-      void NativeSplashScreen.hideAsync().catch(() => undefined);
+  const hasLaidOutRef = useRef(false);
+  const startupDestinationReadyRef = useRef(false);
+  const hasHiddenNativeSplashRef = useRef(false);
+
+  const hideNativeSplashWhenReady = useCallback(() => {
+    if (
+      Platform.OS === "web" ||
+      hasHiddenNativeSplashRef.current ||
+      !hasLaidOutRef.current ||
+      !startupDestinationReadyRef.current
+    ) {
+      return;
     }
+
+    hasHiddenNativeSplashRef.current = true;
+    void NativeSplashScreen.hideAsync().catch(() => undefined);
   }, []);
+
+  const handleRootLayout = useCallback(() => {
+    hasLaidOutRef.current = true;
+    hideNativeSplashWhenReady();
+  }, [hideNativeSplashWhenReady]);
+
+  const handleStartupDestinationReady = useCallback(() => {
+    startupDestinationReadyRef.current = true;
+    hideNativeSplashWhenReady();
+  }, [hideNativeSplashWhenReady]);
+
   const app = (
     <View style={styles.appRoot} onLayout={handleRootLayout}>
       <QueryClientProvider client={queryClient}>
         <I18nProvider>
           <SafeAreaProvider>
             <StatusBar style="dark" />
-            <RootNavigator />
+            <RootNavigator onReady={handleStartupDestinationReady} />
           </SafeAreaProvider>
         </I18nProvider>
       </QueryClientProvider>

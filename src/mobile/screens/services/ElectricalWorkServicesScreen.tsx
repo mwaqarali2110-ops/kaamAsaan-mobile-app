@@ -1,81 +1,149 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Activity, ArrowLeft, ChevronRight, Grid2X2, Zap } from 'lucide-react-native';
 
-export const ElectricalWorkServicesScreen = ({ navigation }: any) => {
-  const { width } = useWindowDimensions();
-  const cardWidth = width - 48;
+const electricalHeroImage = require('../../../../electric work hero section.png');
 
-  const electricalServices = [
-    {
-      title: 'Load Distribution',
-      description: 'Balance electrical load safely across your system.',
-      type: 'load_distribution',
-      icon: 'grid',
-    },
-    {
-      title: 'Single Phase to 3 Phase Wiring',
-      description: 'Upgrade wiring support for higher load requirements.',
-      type: 'single_phase_to_3_phase_wiring',
-      icon: 'zap',
-    },
-    {
-      title: 'Diagnostic Services',
-      description: 'Identify wiring faults, load issues, and safety risks.',
-      type: 'diagnostic_services',
-      icon: 'activity',
-    },
-  ];
+type ElectricalServiceType = 'load_distribution' | 'single_phase_to_3_phase_wiring' | 'diagnostic_services';
+type ElectricalServiceIcon = 'grid' | 'zap' | 'activity';
+
+type ElectricalService = {
+  title: string;
+  description: string;
+  type: ElectricalServiceType;
+  icon: ElectricalServiceIcon;
+};
+
+const electricalServices: ElectricalService[] = [
+  {
+    title: 'Load Distribution',
+    description: 'Balance electrical load safely across your system.',
+    type: 'load_distribution',
+    icon: 'grid',
+  },
+  {
+    title: 'Single Phase to 3 Phase Wiring',
+    description: 'Upgrade wiring support for higher load requirements.',
+    type: 'single_phase_to_3_phase_wiring',
+    icon: 'zap',
+  },
+  {
+    title: 'Diagnostic Services',
+    description: 'Identify wiring faults, load issues, and safety risks.',
+    type: 'diagnostic_services',
+    icon: 'activity',
+  },
+];
+
+const ElectricalServiceCard = ({
+  service,
+  onPress,
+}: {
+  service: ElectricalService;
+  onPress: () => void;
+}) => {
+  const renderIcon = () => {
+    if (service.icon === 'grid') return <Grid2X2 size={29} color="#D69A00" strokeWidth={2.1} />;
+    if (service.icon === 'zap') return <Zap size={32} color="#D69A00" strokeWidth={2.15} />;
+    return <Activity size={32} color="#D69A00" strokeWidth={2.15} />;
+  };
 
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
+    <Pressable
+      style={styles.serviceCard}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={service.title}
     >
-      <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-          <ArrowLeft size={30} color="#101828" />
-        </Pressable>
+      <View style={styles.serviceIconBox}>{renderIcon()}</View>
 
-        <Text style={styles.title}>Electrical Work</Text>
-
-        <Text style={styles.subtitle}>
-          Choose the service you need for your home or business wiring.
+      <View style={styles.serviceText}>
+        <Text
+          style={styles.serviceCardTitle}
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1}
+        >
+          {service.title}
+        </Text>
+        <Text
+          style={styles.serviceCardDescription}
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1}
+        >
+          {service.description}
         </Text>
       </View>
 
-      <View style={styles.cardsWrap}>
-        {electricalServices.map((service) => (
-          <Pressable
-            key={service.type}
-            style={[styles.serviceCard, { width: cardWidth }]}
-            onPress={() =>
-              navigation.navigate('BookSurvey', {
-                selectedServiceType: service.type,
-                selectedServiceTitle: service.title,
-              })
-            }
-          >
-            <View style={styles.iconBox}>
-              {service.icon === 'grid' && <Grid2X2 size={34} color="#D99A00" />}
-              {service.icon === 'zap' && <Zap size={36} color="#D99A00" />}
-              {service.icon === 'activity' && <Activity size={36} color="#D99A00" />}
-            </View>
-
-            <View style={styles.textArea}>
-              <Text style={styles.cardTitle}>{service.title}</Text>
-              <Text style={styles.cardDescription}>{service.description}</Text>
-            </View>
-
-            <View style={styles.arrowCircle}>
-              <ChevronRight size={22} color="#D99A00" />
-            </View>
-          </Pressable>
-        ))}
+      <View style={styles.serviceArrow}>
+        <ChevronRight size={26} color="#D69A00" strokeWidth={2.45} />
       </View>
-    </ScrollView>
+    </Pressable>
+  );
+};
+
+export const ElectricalWorkServicesScreen = ({ navigation }: any) => {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
+      <View style={styles.serviceHeader}>
+        <Pressable
+          style={({ pressed }) => [styles.serviceBackButton, pressed && styles.servicePressed]}
+          onPress={() => navigation.goBack()}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          android_ripple={{ color: 'rgba(166, 111, 0, 0.10)', borderless: false }}
+        >
+          <ArrowLeft size={27} color="#111827" strokeWidth={2.25} />
+        </Pressable>
+
+        <View style={styles.serviceHeaderCopy}>
+          <Text style={styles.serviceTitle}>Electrical Work</Text>
+          <Text style={styles.serviceSubtitle}>
+            Choose the service you need for your home or business wiring.
+          </Text>
+        </View>
+      </View>
+
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <ImageBackground
+          source={electricalHeroImage}
+          resizeMode="cover"
+          style={styles.hero}
+          imageStyle={styles.heroImage}
+        >
+          <View style={styles.heroFullShade} />
+          <View style={styles.heroCopy}>
+            <Text style={styles.heroTitle}>Expert Electrical{'\n'}Solutions</Text>
+            <Text style={styles.heroSubtitle}>
+              Safe, reliable & efficient{'\n'}electrical work for your home{'\n'}or business.
+            </Text>
+          </View>
+        </ImageBackground>
+
+        <View style={styles.serviceList}>
+          {electricalServices.map((service) => (
+            <ElectricalServiceCard
+              key={service.type}
+              service={service}
+              onPress={() =>
+                navigation.navigate('BookSurvey', {
+                  bookingContext: 'electrical',
+                  source: 'electrical_service',
+                  selectedServiceType: service.type,
+                  selectedServiceTitle: service.title,
+                })
+              }
+            />
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
@@ -85,7 +153,7 @@ export const ElectricalWorkBookingScreen = ({ route, navigation }: any) => {
   const selectedService = route?.params?.selectedService;
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top']}>
+    <SafeAreaView style={styles.screen} edges={['top', 'right', 'bottom', 'left']}>
       <View style={styles.bookingContent}>
         <View style={styles.header}>
           <Pressable
@@ -113,7 +181,12 @@ export const ElectricalWorkBookingScreen = ({ route, navigation }: any) => {
 
         <Pressable
           style={({ pressed }) => [styles.bookButton, pressed && styles.pressed]}
-          onPress={() => navigation.navigate('BookSurvey')}
+          onPress={() => navigation.navigate('BookSurvey', {
+            bookingContext: 'electrical',
+            source: 'electrical_service',
+            selectedServiceType: selectedService,
+            selectedServiceTitle: serviceTitle
+          })}
           accessibilityRole="button"
         >
           <Text style={styles.bookButtonText}>Book Service</Text>
@@ -127,13 +200,13 @@ export const ElectricalWorkBookingScreen = ({ route, navigation }: any) => {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#FFFBF2',
+    backgroundColor: '#FBF8F1',
   },
   content: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 18,
-    paddingBottom: 110,
+    width: '100%',
+    maxWidth: 620,
+    alignSelf: 'center',
+    paddingHorizontal: 16,
   },
   bookingContent: {
     flex: 1,
@@ -144,6 +217,13 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 24,
   },
+  serviceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 11,
+  },
   backButton: {
     width: 44,
     height: 44,
@@ -153,6 +233,40 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.82,
+  },
+  servicePressed: {
+    opacity: 0.94,
+    backgroundColor: '#FFFCF5',
+  },
+  serviceBackButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E9DCC5',
+    marginRight: 14,
+    overflow: 'hidden',
+  },
+  serviceHeaderCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  serviceTitle: {
+    color: '#111111',
+    fontSize: 20,
+    lineHeight: 24,
+    fontWeight: '800',
+    letterSpacing: -0.4,
+  },
+  serviceSubtitle: {
+    marginTop: 0,
+    color: '#5F6368',
+    fontSize: 12,
+    lineHeight: 15,
+    fontWeight: '500',
   },
   headerCopy: {
     width: '100%',
@@ -173,62 +287,120 @@ const styles = StyleSheet.create({
     color: '#667085',
     textAlign: 'center',
   },
-  cardsWrap: {
+  serviceList: {
     width: '100%',
-    alignItems: 'center',
+    paddingTop: 18,
+    paddingBottom: 0,
   },
   serviceCard: {
+    width: '100%',
+    height: 124,
     minHeight: 124,
+    maxHeight: 124,
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#EFE7D5',
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    marginBottom: 16,
+    paddingVertical: 11,
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(245, 180, 0, 0.22)',
-    shadowColor: '#000',
+    flexShrink: 0,
+    flexGrow: 0,
+    flexBasis: 'auto',
+    alignSelf: 'stretch',
+    overflow: 'hidden',
+    marginBottom: 16,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 7,
     elevation: 3,
   },
-  iconBox: {
-    width: 72,
-    height: 72,
+  serviceIconBox: {
+    width: 64,
+    height: 64,
     borderRadius: 18,
-    backgroundColor: '#FFF4D6',
+    backgroundColor: '#FFF4CC',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 14,
+    flexShrink: 0,
   },
-  textArea: {
+  serviceText: {
     flex: 1,
     minWidth: 0,
+    marginLeft: 16,
+    marginRight: 12,
     justifyContent: 'center',
   },
-  cardTitle: {
+  serviceCardTitle: {
+    fontSize: 16,
+    lineHeight: 21,
+    fontWeight: '700',
+    color: '#111827',
+    letterSpacing: -0.15,
+    includeFontPadding: false,
+  },
+  serviceCardDescription: {
+    marginTop: 5,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '500',
+    color: '#60646C',
+    includeFontPadding: false,
+  },
+  serviceArrow: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFF4CC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  hero: {
+    width: '100%',
+    aspectRatio: 1.78,
+    borderRadius: 22,
+    overflow: 'hidden',
+    backgroundColor: '#E9D8BF',
+    justifyContent: 'flex-end',
+  },
+  heroImage: {
+    borderRadius: 22,
+  },
+  heroFullShade: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.12)',
+  },
+  heroCopy: {
+    paddingHorizontal: 17,
+    paddingBottom: 16,
+    width: '76%',
+  },
+  heroTitle: {
+    color: '#FFFFFF',
     fontSize: 18,
     lineHeight: 22,
     fontWeight: '800',
-    color: '#101828',
+    letterSpacing: -0.35,
+    textShadowColor: 'rgba(0, 0, 0, 0.34)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 5,
   },
-  cardDescription: {
+  heroSubtitle: {
     marginTop: 6,
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: '500',
-    color: '#667085',
-  },
-  arrowCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#FFF4D6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 10,
+    color: '#F9FAFB',
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: '600',
+    textShadowColor: 'rgba(0, 0, 0, 0.34)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 5,
   },
   detailCard: {
     marginTop: 6,
@@ -285,7 +457,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
     shadowColor: '#D99A00',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.14,
@@ -296,5 +467,6 @@ const styles = StyleSheet.create({
     color: '#0F172A',
     fontSize: 16,
     fontWeight: '900',
+    marginRight: 10,
   },
 });

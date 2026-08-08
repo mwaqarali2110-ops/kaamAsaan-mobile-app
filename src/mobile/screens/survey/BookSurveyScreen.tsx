@@ -1,56 +1,21 @@
-import {
-  latestWelcomeNotificationQueryKey,
-  notificationsQueryKey,
-  unreadNotificationsQueryKey,
-} from "@/hooks/useNotifications";
-import { activeSurveyJourneyQueryKey } from "@/hooks/useSurveyJourney";
-import {
-  SurveyBookingForm,
-  surveyBookingSchema,
-} from "@/schemas/survey.schema";
-import { saveLocalActiveSurveyBooking } from "@/services/journey.api";
-import { notificationsApi } from "@/services/notifications.api";
-import { systemApi } from "@/services/system.api";
-import { useAuthStore } from "@/store/useAuthStore";
-import { useSystemStore } from "@/store/useSystemStore";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Building2,
-  CalendarCheck2,
-  CalendarDays,
-  Check,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Clock3,
-  Home,
-  MapPin,
-  MessageCircle,
-  Phone,
-  ShieldCheck,
-  ShoppingBag,
-  User,
-  Wrench,
-} from "lucide-react-native";
-import { useEffect, useMemo, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
-import {
-  Image,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Controller, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, ArrowRight, Building2, CalendarCheck2, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Clock3, Home, MapPin, MessageCircle, Phone, ShieldCheck, ShoppingBag, User, Wrench } from 'lucide-react-native';
+import { surveyBookingSchema, SurveyBookingForm } from '@/schemas/survey.schema';
+import { systemApi } from '@/services/system.api';
+import { useSystemStore, type BookingContext } from '@/store/useSystemStore';
+import { useAuthStore } from '@/store/useAuthStore';
+import { activeSurveyJourneyQueryKey } from '@/hooks/useSurveyJourney';
+import { latestWelcomeNotificationQueryKey, notificationsQueryKey, unreadNotificationsQueryKey } from '@/hooks/useNotifications';
+import { saveLocalActiveSurveyBooking } from '@/services/journey.api';
+import { notificationsApi } from '@/services/notifications.api';
+import { formatPkrAmount } from '@/utils/cleaningPricing';
+import { buildPackagePromoContext, formatPkrCurrency, promoContextSignature } from '@/utils/promo';
+import { createSelectedPackageSnapshot } from '@/utils/surveyPackageSnapshot';
 
 const solarHouse = require("../../../assets/home/hero-house.png");
 
@@ -145,7 +110,14 @@ const AddressField = ({
   />
 );
 
-export const BookSurveyScreen = ({ navigation }: any) => {
+const SummaryLine = ({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) => (
+  <View style={styles.cleaningSummaryLine}>
+    <Text style={[styles.cleaningSummaryLabel, strong && styles.cleaningSummaryStrong]}>{label}</Text>
+    <Text style={[styles.cleaningSummaryValue, strong && styles.cleaningSummaryStrong]}>{value}</Text>
+  </View>
+);
+
+export const BookSurveyScreen = ({ navigation, route }: any) => {
   const insets = useSafeAreaInsets();
   const safeBottom = insets.bottom || 16;
   const today = useMemo(() => startOfLocalDay(new Date()), []);
@@ -157,6 +129,15 @@ export const BookSurveyScreen = ({ navigation }: any) => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const queryClient = useQueryClient();
   const getSummary = useSystemStore((state) => state.getSummary);
+  const startBooking = useSystemStore((state) => state.startBooking);
+  const cleaningEstimate = useSystemStore((state) => state.cleaningEstimate);
+  const clearCleaningEstimate = useSystemStore((state) => state.clearCleaningEstimate);
+  const installationDetails = useSystemStore((state) => state.installationDetails);
+  const clearInstallationDetails = useSystemStore((state) => state.clearInstallationDetails);
+  const selectedRecommendedPackageId = useSystemStore((state) => state.selectedRecommendedPackageId);
+  const selectedRecommendedPackage = useSystemStore((state) => state.selectedRecommendedPackage);
+  const promo = useSystemStore((state) => state.promo);
+  const applyPromo = useSystemStore((state) => state.applyPromo);
   const session = useAuthStore((state) => state.session);
   const profile = useAuthStore((state) => state.profile);
   const calendarDays = useMemo(
@@ -173,7 +154,32 @@ export const BookSurveyScreen = ({ navigation }: any) => {
     },
   });
   const mutation = useMutation({ mutationFn: systemApi.submitSurveyBooking });
-  const selectedDateKey = selectedDate ? formatDateKey(selectedDate) : null;
+  const bookingIdempotencyKey = useRef<string | null>(null);
+  const bookingContext: BookingContext = route?.params?.bookingContext ??
+    (route?.params?.source === 'cleaning_estimator'
+      ? 'cleaning'
+      : route?.params?.source === 'installation_service'
+        ? 'installation'
+        : route?.params?.packageId
+          ? 'solar_package'
+          : route?.params?.selectedServiceType
+            ? 'electrical'
+            : 'general');
+  const isCleaningBooking = bookingContext === 'cleaning';
+  const isInstallationBooking = bookingContext === 'installation';
+  const isPackageBooking = bookingContext === 'solar_package';
+  const isElectricalBooking = bookingContext === 'electrical';
+  const systemSummary = getSummary();
+  const packageSummary = selectedRecommendedPackage ?? systemSummary.selectedRecommendedPackage;
+  const promoContext = useMemo(() => buildPackagePromoContext(packageSummary), [packageSummary]);
+  const hasAppliedPackagePromo = Boolean(
+    isPackageBooking &&
+    promoContext &&
+    promo.status === 'applied' &&
+    promo.appliedCode &&
+    promo.appliedPackageId === promoContext.packageId &&
+    promo.appliedContextSignature === promoContextSignature(promoContext)
+  );
   const draftDateKey = draftDate ? formatDateKey(draftDate) : null;
   const todayKey = formatDateKey(today);
 
@@ -205,6 +211,10 @@ export const BookSurveyScreen = ({ navigation }: any) => {
   };
 
   useEffect(() => {
+    startBooking(bookingContext);
+  }, [bookingContext, startBooking]);
+
+  useEffect(() => {
     if (!profile) return;
     form.reset({
       name: profile.full_name ?? "",
@@ -225,19 +235,77 @@ export const BookSurveyScreen = ({ navigation }: any) => {
     }
     if (isSubmitted || mutation.isPending) return;
     setIsSubmitted(true);
+    bookingIdempotencyKey.current ??= `survey-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
     try {
+      const serviceType = isInstallationBooking
+        ? 'installation'
+        : isCleaningBooking
+          ? 'cleaning'
+          : isElectricalBooking
+            ? 'electrical'
+            : isPackageBooking
+              ? 'solar_package'
+              : 'solar_survey';
+      const selectedPackageSnapshot = isPackageBooking && packageSummary
+        ? createSelectedPackageSnapshot({
+            selectedPackage: packageSummary,
+            grossTotal: promoContext?.originalTotal ?? packageSummary.totalPrice ?? 0,
+            discountAmount: hasAppliedPackagePromo ? promo.discountAmount : 0,
+            finalTotal: hasAppliedPackagePromo
+              ? promo.finalTotal
+              : promoContext?.originalTotal ?? packageSummary.totalPrice ?? 0,
+            promoCode: hasAppliedPackagePromo ? promo.appliedCode : null
+          })
+        : null;
       const result = await mutation.mutateAsync({
         userId: session.user.id,
+        idempotencyKey: bookingIdempotencyKey.current,
         fullName: values.name,
         phone: values.phone,
         city: values.city,
         address: values.address,
         preferredDate: formatDateKey(selectedDate),
         preferredTimeSlot: TEAM_CONFIRMED_TIME_SLOT,
+        customerEmail: session.user.email ?? null,
+        serviceType,
+        selectedPackageSnapshot,
         notes: JSON.stringify({
-          source: "mobile-app",
-          systemSummary: getSummary(),
+          source: 'mobile-app',
+          selectedRecommendedPackageId: selectedRecommendedPackageId ?? route?.params?.packageId ?? null,
+          selectedRecommendedPackage,
+          bookingContext,
+          systemSummary,
+          serviceType,
+          serviceSubType: isElectricalBooking ? route?.params?.selectedServiceType ?? null : null,
+          selectedServiceTitle: isInstallationBooking
+            ? 'Solar Panel Installation'
+            : isCleaningBooking
+              ? 'Solar Panel Cleaning'
+              : isPackageBooking
+                ? packageSummary?.packageName ?? systemSummary.packageName ?? 'Selected Solar Package'
+                : route?.params?.selectedServiceTitle ?? null,
+          cleaning: isCleaningBooking ? cleaningEstimate : null,
+          installation: isInstallationBooking ? installationDetails : null,
+          solarPackage: isPackageBooking && packageSummary ? {
+            ...packageSummary,
+            originalEstimatedAmount: promoContext?.originalTotal ?? packageSummary.totalPrice,
+            promo: hasAppliedPackagePromo ? {
+              promoId: promo.promoId,
+              code: promo.appliedCode,
+              discountType: promo.discountType,
+              appliesTo: promo.appliesTo,
+              eligibleAmount: promo.eligibleAmount,
+              discountAmount: promo.discountAmount
+            } : null,
+            finalEstimatedAmount: hasAppliedPackagePromo
+              ? promo.finalTotal
+              : promoContext?.originalTotal ?? packageSummary.totalPrice
+          } : null
         }),
+        solarPackagePricing: hasAppliedPackagePromo && promoContext && promo.appliedCode ? {
+          context: promoContext,
+          promoCode: promo.appliedCode
+        } : null
       });
       if (result.booking) {
         await saveLocalActiveSurveyBooking(result.booking);
@@ -260,21 +328,18 @@ export const BookSurveyScreen = ({ navigation }: any) => {
           result.booking,
         );
       }
-      await queryClient.invalidateQueries({
-        queryKey: activeSurveyJourneyQueryKey(session.user.id),
-      });
-      await queryClient.invalidateQueries({
-        queryKey: notificationsQueryKey(session.user.id),
-      });
-      await queryClient.invalidateQueries({
-        queryKey: unreadNotificationsQueryKey(session.user.id),
-      });
-      await queryClient.invalidateQueries({
-        queryKey: latestWelcomeNotificationQueryKey(session.user.id),
-      });
-      navigation.replace("SurveyConfirmation", { bookingId: result.bookingId });
+      await queryClient.invalidateQueries({ queryKey: activeSurveyJourneyQueryKey(session.user.id) });
+      await queryClient.invalidateQueries({ queryKey: notificationsQueryKey(session.user.id) });
+      await queryClient.invalidateQueries({ queryKey: unreadNotificationsQueryKey(session.user.id) });
+      await queryClient.invalidateQueries({ queryKey: latestWelcomeNotificationQueryKey(session.user.id) });
+      if (isCleaningBooking) clearCleaningEstimate();
+      if (isInstallationBooking) clearInstallationDetails();
+      navigation.replace('SurveyConfirmation', { bookingId: result.bookingId });
     } catch {
       // Mutation error is shown inline below the trust card.
+      if (hasAppliedPackagePromo && promoContext && promo.appliedCode) {
+        await applyPromo(promoContext, promo.appliedCode);
+      }
       setIsSubmitted(false);
     }
   });
@@ -324,11 +389,47 @@ export const BookSurveyScreen = ({ navigation }: any) => {
           <CalendarDays color="#0F1E33" size={24} strokeWidth={2.1} />
           <Text style={styles.sectionTitle}>Select Date</Text>
         </View>
-        <Pressable
-          style={[styles.dateField, dateError && styles.inputError]}
-          onPress={openCalendar}
-          accessibilityRole="button"
-        >
+
+        {isPackageBooking && packageSummary ? (
+          <View style={styles.cleaningSummaryCard}>
+            <Text style={styles.cleaningSummaryKicker}>System Summary</Text>
+            <Text style={styles.cleaningSummaryTitle}>{packageSummary.packageName}</Text>
+            <View style={styles.cleaningSummaryRows}>
+              <SummaryLine label="System Size" value={`${packageSummary.totalSolarKw.toFixed(2)} kW`} />
+              <SummaryLine label="Panels" value={`${packageSummary.panelQuantity} x ${Math.round((packageSummary.totalSolarKw * 1000) / Math.max(1, packageSummary.panelQuantity)) || systemSummary.panelWattage}W`} />
+              <SummaryLine label="Inverter" value={`${packageSummary.inverterSizeKw} kW`} />
+              <SummaryLine label="Battery" value={packageSummary.totalBatteryKwh > 0 ? `${packageSummary.totalBatteryKwh} kWh` : 'Not included'} />
+              {hasAppliedPackagePromo ? (
+                <>
+                  <SummaryLine label="Original Estimate" value={formatPkrCurrency(promo.originalTotal)} />
+                  <SummaryLine label={`Promo (${promo.appliedCode})`} value={`-${formatPkrCurrency(promo.discountAmount)}`} />
+                </>
+              ) : null}
+              <SummaryLine
+                label="Estimated Cost"
+                value={hasAppliedPackagePromo
+                  ? formatPkrCurrency(promo.finalTotal)
+                  : formatPkrAmount(packageSummary.totalPrice)}
+                strong
+              />
+            </View>
+          </View>
+        ) : null}
+
+        {isCleaningBooking && cleaningEstimate ? (
+          <View style={styles.cleaningSummaryCard}>
+            <Text style={styles.cleaningSummaryKicker}>Cleaning Service Summary</Text>
+            <Text style={styles.cleaningSummaryTitle}>Solar Panel Cleaning</Text>
+            <View style={styles.cleaningSummaryRows}>
+              <SummaryLine label="System Size" value={`${cleaningEstimate.systemSizeKw} kW`} />
+              <SummaryLine label="Structure" value={cleaningEstimate.structureType === 'elevated' ? 'Elevated' : 'Standard'} />
+              {cleaningEstimate.structureType === 'elevated' ? <SummaryLine label="Front Height" value={`${cleaningEstimate.frontHeightFt} ft`} /> : null}
+              {cleaningEstimate.structureType === 'elevated' ? <SummaryLine label="Back Height" value={`${cleaningEstimate.backHeightFt} ft`} /> : null}
+              <SummaryLine label="Estimated Charges" value={formatPkrAmount(cleaningEstimate.estimatedAmount)} strong />
+            </View>
+          </View>
+        ) : null}
+        <Pressable style={[styles.dateField, dateError && styles.inputError]} onPress={openCalendar} accessibilityRole="button">
           <View style={styles.inputIcon}>
             <CalendarDays color="#334155" size={21} strokeWidth={2.1} />
           </View>
@@ -846,7 +947,53 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   confirmButtonDisabled: { opacity: 0.68 },
-  confirmText: { color: "#0F1E33", fontSize: 17, fontWeight: "900" },
+  confirmText: { color: '#0F1E33', fontSize: 17, fontWeight: '900' },
+  cleaningSummaryCard: {
+    borderRadius: 18,
+    backgroundColor: '#FFF9E8',
+    borderWidth: 1,
+    borderColor: '#F1D47A',
+    padding: 14,
+    marginTop: 2,
+    marginBottom: 4
+  },
+  cleaningSummaryKicker: {
+    color: '#8A5D00',
+    fontSize: 11,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4
+  },
+  cleaningSummaryTitle: {
+    marginTop: 4,
+    color: '#0F1E33',
+    fontSize: 16,
+    fontWeight: '900'
+  },
+  cleaningSummaryRows: {
+    marginTop: 10,
+    gap: 7
+  },
+  cleaningSummaryLine: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12
+  },
+  cleaningSummaryLabel: {
+    color: '#64748B',
+    fontSize: 12,
+    fontWeight: '800'
+  },
+  cleaningSummaryValue: {
+    color: '#1F2937',
+    fontSize: 12,
+    fontWeight: '900',
+    textAlign: 'right'
+  },
+  cleaningSummaryStrong: {
+    color: '#0F1E33',
+    fontSize: 13
+  },
   modalBackdrop: {
     flex: 1,
     justifyContent: "flex-end",

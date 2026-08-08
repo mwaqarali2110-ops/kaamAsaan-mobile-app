@@ -22,7 +22,6 @@ export const SafeImage = ({ source, fallbackSource, fallback, onError, ...props 
       {...props}
       source={activeSource}
       onError={(event) => {
-        console.warn('[storage] Image failed to render', { source: activeSource });
         setCandidateIndex((index) => index + 1);
         onError?.(event);
       }}

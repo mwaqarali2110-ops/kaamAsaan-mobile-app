@@ -1,7 +1,8 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowDownToLine, BatteryMedium, Bolt, Check, MessageCircle, Shield, ShieldCheck, Wrench } from 'lucide-react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeBottomActionBar, getFixedFooterContentPadding, getSafeBottomPadding } from '@/components/ui/SafeAreaLayout';
+import { ArrowDownToLine, BatteryMedium, Bolt, MessageCircle, Shield, ShieldCheck, Wrench } from 'lucide-react-native';
 
 const diagnostics = [
   {
@@ -61,9 +62,12 @@ const recommendations = [
   'Monitor battery capacity trend monthly via inverter app'
 ];
 
-export const PostServiceHealthReportScreen = ({ navigation }: any) => (
-  <SafeAreaView style={styles.shell} edges={['top']}>
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+export const PostServiceHealthReportScreen = ({ navigation }: any) => {
+  const insets = useSafeAreaInsets();
+
+  return (
+  <SafeAreaView style={styles.shell} edges={['top', 'left', 'right']}>
+    <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: getFixedFooterContentPadding(103, insets.bottom) }]} showsVerticalScrollIndicator={false}>
       <View style={styles.scoreCard}>
         <View style={styles.scoreRow}>
           <View style={styles.scoreRing}>
@@ -130,11 +134,11 @@ export const PostServiceHealthReportScreen = ({ navigation }: any) => (
       </View>
     </ScrollView>
 
-    <Pressable style={styles.chatButton} accessibilityLabel="WhatsApp help">
-      <MessageCircle color="#FFFFFF" size={20} strokeWidth={2.2} />
+    <Pressable style={[styles.chatButton, { bottom: 113 + getSafeBottomPadding(insets.bottom) }]} accessibilityLabel="WhatsApp help">
+      <MessageCircle color="#FFFFFF" size={19} strokeWidth={2.2} />
     </Pressable>
 
-    <View style={styles.footer}>
+    <SafeBottomActionBar style={styles.footer} minimumBottomPadding={10}>
       <Pressable style={styles.membershipButton} onPress={() => navigation.navigate('SolarCareMembership')}>
         <Text style={styles.membershipText}>Get Solar Care Membership</Text>
       </Pressable>
@@ -142,9 +146,10 @@ export const PostServiceHealthReportScreen = ({ navigation }: any) => (
         <ArrowDownToLine color="#172031" size={16} strokeWidth={2.2} />
         <Text style={styles.downloadText}>Download PDF Report</Text>
       </Pressable>
-    </View>
+    </SafeBottomActionBar>
   </SafeAreaView>
-);
+  );
+};
 
 const styles = StyleSheet.create({
   shell: { flex: 1, backgroundColor: '#F8F3E8' },

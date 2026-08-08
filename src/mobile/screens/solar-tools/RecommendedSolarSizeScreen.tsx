@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, ArrowRight, BatteryCharging, Grid3X3, MessageCircle, RefreshCw, ShieldCheck, Sun, TrendingUp, Wallet, Zap } from 'lucide-react-native';
 import { calculatePanelCount } from '@/utils/calculations';
 

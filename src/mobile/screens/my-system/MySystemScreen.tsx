@@ -107,7 +107,10 @@ const MySystemEmptyScreen = ({ navigation, bottomPadding }: { navigation: any; b
 const OptionalVideoBackground = ({ fallback }: { fallback: ReactNode }) => {
   if (!expoVideoModule?.VideoView || !expoVideoModule?.useVideoPlayer) return <>{fallback}</>;
 
-  const { VideoView, useVideoPlayer } = expoVideoModule;
+  return <AvailableVideoBackground {...expoVideoModule} />;
+};
+
+const AvailableVideoBackground = ({ VideoView, useVideoPlayer }: ExpoVideoModule) => {
   const player = useVideoPlayer(emptyStateVideo, (videoPlayer: any) => {
     videoPlayer.loop = true;
     videoPlayer.muted = true;

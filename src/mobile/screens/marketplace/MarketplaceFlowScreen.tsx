@@ -1,42 +1,27 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, BatteryCharging, Bolt, CheckCircle2, ChevronRight, Home, Search, ShieldCheck, SlidersHorizontal, Sun, User, Zap } from 'lucide-react-native';
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
 import { AppButton } from '@/components/ui/AppButton';
 import { InfoCard } from '@/components/cards/InfoCard';
 import { ProductCard } from '@/components/cards/ProductCard';
-import { SafeImage } from '@/components/ui/SafeImage';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 import { useBrands, useProducts } from '@/hooks/useProducts';
 import { useMarketplaceStore } from '@/store/useMarketplaceStore';
 import { useSystemStore } from '@/store/useSystemStore';
-import type { Product, ProductCategory } from '@/types/product.types';
+import type { MarketplaceBrand, Product, ProductCategory } from '@/types/product.types';
 import { colors } from '@/constants/colors';
+import { brandIdentitiesMatch } from '@/utils/brandLogo';
+import { SolarAccessoriesScreen } from './SolarAccessoriesScreen';
 
 const categoryTitle = {
   inverter: 'Inverter',
   panel: 'Solar Panel',
   battery: 'Batteries',
   accessory: 'Solar Accessories'
-};
-
-const inverterBrandLogos = {
-  fox: require('../../../assets/home/brand-fox-ess.png'),
-  solis: require('../../../assets/home/brand-solis.png')
-};
-
-const solarBrandLogos = {
-  longi: require('../../../assets/home/brand-longi.png'),
-  jinko: require('../../../assets/home/brand-jinko.png'),
-  canadian: require('../../../assets/home/brand-canadian-solar.png')
-};
-
-const batteryBrandLogos = {
-  fox: require('../../../assets/home/brand-fox-ess.png'),
-  dyness: require('../../../assets/home/brand-dyness.png'),
-  soluna: require('../../../assets/home/brand-soluna.png'),
-  pylontech: require('../../../assets/home/pylontech.jpg')
 };
 
 const inverterBrands = [
@@ -48,8 +33,7 @@ const inverterBrands = [
     title: 'Advanced Hybrid Technology',
     description: 'Reliable hybrid energy systems',
     models: 12,
-    initials: 'FX',
-    logo: inverterBrandLogos.fox
+    initials: 'FX'
   },
   {
     name: 'Sungrow',
@@ -79,8 +63,7 @@ const inverterBrands = [
     title: 'Tier-1 Inverter Manufacturer',
     description: 'Trusted high-performance inverters',
     models: 9,
-    initials: 'SL',
-    logo: inverterBrandLogos.solis
+    initials: 'SL'
   },
   {
     name: 'Huawei',
@@ -103,8 +86,7 @@ const solarPanelBrands = [
     title: 'China · Tier-1 Manufacturer',
     description: 'Premium efficiency panels',
     models: 12,
-    initials: 'LG',
-    logo: solarBrandLogos.longi
+    initials: 'LG'
   },
   {
     name: 'JA Solar',
@@ -134,8 +116,7 @@ const solarPanelBrands = [
     title: 'Tier-1 Global Manufacturer',
     description: 'High reliability and performance',
     models: 11,
-    initials: 'JK',
-    logo: solarBrandLogos.jinko
+    initials: 'JK'
   },
   {
     name: 'AIKO',
@@ -158,8 +139,7 @@ const batteryBrands = [
     title: 'Hybrid Backup Technology',
     description: 'Premium backup energy systems',
     models: 9,
-    initials: 'FX',
-    logo: batteryBrandLogos.fox
+    initials: 'FX'
   },
   {
     name: 'Dyness',
@@ -169,8 +149,7 @@ const batteryBrands = [
     title: 'Advanced Lithium Storage',
     description: 'Reliable long backup solutions',
     models: 8,
-    initials: 'DY',
-    logo: batteryBrandLogos.dyness
+    initials: 'DY'
   },
   {
     name: 'Soluna',
@@ -180,8 +159,7 @@ const batteryBrands = [
     title: 'Premium Energy Storage',
     description: 'High-performance lithium batteries',
     models: 7,
-    initials: 'SN',
-    logo: batteryBrandLogos.soluna
+    initials: 'SN'
   },
   {
     name: 'PylonTech',
@@ -191,8 +169,7 @@ const batteryBrands = [
     title: 'Tier-1 Battery Manufacturer',
     description: 'Trusted energy storage systems',
     models: 6,
-    initials: 'PT',
-    logo: batteryBrandLogos.pylontech
+    initials: 'PT'
   },
   {
     name: 'Huawei',
@@ -217,6 +194,7 @@ const batteryBrands = [
 ];
 
 type BrandCardItem = {
+  id?: string;
   name: string;
   productBrand: string;
   category: string;
@@ -224,22 +202,21 @@ type BrandCardItem = {
   title: string;
   description: string;
   initials: string;
-  logo?: number | { uri: string };
+  slug?: string | null;
+  canonicalSlug?: string | null;
+  aliases?: string[];
+  logoUrl?: string;
+  updatedAt?: string | null;
 };
 
-const normalizeBrand = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
+const brandsMatch = (left: string, right: string) => brandIdentitiesMatch(left, right);
 
-const brandsMatch = (left: string, right: string) => {
-  const normalizedLeft = normalizeBrand(left);
-  const normalizedRight = normalizeBrand(right);
-  if (!normalizedLeft || !normalizedRight) return false;
-  return normalizedLeft === normalizedRight || normalizedLeft.includes(normalizedRight) || normalizedRight.includes(normalizedLeft);
-};
-
-const mergeLiveBrands = (liveBrands: { name: string; logoUrl?: string }[], presets: BrandCardItem[]) => liveBrands.map((brand) => {
-  const key = normalizeBrand(brand.name);
-  const preset = presets.find((item) => normalizeBrand(item.name) === key || normalizeBrand(item.productBrand) === key);
+const mergeLiveBrands = (liveBrands: MarketplaceBrand[], presets: BrandCardItem[]) => liveBrands.map((brand) => {
+  const preset = presets.find((item) => (
+    brandIdentitiesMatch(brand, item.name) || brandIdentitiesMatch(brand, item.productBrand)
+  ));
   return {
+    id: brand.id,
     name: brand.name,
     productBrand: brand.name,
     category: preset?.category ?? 'Premium',
@@ -247,13 +224,27 @@ const mergeLiveBrands = (liveBrands: { name: string; logoUrl?: string }[], prese
     title: preset?.title ?? 'KaamAsaan Verified Brand',
     description: preset?.description ?? 'Approved marketplace products',
     initials: preset?.initials ?? brand.name.slice(0, 2).toUpperCase(),
-    logo: brand.logoUrl ? { uri: brand.logoUrl } : preset?.logo
+    slug: brand.slug,
+    canonicalSlug: brand.canonicalSlug,
+    aliases: brand.aliases,
+    logoUrl: brand.logoUrl,
+    updatedAt: brand.updatedAt
   };
 });
 
-const QueryFeedback = ({ message }: { message: string }) => (
+const QueryFeedback = ({ message, onRetry }: { message: string; onRetry?: () => void }) => (
   <View className="rounded-2xl border border-kaam-line bg-white p-4">
     <Text className="text-center text-sm font-bold text-kaam-muted">{message}</Text>
+    {onRetry ? (
+      <Pressable
+        className="mt-3 self-center rounded-xl bg-kaam-yellow px-5 py-2"
+        onPress={onRetry}
+        accessibilityRole="button"
+        accessibilityLabel="Retry loading inverter brands"
+      >
+        <Text className="text-xs font-extrabold text-kaam-navy">Retry</Text>
+      </Pressable>
+    ) : null}
   </View>
 );
 
@@ -395,8 +386,10 @@ const BrandHeroBanner = ({
 );
 
 const InverterBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigation: any; onSelectBrand: (brand: string) => void }) => {
+  const insets = useSafeAreaInsets();
   const [searchText, setSearchText] = useState('');
   const [filter, setFilter] = useState('All');
+  const isFocused = useIsFocused();
   const brandsQuery = useBrands('inverter');
   const liveBrands = useMemo(() => mergeLiveBrands(brandsQuery.data ?? [], inverterBrands), [brandsQuery.data]);
   const filteredBrands = liveBrands.filter((item) => {
@@ -405,8 +398,23 @@ const InverterBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigatio
     return matchesSearch && matchesFilter;
   });
 
+  useEffect(() => {
+    if (isFocused) void brandsQuery.refetch();
+  }, [brandsQuery.refetch, isFocused]);
+
+  useEffect(() => {
+    if (!__DEV__ || !brandsQuery.error) return;
+    const error = brandsQuery.error as { message?: string; code?: string; details?: string; hint?: string };
+    console.warn('Inverter brand screen query error', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    });
+  }, [brandsQuery.error]);
+
   return (
-    <View style={brandStyles.shell}>
+    <SafeAreaView style={brandStyles.shell} edges={['top', 'left', 'right']}>
       <View style={brandStyles.topBar}>
         <Pressable style={brandStyles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="Back">
           <ArrowLeft color="#111827" size={18} strokeWidth={2.3} />
@@ -420,7 +428,7 @@ const InverterBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigatio
         </View>
       </View>
 
-      <ScrollView style={brandStyles.scroll} contentContainerStyle={brandStyles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={brandStyles.scroll} contentContainerStyle={[brandStyles.content, { paddingBottom: 82 + insets.bottom }]} showsVerticalScrollIndicator={false}>
         <View style={brandStyles.searchWrap}>
           <Search color="#94A3B8" size={16} strokeWidth={2.1} />
           <TextInput
@@ -442,16 +450,17 @@ const InverterBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigatio
 
         <View style={brandStyles.list}>
           {brandsQuery.isLoading ? <QueryFeedback message="Loading inverter brands..." /> : null}
-          {brandsQuery.isError ? <QueryFeedback message="Unable to load inverter brands. Please try again." /> : null}
-          {!brandsQuery.isLoading && !brandsQuery.isError && filteredBrands.length === 0 ? <QueryFeedback message="No inverter brands are available yet." /> : null}
-          {filteredBrands.map((item, index) => (
-            <Pressable key={item.name} style={[brandStyles.brandCard, index === 0 && brandStyles.brandCardSelected]} onPress={() => onSelectBrand(item.productBrand)}>
+          {brandsQuery.isError ? (
+            <QueryFeedback
+              message="Unable to load inverter brands. Please try again."
+              onRetry={() => void brandsQuery.refetch()}
+            />
+          ) : null}
+          {!brandsQuery.isLoading && !brandsQuery.isError && filteredBrands.length === 0 ? <QueryFeedback message="No inverter brands are currently available." /> : null}
+          {!brandsQuery.isError && filteredBrands.map((item, index) => (
+            <Pressable key={item.id ?? item.name} style={[brandStyles.brandCard, index === 0 && brandStyles.brandCardSelected]} onPress={() => onSelectBrand(item.productBrand)}>
               <View style={brandStyles.logoBox}>
-                {item.logo ? (
-                  <SafeImage source={item.logo} style={brandStyles.logoImage} resizeMode="contain" fallback={<Text style={brandStyles.logoText}>{item.initials}</Text>} />
-                ) : (
-                  <Text style={brandStyles.logoText}>{item.initials}</Text>
-                )}
+                <BrandLogo brand={item} style={brandStyles.logoImage} fallbackTextStyle={brandStyles.logoText} />
               </View>
               <View style={brandStyles.brandCopy}>
                 <View style={brandStyles.brandNameRow}>
@@ -482,7 +491,7 @@ const InverterBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigatio
         </View>
       </ScrollView>
 
-      <View style={brandStyles.bottomNav}>
+      <View style={[brandStyles.bottomNav, { height: 58 + insets.bottom, paddingBottom: Math.max(4, insets.bottom) }]}>
         {[
           { label: 'Home', Icon: Home, active: false },
           { label: 'Explore', Icon: Search, active: true },
@@ -495,11 +504,12 @@ const InverterBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigatio
           </Pressable>
         ))}
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const SolarPanelBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigation: any; onSelectBrand: (brand: string) => void }) => {
+  const insets = useSafeAreaInsets();
   const [searchText, setSearchText] = useState('');
   const [filter, setFilter] = useState('All');
   const brandsQuery = useBrands('panel');
@@ -511,7 +521,7 @@ const SolarPanelBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigat
   });
 
   return (
-    <View style={brandStyles.shell}>
+    <SafeAreaView style={brandStyles.shell} edges={['top', 'left', 'right']}>
       <View style={brandStyles.topBar}>
         <Pressable style={brandStyles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="Back">
           <ArrowLeft color="#111827" size={18} strokeWidth={2.3} />
@@ -525,7 +535,7 @@ const SolarPanelBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigat
         </View>
       </View>
 
-      <ScrollView style={brandStyles.scroll} contentContainerStyle={brandStyles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={brandStyles.scroll} contentContainerStyle={[brandStyles.content, { paddingBottom: 82 + insets.bottom }]} showsVerticalScrollIndicator={false}>
         <View style={brandStyles.searchWrap}>
           <Search color="#94A3B8" size={16} strokeWidth={2.1} />
           <TextInput
@@ -550,13 +560,9 @@ const SolarPanelBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigat
           {brandsQuery.isError ? <QueryFeedback message="Unable to load solar brands. Please try again." /> : null}
           {!brandsQuery.isLoading && !brandsQuery.isError && filteredBrands.length === 0 ? <QueryFeedback message="No solar panel brands are available yet." /> : null}
           {filteredBrands.map((item, index) => (
-            <Pressable key={item.name} style={[brandStyles.brandCard, index === 0 && brandStyles.brandCardSelected]} onPress={() => onSelectBrand(item.productBrand)}>
+            <Pressable key={item.id ?? item.name} style={[brandStyles.brandCard, index === 0 && brandStyles.brandCardSelected]} onPress={() => onSelectBrand(item.productBrand)}>
               <View style={brandStyles.logoBox}>
-                {item.logo ? (
-                  <SafeImage source={item.logo} style={brandStyles.logoImage} resizeMode="contain" fallback={<Text style={brandStyles.logoText}>{item.initials}</Text>} />
-                ) : (
-                  <Text style={brandStyles.logoText}>{item.initials}</Text>
-                )}
+                <BrandLogo brand={item} style={brandStyles.logoImage} fallbackTextStyle={brandStyles.logoText} />
               </View>
               <View style={brandStyles.brandCopy}>
                 <View style={brandStyles.brandNameRow}>
@@ -587,7 +593,7 @@ const SolarPanelBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigat
         </View>
       </ScrollView>
 
-      <View style={brandStyles.bottomNav}>
+      <View style={[brandStyles.bottomNav, { height: 58 + insets.bottom, paddingBottom: Math.max(4, insets.bottom) }]}>
         {[
           { label: 'Home', Icon: Home, active: false },
           { label: 'Explore', Icon: Search, active: true },
@@ -600,11 +606,12 @@ const SolarPanelBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigat
           </Pressable>
         ))}
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const BatteryBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigation: any; onSelectBrand: (brand: string) => void }) => {
+  const insets = useSafeAreaInsets();
   const [searchText, setSearchText] = useState('');
   const [filter, setFilter] = useState('All');
   const brandsQuery = useBrands('battery');
@@ -616,7 +623,7 @@ const BatteryBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigation
   });
 
   return (
-    <View style={brandStyles.shell}>
+    <SafeAreaView style={brandStyles.shell} edges={['top', 'left', 'right']}>
       <View style={brandStyles.topBar}>
         <Pressable style={brandStyles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="Back">
           <ArrowLeft color="#111827" size={18} strokeWidth={2.3} />
@@ -630,7 +637,7 @@ const BatteryBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigation
         </View>
       </View>
 
-      <ScrollView style={brandStyles.scroll} contentContainerStyle={brandStyles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={brandStyles.scroll} contentContainerStyle={[brandStyles.content, { paddingBottom: 82 + insets.bottom }]} showsVerticalScrollIndicator={false}>
         <View style={brandStyles.searchWrap}>
           <Search color="#94A3B8" size={16} strokeWidth={2.1} />
           <TextInput
@@ -655,13 +662,9 @@ const BatteryBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigation
           {brandsQuery.isError ? <QueryFeedback message="Unable to load battery brands. Please try again." /> : null}
           {!brandsQuery.isLoading && !brandsQuery.isError && filteredBrands.length === 0 ? <QueryFeedback message="No battery brands are available yet." /> : null}
           {filteredBrands.map((item, index) => (
-            <Pressable key={item.name} style={[brandStyles.brandCard, index === 0 && brandStyles.brandCardSelected]} onPress={() => onSelectBrand(item.productBrand)}>
+            <Pressable key={item.id ?? item.name} style={[brandStyles.brandCard, index === 0 && brandStyles.brandCardSelected]} onPress={() => onSelectBrand(item.productBrand)}>
               <View style={brandStyles.logoBox}>
-                {item.logo ? (
-                  <SafeImage source={item.logo} style={brandStyles.logoImage} resizeMode="contain" fallback={<Text style={brandStyles.logoText}>{item.initials}</Text>} />
-                ) : (
-                  <Text style={brandStyles.logoText}>{item.initials}</Text>
-                )}
+                <BrandLogo brand={item} style={brandStyles.logoImage} fallbackTextStyle={brandStyles.logoText} />
               </View>
               <View style={brandStyles.brandCopy}>
                 <View style={brandStyles.brandNameRow}>
@@ -692,7 +695,7 @@ const BatteryBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigation
         </View>
       </ScrollView>
 
-      <View style={brandStyles.bottomNav}>
+      <View style={[brandStyles.bottomNav, { height: 58 + insets.bottom, paddingBottom: Math.max(4, insets.bottom) }]}>
         {[
           { label: 'Home', Icon: Home, active: false },
           { label: 'Explore', Icon: Search, active: true },
@@ -705,7 +708,7 @@ const BatteryBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigation
           </Pressable>
         ))}
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -744,6 +747,10 @@ export const MarketplaceFlowScreen = ({ route, navigation }: any) => {
     navigation.navigate('ProductDetail', { productId: product.id });
   };
 
+  if (category === 'accessory') {
+    return <SolarAccessoriesScreen navigation={navigation} query={productsQuery} onSelectProduct={chooseProduct} />;
+  }
+
   if (category === 'inverter' && !brand) {
     return <InverterBrandSelectionScreen navigation={navigation} onSelectBrand={setBrand} />;
   }
@@ -760,20 +767,10 @@ export const MarketplaceFlowScreen = ({ route, navigation }: any) => {
     <Screen refreshing={productsQuery.isRefetching} onRefresh={() => void productsQuery.refetch()}>
       <Header
         title={isBrandProductList ? selectedBrandLabel : categoryTitle[category]}
-        subtitle={isBrandProductList ? modelSubtitleByCategory[category] : category === 'accessory' ? modelSubtitleByCategory.accessory : 'Brand Selection'}
+        subtitle={isBrandProductList ? modelSubtitleByCategory[category] : 'Brand Selection'}
         onBack={() => isBrandProductList ? setBrand(null) : navigation.goBack()}
         right={<View className="flex-row gap-2"><Search color={colors.navy} size={18} /><SlidersHorizontal color={colors.navy} size={18} /></View>}
       />
-
-      {category === 'accessory' ? (
-        <View className="mb-4 rounded-3xl bg-kaam-yellow p-5">
-          <Text className="text-2xl font-extrabold text-kaam-navy">Solar Accessories</Text>
-          <Text className="mt-2 text-sm font-semibold text-kaam-navy/70">Durable mounting, structure, and accessory products for clean solar installations.</Text>
-          <View className="mt-4 flex-row flex-wrap gap-2">
-            {['Galvanized Steel', 'Wind Resistant', 'Installation Ready'].map((badge) => <Text key={badge} className="rounded-full bg-white/70 px-3 py-1 text-xs font-bold text-kaam-navy">{badge}</Text>)}
-          </View>
-        </View>
-      ) : null}
 
       {listingHero ? (
         <View style={{ marginBottom: 14 }}>
@@ -1127,14 +1124,12 @@ const brandStyles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: 62,
     borderTopWidth: 1,
     borderTopColor: 'rgba(218,211,203,0.78)',
     backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    paddingBottom: 4
   },
   navItem: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3 },
   navText: { color: '#94A3B8', fontSize: 10, fontWeight: '800' },

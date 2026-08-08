@@ -10,6 +10,7 @@ type NotificationType =
 export type NotificationItem = {
   id: string;
   notification_key?: string | null;
+  survey_booking_id?: string | null;
   type: NotificationType;
   title: string;
   message: string;
@@ -31,6 +32,14 @@ function getNotificationAction(notification: NotificationItem) {
       label: 'Book a New Survey',
       icon: ClipboardCheck,
       variant: 'cancelled' as const,
+    };
+  }
+
+  if (notification.action_type === 'open_project_progress') {
+    return {
+      label: 'View Project Progress',
+      icon: ClipboardCheck,
+      variant: 'project' as const,
     };
   }
 

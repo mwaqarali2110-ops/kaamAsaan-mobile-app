@@ -1,23 +1,4 @@
 import {
-  useLatestUnreadWelcomeNotification,
-  useMarkNotificationRead,
-  useUnreadNotificationsCount,
-} from "@/hooks/useNotifications";
-import { useActiveSurveyJourney } from "@/hooks/useSurveyJourney";
-import {
-  activeSurveyBookingStatuses,
-  formatSurveyReference,
-  SurveyJourneyBooking,
-} from "@/services/journey.api";
-import {
-  openSupportWhatsApp,
-  WELCOME_NOTIFICATION_CTA,
-} from "@/services/notifications.api";
-import { useAuthStore } from "@/store/useAuthStore";
-import { useSystemStore } from "@/store/useSystemStore";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect, useIsFocused } from "@react-navigation/native";
-import {
   ArrowRight,
   Bell,
   Calculator,
@@ -61,6 +42,29 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useActiveSurveyJourney } from "@/hooks/useSurveyJourney";
+import {
+  useMarkNotificationRead,
+  useNotificationRealtime,
+  useNotifications,
+  useUnreadNotificationsCount,
+} from "@/hooks/useNotifications";
+import {
+  activeSurveyBookingStatuses,
+  formatSurveyReference,
+  SurveyJourneyBooking,
+} from "@/services/journey.api";
+import {
+  openSupportWhatsApp,
+  type CustomerNotification,
+} from "@/services/notifications.api";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useSystemStore } from "@/store/useSystemStore";
+import { TopNotificationBanner } from "@/components/notifications/TopNotificationBanner";
+import { PremiumShimmerSweep } from "@/components/ui/PremiumShimmerSweep";
+import { performNotificationAction } from "@/utils/notificationActions";
 
 /* ─── Assets ─── */
 const logo = require("../../../assets/onboarding/Splash-Screen-Cart-1-transparent.png");
@@ -215,7 +219,14 @@ const ElectricHeroCta = ({ onPress }: { onPress: () => void }) => {
   }));
 
   return (
-    <Pressable style={s.heroCta} onPress={onPress}>
+    <Pressable
+      style={s.heroCta}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={t('home.designSystem')}
+    >
+      <PremiumShimmerSweep showSparkle />
+
       <View style={s.heroCtaContent}>
         <Text style={s.heroCtaText}>{t("home.designSystem")}</Text>
         <View style={s.heroCtaIconWrap}>
@@ -228,6 +239,7 @@ const ElectricHeroCta = ({ onPress }: { onPress: () => void }) => {
           </Reanimated.View>
         </View>
       </View>
+
     </Pressable>
   );
 };
@@ -721,11 +733,12 @@ export const HomeScreen = ({ navigation }: any) => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const userId = useAuthStore((state) => state.session?.user.id);
-  const isFocused = useIsFocused();
   const journeyQuery = useActiveSurveyJourney(userId);
+  const refetchJourney = journeyQuery.refetch;
   const unreadNotificationsQuery = useUnreadNotificationsCount(userId);
-  const welcomeNotificationQuery = useLatestUnreadWelcomeNotification(userId);
+  const notificationsQuery = useNotifications(userId);
   const markNotificationRead = useMarkNotificationRead(userId);
+  useNotificationRealtime(userId);
   const [menuOpen, setMenuOpen] = useState(false);
   const [continuePlanDismissed, setContinuePlanDismissed] = useState(false);
   const [expertOpinionPressed, setExpertOpinionPressed] = useState(false);
@@ -747,25 +760,16 @@ export const HomeScreen = ({ navigation }: any) => {
   const selectedBattery = useSystemStore((state) => state.selectedBattery);
 
   useEffect(() => {
-    if (isFocused && userId) void journeyQuery.refetch();
-  }, [isFocused, journeyQuery.refetch, userId]);
+    if (__DEV__ && notificationsQuery.error) {
+      console.warn('Notifications could not be refreshed.', notificationsQuery.error);
+    }
+  }, [notificationsQuery.error]);
 
   useFocusEffect(
     React.useCallback(() => {
-      if (userId) void journeyQuery.refetch();
-    }, [journeyQuery.refetch, userId]),
+      if (userId) void refetchJourney();
+    }, [refetchJourney, userId]),
   );
-
-  useEffect(() => {
-    if (!isFocused || !userId) return;
-    void unreadNotificationsQuery.refetch();
-    void welcomeNotificationQuery.refetch();
-  }, [
-    isFocused,
-    unreadNotificationsQuery.refetch,
-    userId,
-    welcomeNotificationQuery.refetch,
-  ]);
 
   useEffect(() => {
     void AsyncStorage.getItem(CONTINUE_PLAN_DISMISS_KEY).then((value) => {
@@ -842,12 +846,10 @@ export const HomeScreen = ({ navigation }: any) => {
     setMenuOpen(true);
   };
 
-  const openWelcomeNotification = async () => {
-    const notification = welcomeNotificationQuery.data;
-    if (!notification) return;
+  const openNotification = async (notification: CustomerNotification) => {
     if (!notification.isRead)
       await markNotificationRead.mutateAsync(notification.id);
-    await openSupportWhatsApp(notification.actionValue ?? undefined);
+    await performNotificationAction(notification, navigation);
   };
 
   const handleExpertOpinion = () => {
@@ -855,263 +857,258 @@ export const HomeScreen = ({ navigation }: any) => {
   };
 
   return (
-    <SafeAreaView style={s.shell} edges={["top"]}>
-      {/* ══ Header ══ */}
-      <View style={s.header}>
-        <View style={s.headerBar}>
-          <Pressable
-            style={({ pressed }) => [s.iconBtn, pressed && s.headerPressed]}
-            onPress={openMenu}
-            accessibilityLabel="Open menu"
-            accessibilityRole="button"
-            hitSlop={12}
-          >
-            <Menu color="#111827" size={22} strokeWidth={2} />
-          </Pressable>
-          <View pointerEvents="none" style={s.logoWrap}>
-            <Image source={logo} style={s.logoImg} resizeMode="contain" />
-            <Text style={s.logoText}>
-              <Text style={s.logoTextKaam}>Kaam</Text>
-              <Text style={s.logoTextAsaan}>Asaan</Text>
-            </Text>
-          </View>
-          <Pressable
-            style={({ pressed }) => [
-              s.iconBtn,
-              s.notificationButton,
-              pressed && s.headerPressed,
-            ]}
-            onPress={() => navigation.navigate("Notifications")}
-            accessibilityLabel="Open notifications"
-            accessibilityRole="button"
-            hitSlop={12}
-          >
-            <Bell color="#111827" size={20} strokeWidth={2} />
-            {unreadNotifications > 0 ? <View style={s.notifDot} /> : null}
-          </Pressable>
-        </View>
-      </View>
-
-      {/* ══ Scrollable Content ══ */}
-      <ScrollView
-        style={s.scroll}
-        contentContainerStyle={[
-          s.scrollInner,
-          { paddingBottom: scrollBottomPadding },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* 1 ── Hero */}
-        <View style={s.hero}>
-          <View style={s.heroContent}>
-            <View style={s.heroBullet}>
-              <View style={s.bulletBadge}>
-                <Zap color="#B07800" size={12} fill="#B07800" />
-              </View>
-              <Text style={s.bulletText}>{t("home.estimateLoad")}</Text>
-            </View>
-            <View style={s.heroBullet}>
-              <View style={[s.bulletBadge, s.bulletBadgeGreen]}>
-                <HomeIcon color="#128A3E" size={12} strokeWidth={2.4} />
-              </View>
-              <Text style={s.bulletText}>{t("home.designSystem")}</Text>
-            </View>
-            <ElectricHeroCta
-              onPress={() => navigation.navigate("DesignFlow")}
-            />
-          </View>
-          <Image source={heroHouse} style={s.heroImage} resizeMode="contain" />
-        </View>
-
-        {/* 2 ── Trusted Brands */}
-        {welcomeNotificationQuery.data ? (
-          <Pressable
-            style={({ pressed }) => [
-              s.welcomeBanner,
-              pressed && s.welcomeBannerPressed,
-            ]}
-            onPress={() => void openWelcomeNotification()}
-          >
-            <View style={s.welcomeIcon}>
-              <Bell color="#B07800" size={18} strokeWidth={2.4} />
-              <View style={s.welcomeUnreadDot} />
-            </View>
-            <View style={s.welcomeCopy}>
-              <Text style={s.welcomeTitle} numberOfLines={1}>
-                {welcomeNotificationQuery.data.title}
-              </Text>
-              <Text style={s.welcomeText} numberOfLines={2}>
-                {welcomeNotificationQuery.data.message}
-              </Text>
-            </View>
-            <Text style={s.welcomeCta} numberOfLines={1}>
-              {WELCOME_NOTIFICATION_CTA}
-            </Text>
-          </Pressable>
-        ) : null}
-
-        <BrandMarquee />
-
-        {/* 3 ── Smart Tools */}
-        <SectionHeader title={t("home.smartTools")} />
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={s.qaTrack}
-        >
-          {QUICK_ACTIONS.map((a) => (
+    <View style={s.shell}>
+      <SafeAreaView style={s.shell} edges={["top"]}>
+        {/* ══ Header ══ */}
+        <View style={s.header}>
+          <View style={s.headerBar}>
             <Pressable
-              key={a.id}
-              style={s.qaCard}
-              onPress={() =>
-                navigation.navigate(
-                  a.id === "roof-space"
-                    ? "RoofSpaceTool"
-                    : a.id === "roi"
-                      ? "ROICalculator"
-                      : a.id === "solar-size"
-                        ? "SolarSizeTool"
-                        : a.id === "battery-size"
-                          ? "BatterySizeTool"
-                          : "DesignFlow",
-                )
-              }
-            >
-              <View style={s.qaIcon}>
-                <a.Icon color="#B07800" size={20} strokeWidth={1.9} />
-              </View>
-              <Text style={s.qaLabel} numberOfLines={2}>
-                {t(a.labelKey)}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-
-        {/* 4 ── Preventive Maintenance */}
-        <Pressable
-          style={s.maintCard}
-          onPress={() => navigation.navigate("PreventiveMaintenance")}
-        >
-          <ImageBackground
-            source={maintenanceImage}
-            style={s.maintBg}
-            imageStyle={s.maintBgImg}
-            resizeMode="cover"
-          >
-            <View style={s.maintOverlay} />
-            <View style={s.maintContent}>
-              <Text style={s.maintBadge}>
-                {t("services.solarCare").toUpperCase()}
-              </Text>
-              <Text style={s.maintTitle}>
-                {t("services.preventiveMaintenance")}
-              </Text>
-              <View style={s.maintCta}>
-                <Text style={s.maintCtaText}>
-                  {t("tools.checkSolarHealth")}
-                </Text>
-                <ChevronRight color="#201503" size={12} strokeWidth={2.8} />
-              </View>
-            </View>
-          </ImageBackground>
-        </Pressable>
-
-        {/* 5 ── Explore Products */}
-        <SectionHeader
-          title={t("home.exploreProducts")}
-          action={t("common.viewAll")}
-          onPress={() => navigation.navigate("Marketplace")}
-        />
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={s.catTrack}
-        >
-          {MARKETPLACE_CATEGORIES.map((item) => (
-            <CategoryCard
-              key={item.id}
-              item={item}
-              onPress={() => navigateToCategory(navigation, item.id)}
-            />
-          ))}
-        </ScrollView>
-
-        {/* 6 ── Services */}
-        <SectionHeader
-          title={t("home.services")}
-          action={t("common.viewAll")}
-          onPress={() => navigation.navigate("BookSurvey")}
-        />
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={s.catTrack}
-        >
-          {SERVICES.map((item) => (
-            <CategoryCard
-              key={item.id}
-              item={item}
-              onPress={() =>
-                navigation.navigate(
-                  item.id === "aftersale"
-                    ? "ElectricalWorkServices"
-                    : "BookSurvey",
-                )
-              }
-            />
-          ))}
-        </ScrollView>
-
-        {/* 7 ── Expert consultation */}
-        <View style={s.expertCardWrap}>
-          <View style={s.expertCard}>
-            <Text style={s.expertTitle}>{t("home.whyTitle")}</Text>
-            <Text style={s.expertDescription}>{t("home.whyCopy")}</Text>
-
-            <View style={s.benefitsContainer}>
-              {WHY_ITEMS.map((item) => (
-                <ExpertBenefitRow key={item} label={t(item)} />
-              ))}
-            </View>
-
-            <Pressable
-              onPress={handleExpertOpinion}
-              onPressIn={() => setExpertOpinionPressed(true)}
-              onPressOut={() => setExpertOpinionPressed(false)}
-              style={[
-                s.expertOpinionButton,
-                expertOpinionPressed && s.expertOpinionButtonPressed,
-              ]}
+              style={({ pressed }) => [s.iconBtn, pressed && s.headerPressed]}
+              onPress={openMenu}
+              accessibilityLabel="Open menu"
               accessibilityRole="button"
+              hitSlop={12}
             >
-              <Text style={s.expertOpinionButtonText}>Get Expert Opinion</Text>
-              <ArrowRight size={18} color="#10233F" strokeWidth={2.5} />
+              <Menu color="#111827" size={22} strokeWidth={2} />
+            </Pressable>
+            <View pointerEvents="none" style={s.logoWrap}>
+              <Image source={logo} style={s.logoImg} resizeMode="contain" />
+              <Text style={s.logoText}>
+                <Text style={s.logoTextKaam}>Kaam</Text>
+                <Text style={s.logoTextAsaan}>Asaan</Text>
+              </Text>
+            </View>
+            <Pressable
+              style={({ pressed }) => [
+                s.iconBtn,
+                s.notificationButton,
+                pressed && s.headerPressed,
+              ]}
+              onPress={() => navigation.navigate("Notifications")}
+              accessibilityLabel="Open notifications"
+              accessibilityRole="button"
+              hitSlop={12}
+            >
+              <Bell color="#B07800" size={20} strokeWidth={2} />
+              {unreadNotifications > 0 ? <View style={s.notifDot} /> : null}
             </Pressable>
           </View>
         </View>
-      </ScrollView>
 
-      {/* ══ Continue Plan Floating Bar ══ */}
-      {shouldShowJourneyCard && activeJourney ? (
-        <ActiveJourneyBar
-          booking={activeJourney}
+        {/* ══ Scrollable Content ══ */}
+        <ScrollView
+          style={s.scroll}
+          contentContainerStyle={[
+            s.scrollInner,
+            { paddingBottom: scrollBottomPadding },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* 1 ── Hero */}
+          <View style={s.hero}>
+            <View style={s.heroContent}>
+              <View style={s.heroBullet}>
+                <View style={s.bulletBadge}>
+                  <Zap color="#B07800" size={12} fill="#B07800" />
+                </View>
+                <Text style={s.bulletText}>{t("home.estimateLoad")}</Text>
+              </View>
+              <View style={s.heroBullet}>
+                <View style={[s.bulletBadge, s.bulletBadgeGreen]}>
+                  <HomeIcon color="#128A3E" size={12} strokeWidth={2.4} />
+                </View>
+                <Text style={s.bulletText}>{t("home.designSystem")}</Text>
+              </View>
+              <ElectricHeroCta
+                onPress={() => navigation.navigate("DesignFlow")}
+              />
+            </View>
+            <Image
+              source={heroHouse}
+              style={s.heroImage}
+              resizeMode="contain"
+            />
+          </View>
+
+          {/* 2 ── Trusted Brands */}
+          <BrandMarquee />
+
+          {/* 3 ── Smart Tools */}
+          <SectionHeader title={t("home.smartTools")} />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={s.qaTrack}
+          >
+            {QUICK_ACTIONS.map((a) => (
+              <Pressable
+                key={a.id}
+                style={s.qaCard}
+                onPress={() =>
+                  navigation.navigate(
+                    a.id === "roof-space"
+                      ? "RoofSpaceTool"
+                      : a.id === "roi"
+                        ? "ROICalculator"
+                        : a.id === "solar-size"
+                          ? "SolarSizeTool"
+                          : a.id === "battery-size"
+                            ? "BatterySizeTool"
+                            : "DesignFlow",
+                  )
+                }
+              >
+                <View style={s.qaIcon}>
+                  <a.Icon color="#B07800" size={20} strokeWidth={1.9} />
+                </View>
+                <Text style={s.qaLabel} numberOfLines={2}>
+                  {t(a.labelKey)}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+
+          {/* 4 ── Preventive Maintenance */}
+          <Pressable
+            style={s.maintCard}
+            onPress={() => navigation.navigate("PreventiveMaintenance")}
+          >
+            <ImageBackground
+              source={maintenanceImage}
+              style={s.maintBg}
+              imageStyle={s.maintBgImg}
+              resizeMode="cover"
+            >
+              <View style={s.maintOverlay} />
+              <View style={s.maintContent}>
+                <Text style={s.maintBadge}>
+                  {t("services.solarCare").toUpperCase()}
+                </Text>
+                <Text style={s.maintTitle}>
+                  {t("services.preventiveMaintenance")}
+                </Text>
+                <View style={s.maintCta}>
+                  <Text style={s.maintCtaText}>
+                    {t("tools.checkSolarHealth")}
+                  </Text>
+                  <ChevronRight color="#201503" size={12} strokeWidth={2.8} />
+                </View>
+              </View>
+            </ImageBackground>
+          </Pressable>
+
+          {/* 5 ── Explore Products */}
+          <SectionHeader
+            title={t("home.exploreProducts")}
+            action={t("common.viewAll")}
+            onPress={() => navigation.navigate("Marketplace")}
+          />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={s.catTrack}
+          >
+            {MARKETPLACE_CATEGORIES.map((item) => (
+              <CategoryCard
+                key={item.id}
+                item={item}
+                onPress={() => navigateToCategory(navigation, item.id)}
+              />
+            ))}
+          </ScrollView>
+
+          {/* 6 ── Services */}
+          <SectionHeader
+            title={t("home.services")}
+            action={t("common.viewAll")}
+            onPress={() => navigation.navigate("BookSurvey")}
+          />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={s.catTrack}
+          >
+            {SERVICES.map((item) => (
+              <CategoryCard
+                key={item.id}
+                item={item}
+                onPress={() =>
+                  navigation.navigate(
+                    item.id === "aftersale"
+                      ? "ElectricalWorkServices"
+                      : item.id === "care"
+                        ? "CleaningServiceEstimator"
+                        : item.id === "install"
+                          ? "InstallationService"
+                          : "BookSurvey",
+                  )
+                }
+              />
+            ))}
+          </ScrollView>
+
+          {/* 7 ── Expert consultation */}
+          <View style={s.expertCardWrap}>
+            <View style={s.expertCard}>
+              <Text style={s.expertTitle}>{t("home.whyTitle")}</Text>
+              <Text style={s.expertDescription}>{t("home.whyCopy")}</Text>
+
+              <View style={s.benefitsContainer}>
+                {WHY_ITEMS.map((item) => (
+                  <ExpertBenefitRow key={item} label={t(item)} />
+                ))}
+              </View>
+
+              <Pressable
+                onPress={handleExpertOpinion}
+                onPressIn={() => setExpertOpinionPressed(true)}
+                onPressOut={() => setExpertOpinionPressed(false)}
+                style={[
+                  s.expertOpinionButton,
+                  expertOpinionPressed && s.expertOpinionButtonPressed,
+                ]}
+                accessibilityRole="button"
+              >
+                <Text style={s.expertOpinionButtonText}>
+                  Get Expert Opinion
+                </Text>
+                <ArrowRight size={18} color="#10233F" strokeWidth={2.5} />
+              </Pressable>
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* ══ Continue Plan Floating Bar ══ */}
+        {shouldShowJourneyCard && activeJourney ? (
+          <ActiveJourneyBar
+            booking={activeJourney}
+            navigation={navigation}
+            bottomOffset={floatingBottom}
+          />
+        ) : showContinuePlan ? (
+          <ContinuePlanBar
+            navigation={navigation}
+            progress={designProgress}
+            onDismiss={dismissContinuePlan}
+            bottomOffset={floatingBottom}
+          />
+        ) : null}
+        <HomeMenuModal
+          visible={menuOpen}
+          onClose={() => setMenuOpen(false)}
           navigation={navigation}
-          bottomOffset={floatingBottom}
         />
-      ) : showContinuePlan ? (
-        <ContinuePlanBar
-          navigation={navigation}
-          progress={designProgress}
-          onDismiss={dismissContinuePlan}
-          bottomOffset={floatingBottom}
-        />
-      ) : null}
-      <HomeMenuModal
-        visible={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        navigation={navigation}
+      </SafeAreaView>
+      <TopNotificationBanner
+        userId={userId}
+        notifications={notificationsQuery.data ?? []}
+        notificationsReady={
+          !notificationsQuery.isLoading && !notificationsQuery.isError
+        }
+        onPress={(notification) => void openNotification(notification)}
+        topOffset={insets.top + 8}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -1155,61 +1152,6 @@ const s = StyleSheet.create({
     backgroundColor: "#FF6B35",
     borderWidth: 2,
     borderColor: "#FFFFFF",
-  },
-  welcomeBanner: {
-    marginTop: 12,
-    marginHorizontal: 18,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "#F0D69A",
-    backgroundColor: "#FFF9EA",
-    paddingHorizontal: 13,
-    paddingVertical: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    shadowColor: "#7A4E00",
-    shadowOpacity: 0.08,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 2,
-  },
-  welcomeBannerPressed: { opacity: 0.88 },
-  welcomeIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#F1DCA8",
-    position: "relative",
-  },
-  welcomeUnreadDot: {
-    position: "absolute",
-    right: 5,
-    top: 5,
-    width: 7,
-    height: 7,
-    borderRadius: 7,
-    backgroundColor: "#FF6B35",
-  },
-  welcomeCopy: { flex: 1 },
-  welcomeTitle: { color: "#10213A", fontSize: 13, fontWeight: "900" },
-  welcomeText: {
-    marginTop: 2,
-    color: "#64748B",
-    fontSize: 11,
-    fontWeight: "700",
-    lineHeight: 15,
-  },
-  welcomeCta: {
-    maxWidth: 92,
-    color: "#128C4A",
-    fontSize: 11,
-    fontWeight: "900",
-    textAlign: "right",
   },
   logoWrap: {
     position: "absolute",
