@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getSafeBottomPadding } from '@/components/ui/SafeAreaLayout';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
@@ -13,28 +14,24 @@ import {
   MapPin,
   Phone,
   ShieldCheck,
-  User,
-  Wrench
+  User
 } from 'lucide-react-native';
-import { formatSurveyReference, SurveyBookingStatus, verifyCancellationSchema } from '@/services/journey.api';
-import { journeyApi } from '@/services/journey.api';
-import { activeSurveyJourneyQueryKey, latestSurveyJourneyQueryKey, useSurveyJourney } from '@/hooks/useSurveyJourney';
+import { formatSurveyReference, journeyApi, verifyCancellationSchema, type SurveyBookingStatus } from '@/services/journey.api';
+import { activeSurveyJourneyQueryKey, latestSurveyJourneyQueryKey, useSurveyJourney, useSurveyJourneyRealtime } from '@/hooks/useSurveyJourney';
 import { latestWelcomeNotificationQueryKey, notificationsQueryKey, unreadNotificationsQueryKey } from '@/hooks/useNotifications';
 import { notificationsApi } from '@/services/notifications.api';
 import { useAuthStore } from '@/store/useAuthStore';
+import { SURVEY_MILESTONE_DEFINITIONS, type SurveyMilestone } from '@/types/survey.types';
+import { getSolarJourneyStepState } from '../../../../../backend-development/supabase/contracts/solarJourneyMilestones';
+import { resolveSurveyLifecycle, resolveSurveyMilestone, surveyMilestoneMeta } from '@/utils/surveyMilestones';
 
-const timeline = [
-  ['Survey Request Received', 'Your survey request has been received by KaamAsaan.', ClipboardCheck],
-  ['Representative Call', 'Our solar consultant will call you within 1 hour.', Phone],
-  ['Survey Scheduled', 'Your site survey date and time will be confirmed.', CalendarDays],
-  ['Site Survey', 'Our team will inspect your roof, load, and installation requirements.', Home],
-  ['Proposal Preparation', 'Your recommended solar system and cost estimate will be prepared.', FileText],
-  ['Quotation Shared', 'Your quotation will be shared for review.', ShieldCheck],
-  ['Installation Planning', 'Installation plan will be finalized after approval.', Wrench],
-  ['Installation Completed', 'Your solar installation will be completed by the assigned team.', Check]
-] as const;
-
-type TimelineState = 'completed' | 'active' | 'pending' | 'cancelled';
+const timelineIcons: Record<SurveyMilestone, typeof ClipboardCheck> = {
+  request_received: ClipboardCheck,
+  survey_scheduled: CalendarDays,
+  survey_completed: Check,
+  quotation_shared: FileText,
+  installation_completed: Home,
+};
 
 const cancellableStatuses: SurveyBookingStatus[] = ['pending', 'confirmed', 'assigned', 'scheduled', 'survey_scheduled'];
 const cancellationReasons = [
@@ -46,63 +43,16 @@ const cancellationReasons = [
   'Other'
 ] as const;
 
-const getTimelineState = (status: SurveyBookingStatus, index: number): TimelineState => {
-  if (status === 'cancelled') return index === 0 ? 'cancelled' : 'pending';
-  if (['pending', 'survey_requested', 'survey_booked', 'survey_pending'].includes(status)) return index === 0 ? 'active' : 'pending';
-  if (['confirmed', 'survey_confirmed', 'assigned'].includes(status)) return index < 1 ? 'completed' : index === 1 ? 'active' : 'pending';
-  if (['scheduled', 'survey_scheduled', 'site_visit_scheduled', 'site_survey_scheduled'].includes(status)) {
-    return index < 2 ? 'completed' : index === 2 ? 'active' : 'pending';
-  }
-  if (status === 'survey_in_progress') return index < 3 ? 'completed' : index === 3 ? 'active' : 'pending';
-  if (status === 'survey_completed') return index <= 3 ? 'completed' : 'pending';
-  if (['proposal_preparation', 'quotation_pending'].includes(status)) return index < 4 ? 'completed' : index === 4 ? 'active' : 'pending';
-  if (status === 'quotation_shared') return index < 5 ? 'completed' : index === 5 ? 'active' : 'pending';
-  if (['installation_pending', 'installation_planning', 'installation_started', 'installation_in_progress', 'project_in_progress'].includes(status)) {
-    return index < 6 ? 'completed' : index === 6 ? 'active' : 'pending';
-  }
-  return 'completed';
-};
-
-const statusCopy: Record<SurveyBookingStatus, { title: string; detail: string; tone: string }> = {
-  survey_requested: { title: 'Survey request received', detail: 'Our consultant will contact you within 1 hour.', tone: '#F5A623' },
-  survey_booked: { title: 'Survey request received', detail: 'Our consultant will contact you within 1 hour.', tone: '#F5A623' },
-  survey_pending: { title: 'Survey request received', detail: 'Our consultant will contact you within 1 hour.', tone: '#F5A623' },
-  survey_confirmed: { title: 'Representative call confirmed', detail: 'Our consultant is coordinating your preferred survey schedule.', tone: '#2563EB' },
-  site_visit_scheduled: { title: 'Survey scheduled', detail: 'Your site survey date and time have been confirmed.', tone: '#2563EB' },
-  site_survey_scheduled: { title: 'Survey scheduled', detail: 'Your site survey date and time have been confirmed.', tone: '#2563EB' },
-  assigned: { title: 'Representative assigned', detail: 'A KaamAsaan representative has been assigned to your booking.', tone: '#2563EB' },
-  scheduled: { title: 'Survey scheduled', detail: 'Your site survey date and time have been confirmed.', tone: '#2563EB' },
-  survey_in_progress: { title: 'Survey in progress', detail: 'Your site survey process has started.', tone: '#0F8B8D' },
-  pending: { title: 'Survey request received', detail: 'Our consultant will contact you within 1 hour.', tone: '#F5A623' },
-  confirmed: { title: 'Representative call confirmed', detail: 'Our consultant is coordinating your preferred survey schedule.', tone: '#2563EB' },
-  survey_scheduled: { title: 'Survey scheduled', detail: 'Your site survey date and time have been confirmed.', tone: '#2563EB' },
-  survey_completed: { title: 'Survey completed', detail: 'Our team has completed the site inspection.', tone: '#168A4A' },
-  design_in_progress: { title: 'Design in progress', detail: 'Your solar design is being prepared.', tone: '#E87916' },
-  proposal_preparation: { title: 'Proposal preparation', detail: 'Your recommended solar system and estimate are being prepared.', tone: '#E87916' },
-  quotation_pending: { title: 'Proposal preparation', detail: 'Your recommended solar system and estimate are being prepared.', tone: '#E87916' },
-  quotation_ready: { title: 'Quotation ready', detail: 'Your quotation is ready for review.', tone: '#7C3AED' },
-  quotation_shared: { title: 'Quotation shared', detail: 'Your quotation is ready for review.', tone: '#7C3AED' },
-  installation_scheduled: { title: 'Installation scheduled', detail: 'Your installation has been scheduled.', tone: '#0F8B8D' },
-  installation_pending: { title: 'Installation planning', detail: 'Your installation plan is being finalized after approval.', tone: '#0F8B8D' },
-  installation_planning: { title: 'Installation planning', detail: 'Your installation plan is being finalized after approval.', tone: '#0F8B8D' },
-  installation_started: { title: 'Installation started', detail: 'Your installation process has started.', tone: '#0F8B8D' },
-  installation_in_progress: { title: 'Installation in progress', detail: 'Your solar installation is currently in progress.', tone: '#0F8B8D' },
-  installation_completed: { title: 'Installation completed', detail: 'Your solar installation has been completed successfully.', tone: '#168A4A' },
-  project_in_progress: { title: 'Project in progress', detail: 'Your solar installation project is currently in progress.', tone: '#0F8B8D' },
-  project_completed: { title: 'Installation completed', detail: 'Your solar installation has been completed successfully.', tone: '#168A4A' },
-  installed: { title: 'Installation completed', detail: 'Your solar installation has been completed successfully.', tone: '#168A4A' },
-  system_active: { title: 'Solar system active', detail: 'Your solar system is active and ready for maintenance care.', tone: '#168A4A' },
-  completed: { title: 'Survey completed', detail: 'Your site survey has been completed successfully.', tone: '#168A4A' },
-  cancelled: { title: 'Survey Booking Cancelled', detail: 'This survey request is no longer active.', tone: '#D14343' }
-};
-
 const formatDate = (value?: string | null) =>
   value ? new Date(value).toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' }) : 'To be confirmed';
 
 export const MySolarJourneyScreen = ({ navigation, route }: any) => {
+  const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const userId = useAuthStore((state) => state.session?.user.id);
-  const query = useSurveyJourney(route.params?.bookingId);
+  const bookingId = route.params?.bookingId as string | undefined;
+  const query = useSurveyJourney(bookingId);
+  useSurveyJourneyRealtime(bookingId, userId);
   const booking = query.data;
   const openedFromTab = Boolean(route.params?.fromTab);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
@@ -139,9 +89,11 @@ export const MySolarJourneyScreen = ({ navigation, route }: any) => {
     );
   }
 
-  const current = statusCopy[booking.status] ?? statusCopy.pending;
+  const milestone = resolveSurveyMilestone(booking.current_milestone, booking.status);
+  const lifecycle = resolveSurveyLifecycle(booking.journey_status, booking.current_milestone, booking.status);
+  const current = surveyMilestoneMeta[lifecycle === 'active' ? milestone : lifecycle];
   const canCancelBooking = cancellableStatuses.includes(booking.status);
-  const isCancelled = booking.status === 'cancelled';
+  const isCancelled = lifecycle === 'cancelled';
 
   const openCancelModal = () => {
     setCancelError(null);
@@ -291,7 +243,7 @@ export const MySolarJourneyScreen = ({ navigation, route }: any) => {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: getSafeBottomPadding(insets.bottom, 34) }]} showsVerticalScrollIndicator={false}>
         <View style={styles.referenceCard}>
           <View>
             <Text style={styles.eyebrow}>REFERENCE NUMBER</Text>
@@ -324,6 +276,9 @@ export const MySolarJourneyScreen = ({ navigation, route }: any) => {
           <DetailRow Icon={ClipboardCheck} label="Booking Type" value={booking.booking_type.replace(/_/g, ' ')} />
           <DetailRow Icon={CalendarDays} label="Preferred Date" value={formatDate(booking.preferred_date)} />
           <DetailRow Icon={Clock3} label="Time Slot" value={booking.preferred_time_slot || 'To be confirmed'} />
+          <DetailRow Icon={CalendarDays} label="Confirmed Survey" value={booking.confirmed_survey_at ? new Date(booking.confirmed_survey_at).toLocaleString('en-PK', { day: '2-digit', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'To be confirmed'} />
+          {booking.assigned_team_name ? <DetailRow Icon={User} label="Assigned Team" value={`${booking.assigned_team_name}${booking.assigned_team_contact ? ` · ${booking.assigned_team_contact}` : ''}`} /> : null}
+          {booking.progress_note ? <DetailRow Icon={ClipboardCheck} label="Latest Update" value={booking.progress_note} /> : null}
           <DetailRow Icon={CalendarDays} label="Requested On" value={formatDate(booking.created_at)} last />
         </View>
 
@@ -343,28 +298,33 @@ export const MySolarJourneyScreen = ({ navigation, route }: any) => {
 
         <Text style={styles.sectionTitle}>Journey Progress</Text>
         <View style={styles.timelineCard}>
-          {timeline.map(([title, description, Icon], index) => {
-            const state = getTimelineState(booking.status, index);
+          {SURVEY_MILESTONE_DEFINITIONS.map((item, index) => {
+            const Icon = timelineIcons[item.key];
+            const state = getSolarJourneyStepState(milestone, lifecycle, index);
             const active = state === 'active';
             const complete = state === 'completed';
-            const cancelled = state === 'cancelled';
-            const tone = cancelled ? '#D14343' : complete ? '#168A4A' : active ? current.tone : '#B7BFC9';
+            const tone = complete ? '#168A4A' : active ? surveyMilestoneMeta[item.key].tone : '#B7BFC9';
             return (
-              <View key={title} style={styles.timelineRow}>
+              <View key={item.key} style={styles.timelineRow}>
                 <View style={styles.timelineRail}>
                   <View style={[styles.timelineIcon, { backgroundColor: tone }]}>
                     <Icon color="#FFFFFF" size={14} strokeWidth={2.4} />
                   </View>
-                  {index < timeline.length - 1 ? <View style={[styles.timelineLine, { backgroundColor: complete ? '#A7D8BB' : '#E2E6EA' }]} /> : null}
+                  {index < SURVEY_MILESTONE_DEFINITIONS.length - 1 ? <View style={[styles.timelineLine, { backgroundColor: complete ? '#A7D8BB' : '#E2E6EA' }]} /> : null}
                 </View>
                 <View style={styles.timelineCopy}>
                   <View style={styles.timelineHead}>
-                    <Text style={[styles.timelineTitle, (active || complete) && styles.timelineTitleStrong]}>{title}</Text>
+                    <Text style={[styles.timelineTitle, (active || complete) && styles.timelineTitleStrong]}>{item.label}</Text>
                     <Text style={[styles.badge, { color: tone, backgroundColor: `${tone}14` }]}>
-                      {cancelled ? 'Cancelled' : complete ? 'Completed' : active ? 'In Progress' : 'Pending'}
+                      {complete ? 'Completed' : active ? 'In Progress' : 'Pending'}
                     </Text>
                   </View>
-                  <Text style={styles.timelineText}>{description}</Text>
+                  <Text style={styles.timelineText}>{item.customerDescription}</Text>
+                  {item.key === 'survey_scheduled' && booking.confirmed_survey_at ? (
+                    <Text style={styles.timelineSchedule}>
+                      {new Date(booking.confirmed_survey_at).toLocaleString('en-PK', { day: '2-digit', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                    </Text>
+                  ) : null}
                 </View>
               </View>
             );
@@ -381,7 +341,7 @@ export const MySolarJourneyScreen = ({ navigation, route }: any) => {
       <Modal visible={cancelModalOpen} transparent animationType="slide" onRequestClose={closeCancelModal}>
         <View style={styles.modalBackdrop}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardAvoider}>
-            <View style={styles.cancelSheet}>
+            <View style={[styles.cancelSheet, { paddingBottom: getSafeBottomPadding(insets.bottom, 22) }]}>
               <ScrollView contentContainerStyle={styles.cancelSheetContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
                 <Text style={styles.cancelTitle}>Cancel Survey Booking?</Text>
                 <Text style={styles.cancelMessage}>Are you sure you want to cancel your solar site survey booking? This action will stop the current survey process.</Text>
@@ -485,16 +445,17 @@ const styles = StyleSheet.create({
   detailCopy: { flex: 1 },
   detailLabel: { color: '#7A8492', fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
   detailValue: { marginTop: 3, color: '#243246', fontSize: 12.5, fontWeight: '800', textTransform: 'capitalize' },
-  timelineCard: { borderRadius: 16, padding: 14, backgroundColor: '#FFFFFF', shadowColor: '#172031', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 1 },
-  timelineRow: { minHeight: 77, flexDirection: 'row', gap: 11 },
+  timelineCard: { borderRadius: 16, padding: 12, backgroundColor: '#FFFFFF', shadowColor: '#172031', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 1 },
+  timelineRow: { minHeight: 66, flexDirection: 'row', gap: 11 },
   timelineRail: { width: 30, alignItems: 'center' },
   timelineIcon: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center', borderRadius: 999 },
   timelineLine: { width: 2, flex: 1, marginVertical: 3 },
-  timelineCopy: { flex: 1, paddingTop: 3, paddingBottom: 12 },
+  timelineCopy: { flex: 1, paddingTop: 3, paddingBottom: 8 },
   timelineHead: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 7 },
   timelineTitle: { flex: 1, color: '#697586', fontSize: 12.5, fontWeight: '800' },
   timelineTitleStrong: { color: '#10213A' },
   timelineText: { marginTop: 5, color: '#7A8492', fontSize: 11, fontWeight: '600', lineHeight: 15 },
+  timelineSchedule: { marginTop: 4, color: '#2563EB', fontSize: 10.5, fontWeight: '800', lineHeight: 15 },
   badge: { overflow: 'hidden', borderRadius: 999, paddingHorizontal: 7, paddingVertical: 3, fontSize: 8.5, fontWeight: '900' },
   successText: { overflow: 'hidden', borderRadius: 12, backgroundColor: '#ECFDF3', paddingHorizontal: 12, paddingVertical: 10, color: '#168A4A', fontSize: 12, fontWeight: '900' },
   cancelledCard: { borderRadius: 16, borderWidth: 1, borderColor: '#F0B4B4', backgroundColor: '#FFF7F7', padding: 14, gap: 6 },

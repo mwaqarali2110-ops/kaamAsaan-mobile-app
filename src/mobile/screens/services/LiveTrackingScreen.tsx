@@ -1,7 +1,8 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Check, Clock3, Info, MessageCircle, Phone, User } from 'lucide-react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeBottomActionBar, getFixedFooterContentPadding, getSafeBottomPadding } from '@/components/ui/SafeAreaLayout';
+import { ArrowLeft, Check, Info, MessageCircle, Phone, User } from 'lucide-react-native';
 
 const steps = [
   { title: 'Booking Confirmed', time: '9:04 AM', state: 'done' },
@@ -12,8 +13,11 @@ const steps = [
   { title: 'Report Uploaded', time: '', state: 'pending' }
 ];
 
-export const LiveTrackingScreen = ({ navigation }: any) => (
-  <SafeAreaView style={styles.shell} edges={['top']}>
+export const LiveTrackingScreen = ({ navigation }: any) => {
+  const insets = useSafeAreaInsets();
+
+  return (
+  <SafeAreaView style={styles.shell} edges={['top', 'left', 'right']}>
     <View style={styles.topBar}>
       <Pressable style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="Back">
         <ArrowLeft color="#111827" size={18} strokeWidth={2.3} />
@@ -22,7 +26,7 @@ export const LiveTrackingScreen = ({ navigation }: any) => (
       <View style={styles.topSpacer} />
     </View>
 
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: getFixedFooterContentPadding(54, insets.bottom) }]} showsVerticalScrollIndicator={false}>
       <View style={styles.etaPill}>
         <View style={styles.etaDot} />
         <Text style={styles.etaText}>Technician On the Way · ETA 25 min</Text>
@@ -77,17 +81,18 @@ export const LiveTrackingScreen = ({ navigation }: any) => (
       </View>
     </ScrollView>
 
-    <Pressable style={styles.chatButton} accessibilityLabel="WhatsApp help">
+    <Pressable style={[styles.chatButton, { bottom: 62 + getSafeBottomPadding(insets.bottom) }]} accessibilityLabel="WhatsApp help">
       <MessageCircle color="#FFFFFF" size={19} strokeWidth={2.2} />
     </Pressable>
 
-    <View style={styles.footer}>
+    <SafeBottomActionBar style={styles.footer} minimumBottomPadding={10}>
       <Pressable style={styles.reportButton} onPress={() => navigation.navigate('PostServiceHealthReport')}>
         <Text style={styles.reportText}>View Service Report</Text>
       </Pressable>
-    </View>
+    </SafeBottomActionBar>
   </SafeAreaView>
-);
+  );
+};
 
 const styles = StyleSheet.create({
   shell: { flex: 1, backgroundColor: '#F8F5EE' },

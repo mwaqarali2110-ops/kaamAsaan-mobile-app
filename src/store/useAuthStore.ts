@@ -2,6 +2,7 @@ import type { Session } from '@supabase/supabase-js';
 import { create } from 'zustand';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import i18n from '@/i18n';
+import { useNotificationSessionStore } from '@/store/useNotificationSessionStore';
 
 export type CustomerProfile = {
   id: string;
@@ -90,6 +91,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         subscribed = true;
         supabase.auth.onAuthStateChange((_event, nextSession) => {
           set({ session: nextSession, profile: nextSession ? get().profile : null });
+          if (!nextSession) useNotificationSessionStore.getState().resetSession();
           if (nextSession) {
             setTimeout(() => {
               void get().refreshProfile(nextSession.user.id);
@@ -211,6 +213,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     } finally {
+      useNotificationSessionStore.getState().resetSession();
       set({ session: null, profile: null, loading: false });
     }
   },

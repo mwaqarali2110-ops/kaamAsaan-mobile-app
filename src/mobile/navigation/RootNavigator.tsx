@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -6,9 +6,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Home, PanelsTopLeft, ShoppingBag, User, ClipboardList } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
+import { getSafeBottomPadding } from '@/components/ui/SafeAreaLayout';
 import { colors } from '@/constants/colors';
 import { useAppStore } from '@/store/useAppStore';
-import { SplashScreen } from '@/mobile/screens/onboarding/SplashScreen';
 import { OnboardingScreen } from '@/mobile/screens/onboarding/OnboardingScreen';
 import { HomeScreen } from '@/mobile/screens/home/HomeScreen';
 import { DesignSystemFlowScreen } from '@/mobile/screens/design-system/DesignSystemFlowScreen';
@@ -26,11 +26,14 @@ import { ComplaintScreen } from '@/mobile/screens/support/ComplaintScreen';
 import { HelpCenterScreen } from '@/mobile/screens/support/HelpCenterScreen';
 import { HowItWorksScreen } from '@/mobile/screens/support/HowItWorksScreen';
 import { PreventiveMaintenanceScreen } from '@/mobile/screens/services/PreventiveMaintenanceScreen';
+import { CleaningServiceEstimatorScreen } from '@/mobile/screens/services/CleaningServiceEstimatorScreen';
+import { InstallationServiceScreen } from '@/mobile/screens/services/InstallationServiceScreen';
 import { ElectricalWorkBookingScreen, ElectricalWorkServicesScreen } from '@/mobile/screens/services/ElectricalWorkServicesScreen';
 import { MaintenancePackagesScreen } from '@/mobile/screens/services/MaintenancePackagesScreen';
 import { MaintenancePlanDetailsScreen } from '@/mobile/screens/services/MaintenancePlanDetailsScreen';
 import { MaintenanceBookingScreen } from '@/mobile/screens/services/MaintenanceBookingScreen';
 import { MaintenanceBookingConfirmationScreen } from '@/mobile/screens/services/MaintenanceBookingConfirmationScreen';
+import { PremiumCareProgressScreen } from '@/mobile/screens/services/PremiumCareProgressScreen';
 import { LiveTrackingScreen } from '@/mobile/screens/services/LiveTrackingScreen';
 import { PostServiceHealthReportScreen } from '@/mobile/screens/services/PostServiceHealthReportScreen';
 import { SolarCareMembershipScreen } from '@/mobile/screens/services/SolarCareMembershipScreen';
@@ -94,7 +97,7 @@ const ProtectedMainTabs = (props: any) => {
 const MainTabs = () => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const safeBottom = insets.bottom || 10;
+  const safeBottom = getSafeBottomPadding(insets.bottom, 10);
   return (
     <Tabs.Navigator
       screenOptions={{
@@ -122,22 +125,23 @@ const MainTabs = () => {
   );
 };
 
-export const RootNavigator = () => {
-  const [splashAnimationComplete, setSplashAnimationComplete] = useState(false);
+type RootNavigatorProps = {
+  onReady: () => void;
+};
+
+export const RootNavigator = ({ onReady }: RootNavigatorProps) => {
   const hasSeenOnboarding = useAppStore((state) => state.hasSeenOnboarding);
   const hasHydrated = useAppStore((state) => state.hasHydrated);
   const initialized = useAuthStore((state) => state.initialized);
   const session = useAuthStore((state) => state.session);
   const initializeAuth = useAuthStore((state) => state.initialize);
-  const onSplashDone = useCallback(() => setSplashAnimationComplete(true), []);
-
   useEffect(() => {
     void initializeAuth();
     return bindSupabaseAutoRefresh();
   }, [initializeAuth]);
 
-  if (!splashAnimationComplete || !hasHydrated || !initialized) {
-    return <SplashScreen onDone={onSplashDone} />;
+  if (!hasHydrated || !initialized) {
+    return null;
   }
 
   const initialRouteName: keyof RootStackParamList = session
@@ -147,7 +151,7 @@ export const RootNavigator = () => {
       : 'Onboarding';
 
   return (
-    <NavigationContainer>
+    <NavigationContainer onReady={onReady}>
       <Stack.Navigator initialRouteName={initialRouteName} screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         <Stack.Screen name="MainTabs" component={ProtectedMainTabs} />
@@ -165,12 +169,15 @@ export const RootNavigator = () => {
         <Stack.Screen name="HelpCenter" component={HelpCenterScreen} />
         <Stack.Screen name="HowItWorks" component={HowItWorksScreen} />
         <Stack.Screen name="PreventiveMaintenance" component={PreventiveMaintenanceScreen} />
+        <Stack.Screen name="CleaningServiceEstimator" component={CleaningServiceEstimatorScreen} />
+        <Stack.Screen name="InstallationService" component={InstallationServiceScreen} />
         <Stack.Screen name="ElectricalWorkServices" component={ElectricalWorkServicesScreen} />
         <Stack.Screen name="ElectricalWorkBooking" component={ElectricalWorkBookingScreen} />
         <Stack.Screen name="MaintenancePackages" component={MaintenancePackagesScreen} />
         <Stack.Screen name="MaintenancePlanDetails" component={MaintenancePlanDetailsScreen} />
         <Stack.Screen name="MaintenanceBooking" component={MaintenanceBookingScreen} />
         <Stack.Screen name="MaintenanceBookingConfirmation" component={MaintenanceBookingConfirmationScreen} />
+        <Stack.Screen name="PremiumCareProgress" component={PremiumCareProgressScreen} />
         <Stack.Screen name="LiveTracking" component={LiveTrackingScreen} />
         <Stack.Screen name="PostServiceHealthReport" component={PostServiceHealthReportScreen} />
         <Stack.Screen name="SolarCareMembership" component={SolarCareMembershipScreen} />

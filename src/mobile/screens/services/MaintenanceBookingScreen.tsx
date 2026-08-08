@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, ArrowRight, Building2, CalendarDays, Clock3, Home, Phone, User } from 'lucide-react-native';
 import { useMaintenanceBookingStore } from '@/store/useMaintenanceBookingStore';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useActiveSurveyJourney } from '@/hooks/useSurveyJourney';
 import type { MaintenancePlanSelection } from '@/types/maintenance.types';
@@ -40,19 +41,22 @@ const Field = ({
 export const MaintenanceBookingScreen = ({ navigation, route }: any) => {
   const insets = useSafeAreaInsets();
   const safeBottom = insets.bottom || 16;
+  const queryClient = useQueryClient();
   const userId = useAuthStore((state) => state.session?.user.id);
   const storedPlan = useMaintenanceBookingStore((state) => state.selectedPlan);
   const createBooking = useMaintenanceBookingStore((state) => state.createBooking);
   const activeJourneyQuery = useActiveSurveyJourney(userId);
   const plan = (route.params?.plan ?? storedPlan) as MaintenancePlanSelection | undefined;
   const [submitting, setSubmitting] = useState(false);
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
-  const [city, setCity] = useState('');
+  const initialValues = route.params?.initialValues;
+  const [name, setName] = useState(initialValues?.customerName ?? '');
+  const [phone, setPhone] = useState(initialValues?.phone ?? '');
+  const [address, setAddress] = useState(initialValues?.address ?? '');
+  const [city, setCity] = useState(initialValues?.city ?? '');
   const [preferredDate, setPreferredDate] = useState('');
   const [preferredTimeSlot, setPreferredTimeSlot] = useState('');
   const [notes, setNotes] = useState('');
+  const idempotencyKey = useRef<string | null>(null);
 
   const submit = async () => {
     if (submitting) return;
@@ -74,6 +78,7 @@ export const MaintenanceBookingScreen = ({ navigation, route }: any) => {
     }
 
     setSubmitting(true);
+    idempotencyKey.current ??= `premium-care-${userId ?? 'guest'}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     try {
       const booking = await createBooking({
         customerName: name.trim(),
@@ -83,7 +88,11 @@ export const MaintenanceBookingScreen = ({ navigation, route }: any) => {
         preferredDate: preferredDate.trim(),
         preferredTimeSlot: preferredTimeSlot.trim(),
         notes: notes.trim()
-      });
+      }, idempotencyKey.current);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['premium-care-lifecycle'] }),
+        queryClient.invalidateQueries({ queryKey: ['notifications'] })
+      ]);
       navigation.replace('MaintenanceBookingConfirmation', { booking });
     } catch (error) {
       Alert.alert('Booking failed', error instanceof Error ? error.message : 'Please try again.');

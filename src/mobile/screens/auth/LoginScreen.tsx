@@ -1,13 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, Animated, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
+import { Pressable, Animated, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { loginSchema, type LoginForm } from '@/schemas/auth.schema';
 import { useAuthStore } from '@/store/useAuthStore';
-
-const googleIcon = require('../../../assets/auth/google-logo.png');
-const facebookIcon = require('../../../assets/auth/facebook-logo.png');
 
 type LoginFieldProps = TextInputProps & {
   label: string;
@@ -92,22 +89,14 @@ export const LoginScreen = ({ navigation, route }: any) => {
   const signIn = useAuthStore((state) => state.signIn);
   const clearError = useAuthStore((state) => state.clearError);
   const storeError = useAuthStore((state) => state.error);
-  const loading = useAuthStore((state) => state.loading);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof LoginForm, string>>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const credentialsRef = useRef<LoginForm>({ email: '', password: '' });
   const passwordInputRef = useRef<TextInput>(null);
   const heroOpacity = useRef(new Animated.Value(0)).current;
   const cardOpacity = useRef(new Animated.Value(0)).current;
   const cardTranslate = useRef(new Animated.Value(24)).current;
-
-  const handleGoogleLogin = () => {
-    // TODO: connect Google login
-  };
-
-  const handleFacebookLogin = () => {
-    // TODO: connect Facebook login
-  };
 
   useEffect(() => {
     Animated.parallel([
@@ -119,6 +108,8 @@ export const LoginScreen = ({ navigation, route }: any) => {
   }, [cardOpacity, cardTranslate, clearError, heroOpacity]);
 
   const submit = async () => {
+    if (isSubmitting) return;
+
     setError('');
     setFieldErrors({});
 
@@ -136,6 +127,7 @@ export const LoginScreen = ({ navigation, route }: any) => {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const { email, password } = result.data;
       await signIn(email, password);
@@ -145,6 +137,8 @@ export const LoginScreen = ({ navigation, route }: any) => {
       });
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : t('auth.login.invalid'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -205,29 +199,11 @@ export const LoginScreen = ({ navigation, route }: any) => {
               secure
             />
 
-            <AnimatedSignInButton loading={loading} onPress={submit} />
+            <AnimatedSignInButton loading={isSubmitting} onPress={submit} />
 
             <View style={styles.securityNote}>
               <ShieldCheck color="#64748B" size={14} strokeWidth={2.2} />
               <Text style={styles.securityText}>Secure login • Your data is protected</Text>
-            </View>
-
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>{t('auth.login.orContinue')}</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            <View style={styles.socialButtonsContainer}>
-              <Pressable style={styles.socialLoginButton} onPress={handleGoogleLogin}>
-                <Image source={googleIcon} style={styles.socialIcon} resizeMode="contain" />
-                <Text style={styles.socialLoginText}>Continue with Google</Text>
-              </Pressable>
-
-              <Pressable style={styles.socialLoginButton} onPress={handleFacebookLogin}>
-                <Image source={facebookIcon} style={styles.socialIcon} resizeMode="contain" />
-                <Text style={styles.socialLoginText}>Continue with Facebook</Text>
-              </Pressable>
             </View>
 
             <Pressable style={styles.forgotButton} onPress={() => navigation.navigate('ForgotPassword')}>
@@ -429,55 +405,10 @@ const styles = StyleSheet.create({
     lineHeight: 15,
     fontWeight: '600'
   },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 12,
-    marginBottom: 12
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E8DED0'
-  },
-  dividerText: {
-    color: '#99A2AF',
-    fontSize: 11,
-    fontWeight: '600'
-  },
-  socialButtonsContainer: {
-    width: '100%',
-    gap: 9,
-    marginTop: 0,
-    marginBottom: 12
-  },
-  socialLoginButton: {
-    width: '100%',
-    height: 46,
-    borderRadius: 15,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E8DED0',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    paddingHorizontal: 16
-  },
-  socialIcon: {
-    width: 22,
-    height: 22
-  },
-  socialLoginText: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#0F172A'
-  },
   forgotButton: {
     alignSelf: 'center',
     paddingHorizontal: 12,
-    marginTop: 10,
+    marginTop: 18,
     marginBottom: 12,
     paddingVertical: 0
   },

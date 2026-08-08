@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -48,21 +48,21 @@ const trustItems = [
   { label: 'Reliable support', Icon: Headphones }
 ];
 
-const checklistCardDuration = 500;
-const checklistRowDelay = 70;
-const checklistRowDuration = 290;
+const checklistRowBaseDelay = 80;
+const checklistRowDelay = 160;
+const checklistRowDuration = 320;
 const checklistBorderRadius = 22;
 const checklistCurrentDuration = 3200;
 
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
 const AnimatedChecklistRow = React.memo(
-  ({ service, index, isLast }: { service: string; index: number; isLast: boolean }) => {
+  ({ service, index, isLast, shouldAnimate }: { service: string; index: number; isLast: boolean; shouldAnimate: boolean }) => {
     const rowProgress = useSharedValue(0);
-    const iconProgress = useSharedValue(0);
-    const delay = checklistCardDuration + 90 + index * checklistRowDelay;
+    const delay = checklistRowBaseDelay + index * checklistRowDelay;
 
     useEffect(() => {
+      if (!shouldAnimate) return;
       rowProgress.value = withDelay(
         delay,
         withTiming(1, {
@@ -70,35 +70,31 @@ const AnimatedChecklistRow = React.memo(
           easing: Easing.out(Easing.cubic)
         })
       );
-      iconProgress.value = withDelay(
-        delay + 30,
-        withTiming(1, {
-          duration: 260,
-          easing: Easing.out(Easing.cubic)
-        })
-      );
-    }, [delay, iconProgress, rowProgress]);
+
+      return () => {
+        cancelAnimation(rowProgress);
+      };
+    }, [delay, rowProgress, shouldAnimate]);
 
     const rowAnimatedStyle = useAnimatedStyle(() => ({
       opacity: rowProgress.value,
-      transform: [{ translateY: (1 - rowProgress.value) * 8 }]
-    }));
-
-    const iconAnimatedStyle = useAnimatedStyle(() => ({
-      opacity: iconProgress.value,
-      transform: [{ scale: 0.85 + iconProgress.value * 0.15 }]
+      transform: [
+        { translateY: (1 - rowProgress.value) * 7 },
+        { scale: 0.985 + rowProgress.value * 0.015 }
+      ]
     }));
 
     return (
       <Animated.View style={[styles.serviceRow, isLast && styles.serviceRowLast, rowAnimatedStyle]}>
-        <Animated.View style={iconAnimatedStyle}>
+        <View>
           <CheckCircle2 size={18} color="#F5A400" strokeWidth={2.4} />
-        </Animated.View>
+        </View>
         <Text style={styles.serviceText}>{service}</Text>
       </Animated.View>
     );
   }
 );
+AnimatedChecklistRow.displayName = 'AnimatedChecklistRow';
 
 export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
   const insets = useSafeAreaInsets();
@@ -108,17 +104,30 @@ export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
   const activeJourneyQuery = useActiveSurveyJourney(userId);
   const [showBlockedInfo, setShowBlockedInfo] = useState(Boolean(route.params?.showActiveInstallationBlocked));
   const [checklistSize, setChecklistSize] = useState({ width: 0, height: 0 });
-  const checklistProgress = useSharedValue(0);
+  const [checklistAnimationStarted, setChecklistAnimationStarted] = useState(false);
+  const checklistAnimationStartedRef = useRef(false);
+  const checklistLayoutRef = useRef({ y: 0, height: 0 });
+  const scrollViewportHeightRef = useRef(0);
+  const scrollOffsetYRef = useRef(0);
   const borderProgress = useSharedValue(0);
   const checklistPerimeter = checklistSize.width > 0 && checklistSize.height > 0 ? (checklistSize.width + checklistSize.height) * 2 : 1;
   const currentDash = Math.min(76, Math.max(52, checklistPerimeter * 0.12));
 
-  useEffect(() => {
-    checklistProgress.value = withTiming(1, {
-      duration: checklistCardDuration,
-      easing: Easing.out(Easing.cubic)
-    });
-  }, [checklistProgress]);
+  const startChecklistAnimationWhenVisible = useCallback(() => {
+    if (checklistAnimationStartedRef.current) return;
+    const viewportHeight = scrollViewportHeightRef.current;
+    const scrollTop = scrollOffsetYRef.current;
+    const checklistLayout = checklistLayoutRef.current;
+    if (viewportHeight <= 0 || checklistLayout.height <= 0) return;
+
+    const viewportBottom = scrollTop + viewportHeight;
+    const checklistBottom = checklistLayout.y + checklistLayout.height;
+    const isVisible = checklistLayout.y < viewportBottom - 24 && checklistBottom > scrollTop + 24;
+    if (!isVisible) return;
+
+    checklistAnimationStartedRef.current = true;
+    setChecklistAnimationStarted(true);
+  }, []);
 
   useEffect(() => {
     borderProgress.value = withRepeat(
@@ -134,11 +143,6 @@ export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
       cancelAnimation(borderProgress);
     };
   }, [borderProgress]);
-
-  const checklistCardAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: checklistProgress.value,
-    transform: [{ translateY: (1 - checklistProgress.value) * 18 }]
-  }));
 
   const currentBorderAnimatedProps = useAnimatedProps(() => ({
     strokeDashoffset: -borderProgress.value * checklistPerimeter
@@ -234,6 +238,15 @@ export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
         style={styles.scroll}
         contentContainerStyle={[styles.content, { paddingBottom: Math.max(120, insets.bottom + 120) }]}
         showsVerticalScrollIndicator={false}
+        onLayout={(event) => {
+          scrollViewportHeightRef.current = event.nativeEvent.layout.height;
+          startChecklistAnimationWhenVisible();
+        }}
+        onScroll={(event) => {
+          scrollOffsetYRef.current = event.nativeEvent.contentOffset.y;
+          startChecklistAnimationWhenVisible();
+        }}
+        scrollEventThrottle={32}
       >
         <View style={styles.header}>
           <Pressable
@@ -297,18 +310,20 @@ export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
           <Text style={styles.urgencyText}>Prevent small issues before they become costly.</Text>
         </View>
 
-        <Animated.View
-          style={[styles.checklistCard, checklistCardAnimatedStyle]}
+        <View
+          style={styles.checklistCard}
           onLayout={(event) => {
-            const { width, height } = event.nativeEvent.layout;
+            const { width, height, y } = event.nativeEvent.layout;
             const nextWidth = Math.round(width);
             const nextHeight = Math.round(height);
 
+            checklistLayoutRef.current = { y, height: nextHeight };
             setChecklistSize((current) =>
               current.width === nextWidth && current.height === nextHeight
                 ? current
                 : { width: nextWidth, height: nextHeight }
             );
+            startChecklistAnimationWhenVisible();
           }}
         >
           {checklistSize.width > 0 && checklistSize.height > 0 && (
@@ -369,10 +384,11 @@ export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
                 service={service}
                 index={index}
                 isLast={index === includedServices.length - 1}
+                shouldAnimate={checklistAnimationStarted}
               />
             ))}
           </View>
-        </Animated.View>
+        </View>
 
         <Pressable
           style={styles.primaryButton}

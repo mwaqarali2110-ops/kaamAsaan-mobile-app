@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AirVent, ArrowLeft, ArrowRight, ChevronUp, Home, Lightbulb, MessageCircle, Plus, Refrigerator, Shirt, Sun, Zap } from 'lucide-react-native';
+import { AirVent, ArrowLeft, ArrowRight, ChevronUp, CircleAlert, Home, Lightbulb, MessageCircle, Refrigerator, Shirt, Sun, Zap } from 'lucide-react-native';
 import type { Appliance } from '@/types/system.types';
 import { calculateLoadKw, recommendSolarKw } from '@/utils/calculations';
 import { useSystemStore } from '@/store/useSystemStore';
@@ -34,25 +34,47 @@ export const SolarSizeToolScreen = ({ navigation }: any) => {
   const safeBottom = insets.bottom || 16;
   const [appliances, setAppliances] = useState(starterAppliances);
   const [showResult, setShowResult] = useState(false);
+  const [applianceError, setApplianceError] = useState('');
   const setRecommendedSolarKw = useSystemStore((state) => state.setRecommendedSolarKw);
 
   const loadKw = useMemo(() => calculateLoadKw(appliances), [appliances]);
   const systemKw = useMemo(() => (loadKw > 0 ? recommendSolarKw(appliances) : 0), [appliances, loadKw]);
-  const selectedAppliances = useMemo(() => appliances.filter((item) => item.quantity > 0), [appliances]);
+  const selectedAppliances = useMemo(() => appliances.filter((item) => Number(item.quantity) > 0), [appliances]);
+  const hasSelectedAppliance = useMemo(
+    () => appliances.some((item) => Number(item.quantity) > 0),
+    [appliances]
+  );
 
   const updateQuantity = (id: string, delta: number) => {
     setAppliances((items) => items.map((item) => item.id === id ? { ...item, quantity: Math.max(0, item.quantity + delta) } : item));
   };
 
   const calculateLoad = () => {
+    if (!hasSelectedAppliance) {
+      setApplianceError('Please select at least one appliance.');
+      return;
+    }
+
+    setApplianceError('');
     setRecommendedSolarKw(systemKw || 0);
     setShowResult(true);
   };
 
   const seeRecommendedSize = () => {
+    if (!hasSelectedAppliance) {
+      setShowResult(false);
+      setApplianceError('Please select at least one appliance.');
+      return;
+    }
+
+    setApplianceError('');
     setRecommendedSolarKw(systemKw || 0);
     navigation.navigate('RecommendedSolarSize', { loadKw, systemKw });
   };
+
+  useEffect(() => {
+    if (hasSelectedAppliance && applianceError) setApplianceError('');
+  }, [applianceError, hasSelectedAppliance]);
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -100,7 +122,20 @@ export const SolarSizeToolScreen = ({ navigation }: any) => {
           </ScrollView>
 
           <View style={[styles.footer, { paddingBottom: 12 + safeBottom }]}>
-            <Pressable style={styles.calculateButton} onPress={calculateLoad}>
+            {applianceError ? (
+              <View
+                style={styles.validationBanner}
+                accessibilityRole="alert"
+                accessibilityLiveRegion="polite"
+              >
+                <CircleAlert color="#C62828" size={16} strokeWidth={2.3} />
+                <Text style={styles.validationText}>{applianceError}</Text>
+              </View>
+            ) : null}
+            <Pressable
+              style={[styles.calculateButton, !hasSelectedAppliance && styles.calculateButtonDisabled]}
+              onPress={calculateLoad}
+            >
               <Text style={styles.calculateText}>Calculate Load</Text>
             </Pressable>
           </View>
@@ -323,7 +358,30 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     elevation: 3
   },
+  calculateButtonDisabled: {
+    opacity: 0.72
+  },
   calculateText: { color: '#111827', fontSize: 13, fontWeight: '900' },
+  validationBanner: {
+    minHeight: 38,
+    marginBottom: 8,
+    borderRadius: 11,
+    borderWidth: 1,
+    borderColor: '#F3B8B8',
+    backgroundColor: '#FFF1F1',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    paddingHorizontal: 11,
+    paddingVertical: 8
+  },
+  validationText: {
+    color: '#B42318',
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: '800'
+  },
   resultContent: {
     paddingHorizontal: 18,
     paddingTop: 18,

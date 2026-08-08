@@ -1,18 +1,19 @@
 import type { ProductCategory } from './product.types';
 import type { MaintenanceBooking, MaintenancePlanSelection } from './maintenance.types';
 import type { Appliance } from './system.types';
+import type { BookingContext } from '@/store/useSystemStore';
 
 export type RootStackParamList = {
-  Splash: undefined;
   Onboarding: undefined;
   MainTabs: undefined;
   Login: { redirectTo?: 'BookSurvey'; message?: string } | undefined;
   Signup: { redirectTo?: 'BookSurvey' } | undefined;
   ForgotPassword: undefined;
-  DesignFlow: { screen?: string } | undefined;
+  DesignFlow: { screen?: string; packageNotice?: string } | undefined;
   MarketplaceFlow: { category?: ProductCategory } | undefined;
   ProductDetail: { productId: string };
   SystemSummary: {
+    packageId?: string;
     selectedAppliances?: Appliance[];
     totalBackupWatts?: number;
     runningLoadKw?: number;
@@ -21,6 +22,9 @@ export type RootStackParamList = {
     recommendedBatteryKwh?: number;
   } | undefined;
   BookSurvey: {
+    packageId?: string;
+    bookingContext?: BookingContext;
+    source?: 'cleaning_estimator' | 'installation_service' | 'solar_package' | 'electrical_service' | 'general';
     selectedServiceType?: 'load_distribution' | 'single_phase_to_3_phase_wiring' | 'diagnostic_services';
     selectedServiceTitle?: string;
   } | undefined;
@@ -30,6 +34,8 @@ export type RootStackParamList = {
   HelpCenter: undefined;
   HowItWorks: undefined;
   PreventiveMaintenance: undefined;
+  CleaningServiceEstimator: undefined;
+  InstallationService: undefined;
   ElectricalWorkServices: undefined;
   ElectricalWorkBooking: {
     selectedService: 'load_distribution' | 'single_phase_to_3_phase_wiring' | 'diagnostic_services';
@@ -38,8 +44,13 @@ export type RootStackParamList = {
   };
   MaintenancePackages: { plan?: MaintenancePlanSelection } | undefined;
   MaintenancePlanDetails: { plan: MaintenancePlanSelection };
-  MaintenanceBooking: { plan: MaintenancePlanSelection };
+  MaintenanceBooking: {
+    plan: MaintenancePlanSelection;
+    renewalFromPlanId?: string;
+    initialValues?: Pick<MaintenanceBooking, 'customerName' | 'phone' | 'address' | 'city'>;
+  };
   MaintenanceBookingConfirmation: { booking: MaintenanceBooking };
+  PremiumCareProgress: { planId?: string; requestId?: string; visitId?: string };
   LiveTracking: undefined;
   PostServiceHealthReport: undefined;
   SolarCareMembership: undefined;

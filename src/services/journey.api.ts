@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { activeSurveyStatusValues } from '@/utils/projectStatus';
+import type { SelectedPackageSnapshot, SurveyJourneyLifecycle, SurveyMilestoneState } from '@/types/survey.types';
 
 export type SurveyBookingStatus =
   | 'survey_requested'
@@ -33,18 +35,7 @@ export type SurveyBookingStatus =
   | 'cancelled'
   | 'completed';
 
-export const activeSurveyBookingStatuses: SurveyBookingStatus[] = [
-  'pending',
-  'confirmed',
-  'assigned',
-  'scheduled',
-  'survey_in_progress',
-  'survey_completed',
-  'design_in_progress',
-  'quotation_ready',
-  'installation_scheduled',
-  'installation_in_progress',
-];
+export const activeSurveyBookingStatuses: SurveyBookingStatus[] = [...activeSurveyStatusValues];
 
 export const completedSurveyBookingStatuses: SurveyBookingStatus[] = [
   'installed',
@@ -65,8 +56,33 @@ export type SurveyJourneyBooking = {
   booking_type: string;
   preferred_date: string | null;
   preferred_time_slot: string | null;
+  customer_email?: string | null;
+  service_type?: string | null;
+  selected_package_snapshot?: SelectedPackageSnapshot | Record<string, unknown> | null;
+  current_milestone?: SurveyMilestoneState | null;
+  journey_status?: SurveyJourneyLifecycle | null;
+  milestone_updated_at?: string | null;
+  confirmed_survey_at?: string | null;
+  assigned_team_name?: string | null;
+  assigned_team_contact?: string | null;
+  progress_note?: string | null;
+  status_history?: {
+    id: string;
+    previous_milestone: SurveyMilestoneState | null;
+    new_milestone: SurveyMilestoneState;
+    note: string | null;
+    updated_by: string | null;
+    created_at: string;
+  }[] | null;
   status: SurveyBookingStatus;
   notes?: string | null;
+  original_estimated_amount?: number | null;
+  promo_code_id?: string | null;
+  promo_code?: string | null;
+  promo_discount_type?: 'percentage' | 'fixed' | null;
+  discount_amount?: number | null;
+  final_estimated_amount?: number | null;
+  pricing_metadata?: Record<string, unknown> | null;
   cancellation_reason?: string | null;
   cancellation_note?: string | null;
   cancelled_at?: string | null;
@@ -146,7 +162,7 @@ export const journeyApi = {
   getLatestSurveyBooking: async (userId: string) => {
     const { data, error } = await supabase
       .from('survey_bookings')
-      .select('*')
+      .select('*, status_history:survey_booking_status_history(*)')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -164,7 +180,7 @@ export const journeyApi = {
   getLatestActiveSurveyBooking: async (userId: string) => {
     const { data, error } = await supabase
       .from('survey_bookings')
-      .select('*')
+      .select('*, status_history:survey_booking_status_history(*)')
       .eq('user_id', userId)
       .in('status', activeSurveyBookingStatuses)
       .order('created_at', { ascending: false })
@@ -189,7 +205,7 @@ export const journeyApi = {
   getSurveyBooking: async (bookingId: string) => {
     const { data, error } = await supabase
       .from('survey_bookings')
-      .select('*')
+      .select('*, status_history:survey_booking_status_history(*)')
       .eq('id', bookingId)
       .single();
 

@@ -4,7 +4,6 @@ import {
   Image,
   ImageBackground,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,19 +11,8 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import Reanimated, {
-  cancelAnimation,
-  Easing as ReanimatedEasing,
-  interpolate,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect, useIsFocused } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -38,17 +26,19 @@ import {
   Menu,
   Ruler,
   Settings,
-  Sun,
   TrendingUp,
   X,
   Zap,
 } from 'lucide-react-native';
 import { useActiveSurveyJourney } from '@/hooks/useSurveyJourney';
-import { useLatestUnreadWelcomeNotification, useMarkNotificationRead, useUnreadNotificationsCount } from '@/hooks/useNotifications';
+import { useMarkNotificationRead, useNotificationRealtime, useNotifications, useUnreadNotificationsCount } from '@/hooks/useNotifications';
 import { activeSurveyBookingStatuses, formatSurveyReference, SurveyJourneyBooking } from '@/services/journey.api';
-import { openSupportWhatsApp, WELCOME_NOTIFICATION_CTA } from '@/services/notifications.api';
+import { openSupportWhatsApp, type CustomerNotification } from '@/services/notifications.api';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useSystemStore } from '@/store/useSystemStore';
+import { TopNotificationBanner } from '@/components/notifications/TopNotificationBanner';
+import { PremiumShimmerSweep } from '@/components/ui/PremiumShimmerSweep';
+import { performNotificationAction } from '@/utils/notificationActions';
 
 /* ─── Assets ─── */
 const logo = require('../../../assets/onboarding/Splash-Screen-Cart-1-transparent.png');
@@ -100,7 +90,6 @@ const SERVICES = [
 ];
 
 const WHY_ITEMS = ['home.whyAccurate', 'home.whyPricing', 'home.whySupport'];
-const CTA_CURRENT_DURATION = 2800;
 const CONTINUE_PLAN_DISMISS_KEY = 'kaamasaan.home.continue-plan.dismissed';
 const EXPERT_WHATSAPP_MESSAGE = 'Assalam-o-Alaikum, I need expert guidance to choose the right solar system for my home through the KaamAsaan app.';
 
@@ -119,42 +108,24 @@ const navigateToCategory = (navigation: any, id: string) => {
 
 const ElectricHeroCta = ({ onPress }: { onPress: () => void }) => {
   const { t } = useTranslation();
-  const pulse = useSharedValue(0);
-
-  useEffect(() => {
-    pulse.value = withRepeat(
-      withSequence(
-        withDelay(CTA_CURRENT_DURATION - 340, withTiming(1, { duration: 150, easing: ReanimatedEasing.out(ReanimatedEasing.quad) })),
-        withTiming(0, { duration: 190, easing: ReanimatedEasing.inOut(ReanimatedEasing.quad) })
-      ),
-      -1,
-      false
-    );
-
-    return () => {
-      cancelAnimation(pulse);
-    };
-  }, [pulse]);
-
-  const iconPulseStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(pulse.value, [0, 1], [0.22, 0.68]),
-    transform: [{ scale: interpolate(pulse.value, [0, 1], [0.72, 1.32]) }],
-  }));
-  const iconStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: interpolate(pulse.value, [0, 1], [1, 1.14]) }],
-  }));
 
   return (
-    <Pressable style={s.heroCta} onPress={onPress}>
+    <Pressable
+      style={s.heroCta}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={t('home.designSystem')}
+    >
+      <PremiumShimmerSweep showSparkle />
+
       <View style={s.heroCtaContent}>
         <Text style={s.heroCtaText}>{t('home.designSystem')}</Text>
         <View style={s.heroCtaIconWrap}>
-          <Reanimated.View pointerEvents="none" style={[s.heroCtaIconHalo, iconPulseStyle]} />
-          <Reanimated.View style={iconStyle}>
-            <Zap color="#B07800" size={13} fill="#B07800" />
-          </Reanimated.View>
+          <View pointerEvents="none" style={s.heroCtaIconHalo} />
+          <Zap color="#B07800" size={13} fill="#B07800" />
         </View>
       </View>
+
     </Pressable>
   );
 };
@@ -373,10 +344,7 @@ const HomeMenuModal = ({
   const insets = useSafeAreaInsets();
   const drawerWidth = Math.round(width * 0.8);
   const drawerItems = [
-    { label: 'Home', route: 'Home' },
     { label: 'How it works', route: 'HowItWorks' },
-    { label: 'Marketplace', route: 'Marketplace' },
-    { label: 'Design System', route: 'DesignSystem' },
     { label: 'My Project', route: 'MyProject' },
     { label: 'Complaint', route: 'Complaint' },
     { label: 'Help Center', route: 'HelpCenter' },
@@ -389,10 +357,7 @@ const HomeMenuModal = ({
 
   const navigateToCorrectRoute = (route: string) => {
     const routeMap: Record<string, () => void> = {
-      Home: () => navigation.navigate('Home'),
       HowItWorks: () => navigation.navigate('HowItWorks'),
-      Marketplace: () => navigation.navigate('Marketplace'),
-      DesignSystem: () => navigation.navigate('DesignFlow'),
       MyProject: () => navigation.navigate('MyProject'),
       Complaint: () => navigation.navigate('Complaint'),
       HelpCenter: () => navigation.navigate('HelpCenter'),
@@ -429,20 +394,17 @@ const HomeMenuModal = ({
           </View>
           <View style={s.divider} />
           <View style={s.menuSection}>
-            {drawerItems.map((item) => {
-              const active = item.label === 'Home';
-              return (
-                <Pressable
-                  key={item.label}
-                  style={[s.drawerRow, active && s.activeDrawerRow]}
-                  onPress={() => navigateToCorrectRoute(item.route)}
-                  accessibilityRole="button"
-                >
-                  <Text style={[s.drawerLabel, active && s.activeDrawerLabel]}>{item.label}</Text>
-                  <Text style={[s.drawerChevron, active && s.activeDrawerChevron]}>›</Text>
-                </Pressable>
-              );
-            })}
+            {drawerItems.map((item) => (
+              <Pressable
+                key={item.label}
+                style={s.drawerRow}
+                onPress={() => navigateToCorrectRoute(item.route)}
+                accessibilityRole="button"
+              >
+                <Text style={s.drawerLabel}>{item.label}</Text>
+                <Text style={s.drawerChevron}>›</Text>
+              </Pressable>
+            ))}
           </View>
           <View style={s.divider} />
           <View style={s.menuSection}>
@@ -474,11 +436,12 @@ export const HomeScreen = ({ navigation }: any) => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const userId = useAuthStore((state) => state.session?.user.id);
-  const isFocused = useIsFocused();
   const journeyQuery = useActiveSurveyJourney(userId);
+  const refetchJourney = journeyQuery.refetch;
   const unreadNotificationsQuery = useUnreadNotificationsCount(userId);
-  const welcomeNotificationQuery = useLatestUnreadWelcomeNotification(userId);
+  const notificationsQuery = useNotifications(userId);
   const markNotificationRead = useMarkNotificationRead(userId);
+  useNotificationRealtime(userId);
   const [menuOpen, setMenuOpen] = useState(false);
   const [continuePlanDismissed, setContinuePlanDismissed] = useState(false);
   const [expertOpinionPressed, setExpertOpinionPressed] = useState(false);
@@ -494,20 +457,16 @@ export const HomeScreen = ({ navigation }: any) => {
   const selectedBattery = useSystemStore((state) => state.selectedBattery);
 
   useEffect(() => {
-    if (isFocused && userId) void journeyQuery.refetch();
-  }, [isFocused, journeyQuery.refetch, userId]);
+    if (__DEV__ && notificationsQuery.error) {
+      console.warn('Notifications could not be refreshed.', notificationsQuery.error);
+    }
+  }, [notificationsQuery.error]);
 
   useFocusEffect(
     React.useCallback(() => {
-      if (userId) void journeyQuery.refetch();
-    }, [journeyQuery.refetch, userId])
+      if (userId) void refetchJourney();
+    }, [refetchJourney, userId])
   );
-
-  useEffect(() => {
-    if (!isFocused || !userId) return;
-    void unreadNotificationsQuery.refetch();
-    void welcomeNotificationQuery.refetch();
-  }, [isFocused, unreadNotificationsQuery.refetch, userId, welcomeNotificationQuery.refetch]);
 
   useEffect(() => {
     void AsyncStorage.getItem(CONTINUE_PLAN_DISMISS_KEY).then((value) => {
@@ -565,11 +524,9 @@ export const HomeScreen = ({ navigation }: any) => {
     setMenuOpen(true);
   };
 
-  const openWelcomeNotification = async () => {
-    const notification = welcomeNotificationQuery.data;
-    if (!notification) return;
+  const openNotification = async (notification: CustomerNotification) => {
     if (!notification.isRead) await markNotificationRead.mutateAsync(notification.id);
-    await openSupportWhatsApp(notification.actionValue ?? undefined);
+    await performNotificationAction(notification, navigation);
   };
 
   const handleExpertOpinion = () => {
@@ -577,6 +534,7 @@ export const HomeScreen = ({ navigation }: any) => {
   };
 
   return (
+  <View style={s.shell}>
   <SafeAreaView style={s.shell} edges={['top']}>
     {/* ══ Header ══ */}
     <View style={s.header}>
@@ -604,7 +562,7 @@ export const HomeScreen = ({ navigation }: any) => {
           accessibilityRole="button"
           hitSlop={12}
         >
-          <Bell color="#111827" size={20} strokeWidth={2} />
+          <Bell color="#B07800" size={20} strokeWidth={2} />
           {unreadNotifications > 0 ? <View style={s.notifDot} /> : null}
         </Pressable>
       </View>
@@ -634,20 +592,6 @@ export const HomeScreen = ({ navigation }: any) => {
       </View>
 
       {/* 2 ── Trusted Brands */}
-      {welcomeNotificationQuery.data ? (
-        <Pressable style={({ pressed }) => [s.welcomeBanner, pressed && s.welcomeBannerPressed]} onPress={() => void openWelcomeNotification()}>
-          <View style={s.welcomeIcon}>
-            <Bell color="#B07800" size={18} strokeWidth={2.4} />
-            <View style={s.welcomeUnreadDot} />
-          </View>
-          <View style={s.welcomeCopy}>
-            <Text style={s.welcomeTitle} numberOfLines={1}>{welcomeNotificationQuery.data.title}</Text>
-            <Text style={s.welcomeText} numberOfLines={2}>{welcomeNotificationQuery.data.message}</Text>
-          </View>
-          <Text style={s.welcomeCta} numberOfLines={1}>{WELCOME_NOTIFICATION_CTA}</Text>
-        </Pressable>
-      ) : null}
-
       <BrandMarquee />
 
       {/* 3 ── Smart Tools */}
@@ -697,7 +641,15 @@ export const HomeScreen = ({ navigation }: any) => {
           <CategoryCard
             key={item.id}
             item={item}
-            onPress={() => navigation.navigate(item.id === 'aftersale' ? 'ElectricalWorkServices' : 'BookSurvey')}
+            onPress={() => navigation.navigate(
+              item.id === 'aftersale'
+                ? 'ElectricalWorkServices'
+                : item.id === 'care'
+                  ? 'CleaningServiceEstimator'
+                  : item.id === 'install'
+                    ? 'InstallationService'
+                    : 'BookSurvey'
+            )}
           />
         ))}
       </ScrollView>
@@ -739,6 +691,14 @@ export const HomeScreen = ({ navigation }: any) => {
     ) : null}
     <HomeMenuModal visible={menuOpen} onClose={() => setMenuOpen(false)} navigation={navigation} />
   </SafeAreaView>
+    <TopNotificationBanner
+      userId={userId}
+      notifications={notificationsQuery.data ?? []}
+      notificationsReady={!notificationsQuery.isLoading && !notificationsQuery.isError}
+      onPress={(notification) => void openNotification(notification)}
+      topOffset={insets.top + 8}
+    />
+  </View>
   );
 };
 
@@ -777,49 +737,6 @@ const s = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#FFFFFF',
   },
-  welcomeBanner: {
-    marginTop: 12,
-    marginHorizontal: 18,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#F0D69A',
-    backgroundColor: '#FFF9EA',
-    paddingHorizontal: 13,
-    paddingVertical: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    shadowColor: '#7A4E00',
-    shadowOpacity: 0.08,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 2,
-  },
-  welcomeBannerPressed: { opacity: 0.88 },
-  welcomeIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#F1DCA8',
-    position: 'relative',
-  },
-  welcomeUnreadDot: {
-    position: 'absolute',
-    right: 5,
-    top: 5,
-    width: 7,
-    height: 7,
-    borderRadius: 7,
-    backgroundColor: '#FF6B35',
-  },
-  welcomeCopy: { flex: 1 },
-  welcomeTitle: { color: '#10213A', fontSize: 13, fontWeight: '900' },
-  welcomeText: { marginTop: 2, color: '#64748B', fontSize: 11, fontWeight: '700', lineHeight: 15 },
-  welcomeCta: { maxWidth: 92, color: '#128C4A', fontSize: 11, fontWeight: '900', textAlign: 'right' },
   logoWrap: {
     position: 'absolute',
     left: 0,
@@ -1032,6 +949,7 @@ const s = StyleSheet.create({
     height: 24,
     borderRadius: 999,
     backgroundColor: '#FFE58A',
+    opacity: 0.28,
   },
   heroCtaText: { color: '#111111', fontSize: 11, fontWeight: '900' },
   /* Brands */

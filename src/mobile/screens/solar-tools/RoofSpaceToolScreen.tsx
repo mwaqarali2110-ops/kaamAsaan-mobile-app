@@ -1,71 +1,78 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEvent } from 'expo';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { Animated, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, ArrowRight, MessageCircle, Ruler } from 'lucide-react-native';
-import { calculatePanelLayout, type PanelOrientation } from '@/utils/calculations';
+import { calculatePanelLayout } from '@/utils/calculations';
+import { PanelLayoutVisualizer } from '@/components/solar-tools/PanelLayoutVisualizer';
+import { useProducts } from '@/hooks/useProducts';
+import { useSystemStore } from '@/store/useSystemStore';
+import { extractPanelWattage, isPanelProduct } from '@/utils/packageBuilder';
+import { selectDefaultPanelProduct } from '@/utils/panelProducts';
 
-const BackgroundVideo = () => {
-  if (Platform.OS === 'web') {
-    return React.createElement('video', {
-      src: '/roof-space-video.mp4',
-      autoPlay: true,
-      muted: true,
-      loop: true,
-      playsInline: true,
-      style: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        objectFit: 'cover',
-        zIndex: 0
-      }
-    });
-  }
+const roofSpaceVideo = require('../../../../roof-space-video.mp4');
+
+const RoofSpaceVideoBackground = () => {
+  const isFocused = useIsFocused();
+  const [hasRenderedFrame, setHasRenderedFrame] = useState(false);
+  const player = useVideoPlayer(roofSpaceVideo, (videoPlayer) => {
+    videoPlayer.loop = true;
+    videoPlayer.muted = true;
+    videoPlayer.staysActiveInBackground = false;
+  });
+  const playerStatus = useEvent(player, 'statusChange', { status: player.status });
+
+  useEffect(() => {
+    if (isFocused) {
+      player.play();
+    } else {
+      player.pause();
+    }
+  }, [isFocused, player]);
+
+  useEffect(() => {
+    if (__DEV__ && playerStatus.status === 'error') {
+      console.warn('Roof-space background video could not be played.', playerStatus.error?.message);
+    }
+  }, [playerStatus.error?.message, playerStatus.status]);
+
+  if (playerStatus.status === 'error') return null;
 
   return (
-    <View style={styles.nativeBackdrop}>
-      <View style={styles.graphLineOne} />
-      <View style={styles.graphLineTwo} />
-      <View style={styles.panelPlane}>
-        {Array.from({ length: 18 }).map((_, index) => (
-          <View key={index} style={styles.backdropPanelCell} />
-        ))}
-      </View>
-    </View>
+    <VideoView
+      player={player}
+      nativeControls={false}
+      contentFit="cover"
+      playsInline
+      pointerEvents="none"
+      useExoShutter={false}
+      surfaceType={Platform.OS === 'android' ? 'textureView' : undefined}
+      style={[styles.backgroundVideo, !hasRenderedFrame && styles.backgroundVideoLoading]}
+      onFirstFrameRender={() => setHasRenderedFrame(true)}
+    />
   );
 };
-
-const PanelGrid = ({ panelCount, layout }: { panelCount: number; layout: ReturnType<typeof calculatePanelLayout> }) => (
-  <View style={styles.layoutCanvas}>
-    <Text style={styles.widthDimension}>{layout.width.toFixed(1)} ft</Text>
-    <View
-      style={[
-        styles.panelGrid,
-        {
-          width: Math.min(230, layout.columns * 42 + Math.max(0, layout.columns - 1) * 5),
-          gridTemplateColumns: Platform.OS === 'web' ? `repeat(${layout.columns}, 1fr)` : undefined
-        } as any
-      ]}
-    >
-      {Array.from({ length: layout.rows * layout.columns }).map((_, index) => (
-        <View key={index} style={[styles.panelTile, index >= panelCount && styles.panelTileGhost]}>
-          {Array.from({ length: 6 }).map((__, cellIndex) => (
-            <View key={cellIndex} style={styles.panelTileLine} />
-          ))}
-        </View>
-      ))}
-    </View>
-    <Text style={styles.heightDimension}>{layout.height.toFixed(1)} ft</Text>
-  </View>
-);
 
 export const RoofSpaceToolScreen = ({ navigation }: any) => {
   const [panelCount, setPanelCount] = useState('');
   const [calculatedPanels, setCalculatedPanels] = useState<number | null>(null);
   const [showInput, setShowInput] = useState(true);
-  const [orientation, setOrientation] = useState<PanelOrientation>('landscape');
+  const orientation = useSystemStore((state) => state.panelOrientation);
+  const setOrientation = useSystemStore((state) => state.setPanelOrientation);
+  const storedPanel = useSystemStore((state) => state.selectedPanels);
+  const storedPanelWattage = useSystemStore((state) => state.panelWattage);
+  const setPanelLayoutSelection = useSystemStore((state) => state.setPanelLayoutSelection);
+  const panelProductsQuery = useProducts('panel');
+  const panelProducts = useMemo(
+    () => (panelProductsQuery.data ?? []).filter(isPanelProduct).filter((product) => extractPanelWattage(product) > 0),
+    [panelProductsQuery.data]
+  );
+  const selectedPanel = panelProducts.find((product) => product.id === storedPanel?.id) ??
+    (storedPanel && isPanelProduct(storedPanel) && extractPanelWattage(storedPanel) > 0 ? storedPanel : null) ??
+    selectDefaultPanelProduct(panelProducts, storedPanelWattage);
+  const selectedPanelWattage = selectedPanel ? extractPanelWattage(selectedPanel) : Math.max(1, storedPanelWattage || 610);
   const [isCalculating, setIsCalculating] = useState(false);
   const inputOpacity = useRef(new Animated.Value(1)).current;
   const inputTranslate = useRef(new Animated.Value(0)).current;
@@ -81,6 +88,17 @@ export const RoofSpaceToolScreen = ({ navigation }: any) => {
     () => calculatePanelLayout({ panelCount: calculatedPanels || normalizedPanels, orientation: orientation === 'landscape' ? 'portrait' : 'landscape' }),
     [calculatedPanels, normalizedPanels, orientation]
   );
+
+  const buildSystem = () => {
+    if (!calculatedPanels) return;
+    setPanelLayoutSelection({
+      panelQuantity: calculatedPanels,
+      panelWattage: selectedPanelWattage,
+      orientation,
+      panelProduct: selectedPanel
+    });
+    navigation.navigate('DesignFlow', { screen: 'roof' });
+  };
 
   const calculate = () => {
     const nextPanels = normalizedPanels;
@@ -104,81 +122,71 @@ export const RoofSpaceToolScreen = ({ navigation }: any) => {
   };
 
   return (
-    <SafeAreaView style={styles.shell} edges={['top']}>
-      <BackgroundVideo />
-      <View style={styles.readabilityOverlay} />
+    <View style={styles.screen}>
+      <RoofSpaceVideoBackground />
+      <View pointerEvents="none" style={styles.videoReadabilityOverlay} />
 
-      <View style={styles.topBar}>
-        <Pressable style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="Back">
-          <ArrowLeft color="#111827" size={18} strokeWidth={2.3} />
-        </Pressable>
-        <Text style={styles.topTitle}>Roof Space</Text>
-        <Pressable style={styles.toolButton} accessibilityLabel="Roof space settings">
-          <Ruler color="#C98300" size={17} strokeWidth={2.2} />
-        </Pressable>
-      </View>
+      <SafeAreaView style={styles.foreground} edges={['top']}>
+        <View style={styles.topBar}>
+          <Pressable style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="Back">
+            <ArrowLeft color="#111827" size={18} strokeWidth={2.3} />
+          </Pressable>
+          <Text style={styles.topTitle}>Roof Space</Text>
+          <Pressable style={styles.toolButton} accessibilityLabel="Roof space settings">
+            <Ruler color="#C98300" size={17} strokeWidth={2.2} />
+          </Pressable>
+        </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[styles.content, showInput ? styles.inputContent : styles.resultContent]}
-        showsVerticalScrollIndicator={false}
-      >
-        {showInput ? (
-          <Animated.View style={[styles.inputCard, { opacity: inputOpacity, transform: [{ translateY: inputTranslate }] }]}>
-            <Text style={styles.heading}>
-              Check Your <Text style={styles.headingAccent}>Roof{'\n'}Space</Text>
-            </Text>
-            <Text style={styles.subtitle}>Enter your panel count to calculate required roof space.</Text>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[styles.content, showInput ? styles.inputContent : styles.resultContent]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {showInput ? (
+            <Animated.View style={[styles.inputCard, { opacity: inputOpacity, transform: [{ translateY: inputTranslate }] }]}>
+              <Text style={styles.heading}>
+                Check Your <Text style={styles.headingAccent}>Roof{'\n'}Space</Text>
+              </Text>
+              <Text style={styles.subtitle}>Enter your panel count to calculate required roof space.</Text>
 
-            <View style={styles.inputBlock}>
-              <Text style={styles.inputLabel}>NUMBER OF PANELS</Text>
-              <TextInput
-                value={panelCount}
-                onChangeText={(value) => setPanelCount(value.replace(/[^0-9]/g, ''))}
-                keyboardType="number-pad"
-                placeholder="e.g. 12"
-                placeholderTextColor="#9CA3AF"
-                style={styles.input}
-              />
-              <Text style={styles.tip}>Tip: Most homes use 8-20 panels</Text>
-            </View>
-
-            <Pressable style={[styles.checkButton, isCalculating && styles.disabledButton]} onPress={calculate} disabled={isCalculating}>
-              <Text style={styles.checkButtonText}>{isCalculating ? 'Calculating...' : 'Check Roof Space'}</Text>
-              {!isCalculating ? <ArrowRight color="#111827" size={16} strokeWidth={2.4} /> : null}
-            </Pressable>
-          </Animated.View>
-        ) : null}
-
-        {calculatedPanels ? (
-          <Animated.View style={[styles.results, { opacity: resultOpacity, transform: [{ translateY: resultTranslate }] }]}>
-            <View style={styles.resultCard}>
-              <Text style={styles.resultLabel}>TOTAL ROOF SPACE</Text>
-              <Text style={styles.areaValue}>{layout.area} sq ft</Text>
-              <Text style={styles.resultSubtext}>{calculatedPanels} panels at full module coverage</Text>
-            </View>
-
-            <View style={styles.layoutCard}>
-              <View style={styles.layoutHeader}>
-                <View>
-                  <Text style={styles.resultLabel}>PANEL LAYOUT</Text>
-                  <Text style={styles.layoutMeta}>{layout.rows} rows x {layout.columns} columns</Text>
-                </View>
-                <View style={styles.sizeBadge}>
-                  <Text style={styles.sizeBadgeText}>{layout.area} sq ft</Text>
-                </View>
+              <View style={styles.inputBlock}>
+                <Text style={styles.inputLabel}>NUMBER OF PANELS</Text>
+                <TextInput
+                  value={panelCount}
+                  onChangeText={(value) => setPanelCount(value.replace(/[^0-9]/g, ''))}
+                  keyboardType="number-pad"
+                  placeholder="e.g. 12"
+                  placeholderTextColor="#9CA3AF"
+                  style={styles.input}
+                />
+                <Text style={styles.tip}>Tip: Most homes use 8-20 panels</Text>
               </View>
 
-              <View style={styles.toggle}>
-                {(['landscape', 'portrait'] as PanelOrientation[]).map((item) => (
-                  <Pressable key={item} style={[styles.toggleItem, orientation === item && styles.toggleItemActive]} onPress={() => setOrientation(item)}>
-                    <Text style={[styles.toggleText, orientation === item && styles.toggleTextActive]}>{item === 'landscape' ? 'Landscape' : 'Portrait'}</Text>
-                  </Pressable>
-                ))}
+              <Pressable style={[styles.checkButton, isCalculating && styles.disabledButton]} onPress={calculate} disabled={isCalculating}>
+                <Text style={styles.checkButtonText}>{isCalculating ? 'Calculating...' : 'Check Roof Space'}</Text>
+                {!isCalculating ? <ArrowRight color="#111827" size={16} strokeWidth={2.4} /> : null}
+              </Pressable>
+            </Animated.View>
+          ) : null}
+
+          {calculatedPanels ? (
+            <Animated.View style={[styles.results, { opacity: resultOpacity, transform: [{ translateY: resultTranslate }] }]}>
+              <View style={styles.resultCard}>
+                <Text style={styles.resultLabel}>TOTAL ROOF SPACE</Text>
+                <Text style={styles.areaValue}>{layout.area} sq ft</Text>
+                <Text style={styles.resultSubtext}>{calculatedPanels} panels at full module coverage</Text>
               </View>
 
-              <PanelGrid panelCount={calculatedPanels} layout={layout} />
-            </View>
+            <PanelLayoutVisualizer
+              selectedPanelProduct={selectedPanel}
+              panelWattage={selectedPanelWattage}
+              panelQuantity={calculatedPanels}
+              orientation={orientation}
+              onOrientationChange={setOrientation}
+              layout={layout}
+              alternateLayout={alternate}
+            />
 
             <View style={styles.bestCard}>
               <View style={styles.bestBadge}>
@@ -191,83 +199,56 @@ export const RoofSpaceToolScreen = ({ navigation }: any) => {
               </Text>
             </View>
 
-            <Pressable style={styles.buildButton} onPress={() => navigation.navigate('DesignFlow')}>
+            <Pressable style={styles.buildButton} onPress={buildSystem}>
               <Text style={styles.buildButtonText}>Build Your System</Text>
               <ArrowRight color="#111827" size={17} strokeWidth={2.5} />
             </Pressable>
-          </Animated.View>
-        ) : null}
-      </ScrollView>
+            </Animated.View>
+          ) : null}
+        </ScrollView>
 
-      <Pressable style={styles.expertButton} accessibilityLabel="Solar Expert">
-        <MessageCircle color="#FFFFFF" size={16} strokeWidth={2.2} />
-        <Text style={styles.expertText}>Solar Expert</Text>
-      </Pressable>
-    </SafeAreaView>
+        <Pressable style={styles.expertButton} accessibilityLabel="Solar Expert">
+          <MessageCircle color="#FFFFFF" size={16} strokeWidth={2.2} />
+          <Text style={styles.expertText}>Solar Expert</Text>
+        </Pressable>
+      </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  shell: { flex: 1, backgroundColor: '#F8F3E8', overflow: 'hidden' },
-  readabilityOverlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(255,252,244,0.62)',
-    zIndex: 1
+  screen: { flex: 1, position: 'relative', backgroundColor: '#F7F3EA', overflow: 'hidden' },
+  foreground: {
+    flex: 1,
+    position: 'relative',
+    zIndex: 2,
+    // Keeps the entire calculator hierarchy above Android's native video texture.
+    elevation: 2
   },
-  nativeBackdrop: {
+  backgroundVideo: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#E7E5DF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    opacity: 0.86,
+    width: '100%',
+    height: '100%',
     zIndex: 0
   },
-  graphLineOne: {
-    position: 'absolute',
-    top: 86,
-    left: 10,
-    right: 16,
-    height: 2,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    transform: [{ rotate: '-10deg' }]
-  },
-  graphLineTwo: {
-    position: 'absolute',
-    top: 124,
-    left: 22,
-    right: 8,
-    height: 2,
-    backgroundColor: 'rgba(255,255,255,0.68)',
-    transform: [{ rotate: '12deg' }]
-  },
-  panelPlane: {
-    width: 320,
-    height: 190,
-    borderRadius: 16,
-    backgroundColor: 'rgba(186,196,198,0.42)',
-    transform: [{ rotate: '-13deg' }, { skewX: '-12deg' }],
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 12,
-    gap: 6
-  },
-  backdropPanelCell: {
-    width: 43,
-    height: 34,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.68)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.9)'
+  backgroundVideoLoading: { opacity: 0 },
+  videoReadabilityOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: Platform.OS === 'android'
+      ? 'rgba(247, 243, 234, 0.28)'
+      : 'rgba(247, 243, 234, 0.32)',
+    zIndex: 1
   },
   topBar: {
     height: 42,
     paddingHorizontal: 13,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(251,248,241,0.92)',
+    backgroundColor: 'rgba(255, 253, 248, 0.88)',
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(218,211,203,0.62)',
-    zIndex: 3
+    zIndex: 3,
+    elevation: 3
   },
   backButton: {
     width: 31,
@@ -286,7 +267,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center'
   },
-  scroll: { flex: 1, zIndex: 2 },
+  scroll: { flex: 1 },
   content: { minHeight: 760, paddingBottom: 116 },
   inputContent: { paddingHorizontal: 33, paddingTop: 178 },
   resultContent: { paddingHorizontal: 0, paddingTop: 6 },
@@ -295,7 +276,7 @@ const styles = StyleSheet.create({
     maxWidth: 292,
     alignSelf: 'center',
     borderRadius: 22,
-    backgroundColor: 'rgba(255,249,235,0.91)',
+    backgroundColor: 'rgba(255, 252, 243, 0.94)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.7)',
     paddingHorizontal: 18,
@@ -351,61 +332,6 @@ const styles = StyleSheet.create({
   resultLabel: { color: '#9B7A2D', fontSize: 9.5, fontWeight: '900', letterSpacing: 1.1, marginBottom: 5 },
   areaValue: { color: '#0F1E33', fontSize: 25, fontWeight: '900', lineHeight: 29 },
   resultSubtext: { color: '#64748B', fontSize: 10.5, fontWeight: '800', marginTop: 1 },
-  layoutCard: {
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.94)',
-    borderWidth: 1,
-    borderColor: 'rgba(232,217,190,0.9)',
-    paddingHorizontal: 10,
-    paddingTop: 10,
-    paddingBottom: 10,
-    overflow: 'hidden'
-  },
-  layoutHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
-  layoutMeta: { color: '#172031', fontSize: 11, fontWeight: '900' },
-  sizeBadge: { borderRadius: 999, backgroundColor: '#FFF1CC', borderWidth: 1, borderColor: '#F5D482', paddingHorizontal: 9, paddingVertical: 5 },
-  sizeBadgeText: { color: '#9B6800', fontSize: 9, fontWeight: '900' },
-  toggle: { height: 31, borderRadius: 10, backgroundColor: '#F3F4F6', flexDirection: 'row', padding: 3, marginBottom: 12 },
-  toggleItem: { flex: 1, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  toggleItemActive: { backgroundColor: '#FDB813' },
-  toggleText: { color: '#64748B', fontSize: 10.5, fontWeight: '900' },
-  toggleTextActive: { color: '#111827' },
-  layoutCanvas: {
-    minHeight: 220,
-    borderRadius: 13,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 30,
-    paddingBottom: 12
-  },
-  widthDimension: { position: 'absolute', top: 9, color: '#334155', fontSize: 10.5, fontWeight: '900' },
-  heightDimension: { position: 'absolute', right: 7, top: '47%', color: '#334155', fontSize: 10.5, fontWeight: '900', transform: [{ rotate: '90deg' }] },
-  panelGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 5,
-    justifyContent: 'center'
-  },
-  panelTile: {
-    width: 40,
-    height: 27,
-    borderRadius: 4,
-    backgroundColor: '#0E325D',
-    borderWidth: 1,
-    borderColor: '#6BA6D8',
-    overflow: 'hidden',
-    opacity: 0.98
-  },
-  panelTileGhost: { opacity: 0 },
-  panelTileLine: {
-    width: '100%',
-    height: 1,
-    backgroundColor: 'rgba(111,166,216,0.45)',
-    marginTop: 3
-  },
   bestCard: {
     borderRadius: 12,
     backgroundColor: 'rgba(255,248,231,0.95)',
@@ -442,8 +368,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 7 },
     shadowOpacity: 0.28,
     shadowRadius: 12,
-    elevation: 6,
-    zIndex: 4
+    zIndex: 3,
+    elevation: 3
   },
   expertText: { color: '#FFFFFF', fontSize: 11.5, fontWeight: '900' }
 });
