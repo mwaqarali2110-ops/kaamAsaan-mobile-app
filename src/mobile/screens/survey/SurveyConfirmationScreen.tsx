@@ -33,7 +33,16 @@ export const SurveyConfirmationScreen = ({ navigation, route }: any) => {
       </View>
 
       <View style={styles.footer}>
-        <Pressable style={styles.homeButton} onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}>
+        {/*
+          Reset rather than navigate: the booking flow screens (SystemSummary /
+          BookSurvey) are still mounted underneath and must be torn down, not
+          popped through — popping lets their effects fire mid-transition. It
+          also stops the customer backing into an already-submitted form.
+        */}
+        <Pressable
+          style={styles.homeButton}
+          onPress={() => navigation.reset({ index: 0, routes: [{ name: 'MainTabs', params: { screen: 'Home' } }] })}
+        >
           <Home color="#10213A" size={20} strokeWidth={2.4} />
           <Text style={styles.homeButtonText}>Back to Home</Text>
           <ArrowRight color="#10213A" size={20} strokeWidth={2.4} />

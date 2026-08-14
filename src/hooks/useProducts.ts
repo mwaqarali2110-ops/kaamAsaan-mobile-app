@@ -39,6 +39,12 @@ export const usePackageCompatibility = () => useQuery({
   staleTime: 5 * 60 * 1000
 });
 
+export const useServicePricing = () => useQuery({
+  queryKey: ['service-pricing-settings'],
+  queryFn: marketplaceApi.fetchServicePricing,
+  staleTime: 5 * 60 * 1000
+});
+
 export const usePackageGenerationStatus = () => useQuery({
   queryKey: ['package-generation-status'],
   queryFn: marketplaceApi.getPackageGenerationStatus,
@@ -59,6 +65,12 @@ export const useCompatibleBatteryBrands = (inverterBrand?: string) => useQuery({
   queryKey: ['compatible-battery-brands', inverterBrand],
   queryFn: () => marketplaceApi.getCompatibleBatteryBrands(inverterBrand),
   enabled: Boolean(inverterBrand)
+});
+
+export const useCompatibleInverterBrands = (batteryBrand?: string) => useQuery({
+  queryKey: ['compatible-inverter-brands', batteryBrand],
+  queryFn: () => marketplaceApi.getCompatibleInverterBrands(batteryBrand),
+  enabled: Boolean(batteryBrand)
 });
 
 export const useProduct = (id: string) => useQuery({

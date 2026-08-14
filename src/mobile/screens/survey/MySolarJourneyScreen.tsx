@@ -5,6 +5,7 @@ import { getSafeBottomPadding } from '@/components/ui/SafeAreaLayout';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
+  CalendarClock,
   CalendarDays,
   Check,
   ClipboardCheck,
@@ -12,6 +13,7 @@ import {
   FileText,
   Home,
   MapPin,
+  MessageSquare,
   Phone,
   ShieldCheck,
   User
@@ -20,17 +22,27 @@ import { formatSurveyReference, journeyApi, verifyCancellationSchema, type Surve
 import { activeSurveyJourneyQueryKey, latestSurveyJourneyQueryKey, useSurveyJourney, useSurveyJourneyRealtime } from '@/hooks/useSurveyJourney';
 import { latestWelcomeNotificationQueryKey, notificationsQueryKey, unreadNotificationsQueryKey } from '@/hooks/useNotifications';
 import { notificationsApi } from '@/services/notifications.api';
+import {
+  resolveSurveyLifecycle,
+  resolveSurveyMilestone,
+  surveyJourneyKindForServiceType,
+  surveyJourneyMilestoneDefinitions,
+  surveyMilestoneMeta,
+  surveyMilestoneStepState,
+} from '@/utils/surveyMilestones';
+import type { SurveyMilestoneState } from '@/types/survey.types';
 import { useAuthStore } from '@/store/useAuthStore';
-import { SURVEY_MILESTONE_DEFINITIONS, type SurveyMilestone } from '@/types/survey.types';
-import { getSolarJourneyStepState } from '../../../../../backend-development/supabase/contracts/solarJourneyMilestones';
-import { resolveSurveyLifecycle, resolveSurveyMilestone, surveyMilestoneMeta } from '@/utils/surveyMilestones';
 
-const timelineIcons: Record<SurveyMilestone, typeof ClipboardCheck> = {
+const timelineIcons: Record<string, typeof ClipboardCheck> = {
   request_received: ClipboardCheck,
   survey_scheduled: CalendarDays,
-  survey_completed: Check,
   quotation_shared: FileText,
+  installation_date: CalendarClock,
   installation_completed: Home,
+  feedback: MessageSquare,
+  service_confirmed: ClipboardCheck,
+  cleaning_datetime: CalendarDays,
+  service_completed: Check,
 };
 
 const cancellableStatuses: SurveyBookingStatus[] = [
@@ -101,7 +113,9 @@ export const MySolarJourneyScreen = ({ navigation, route }: any) => {
     );
   }
 
-  const milestone = resolveSurveyMilestone(booking.current_milestone, booking.status);
+  const journeyKind = surveyJourneyKindForServiceType(booking.service_type);
+  const milestoneDefinitions = surveyJourneyMilestoneDefinitions(journeyKind);
+  const milestone = resolveSurveyMilestone(journeyKind, booking.current_milestone, booking.status);
   const lifecycle = resolveSurveyLifecycle(booking.journey_status, booking.current_milestone, booking.status);
   const current = surveyMilestoneMeta[lifecycle === 'active' ? milestone : lifecycle];
   const canCancelBooking = cancellableStatuses.includes(booking.status);
@@ -381,12 +395,12 @@ export const MySolarJourneyScreen = ({ navigation, route }: any) => {
 
         <Text style={styles.sectionTitle}>Journey Progress</Text>
         <View style={styles.timelineCard}>
-          {SURVEY_MILESTONE_DEFINITIONS.map((item, index) => {
-            const Icon = timelineIcons[item.key];
-            const state = getSolarJourneyStepState(milestone, lifecycle, index);
+          {milestoneDefinitions.map((item, index) => {
+            const Icon = timelineIcons[item.key] ?? ClipboardCheck;
+            const state = surveyMilestoneStepState(journeyKind, milestone, lifecycle, index);
             const active = state === 'active';
             const complete = state === 'completed';
-            const tone = complete ? '#168A4A' : active ? surveyMilestoneMeta[item.key].tone : '#B7BFC9';
+            const tone = complete ? '#168A4A' : active ? surveyMilestoneMeta[item.key as SurveyMilestoneState].tone : '#B7BFC9';
             return (
               <View key={item.key} style={styles.timelineRow}>
                 <View style={styles.timelineRail}>
@@ -395,7 +409,7 @@ export const MySolarJourneyScreen = ({ navigation, route }: any) => {
                   >
                     <Icon color="#FFFFFF" size={14} strokeWidth={2.4} />
                   </View>
-                  {index < SURVEY_MILESTONE_DEFINITIONS.length - 1 ? <View style={[styles.timelineLine, { backgroundColor: complete ? '#A7D8BB' : '#E2E6EA' }]} /> : null}
+                  {index < milestoneDefinitions.length - 1 ? <View style={[styles.timelineLine, { backgroundColor: complete ? '#A7D8BB' : '#E2E6EA' }]} /> : null}
                 </View>
                 <View style={styles.timelineCopy}>
                   <View style={styles.timelineHead}>
@@ -405,7 +419,7 @@ export const MySolarJourneyScreen = ({ navigation, route }: any) => {
                     </Text>
                   </View>
                   <Text style={styles.timelineText}>{item.customerDescription}</Text>
-                  {item.key === 'survey_scheduled' && booking.confirmed_survey_at ? (
+                  {(item.key === 'survey_scheduled' || item.key === 'cleaning_datetime') && booking.confirmed_survey_at ? (
                     <Text style={styles.timelineSchedule}>
                       {new Date(booking.confirmed_survey_at).toLocaleString('en-PK', { day: '2-digit', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                     </Text>

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, ArrowRight, BatteryCharging, Grid3X3, MessageCircle, RefreshCw, ShieldCheck, Sun, TrendingUp, Wallet, Zap } from 'lucide-react-native';
+import { ArrowLeft, BatteryCharging, Grid3X3, MessageCircle, RefreshCw, ShieldCheck, Sun, TrendingUp, Wallet, Zap } from 'lucide-react-native';
 import { calculatePanelCount } from '@/utils/calculations';
 
 const formatKw = (value: number) => Number.isInteger(value) ? value.toFixed(0) : value.toFixed(1);
@@ -63,11 +63,6 @@ export const RecommendedSolarSizeScreen = ({ navigation, route }: any) => {
             <Text style={styles.confirmationText}>You can always upgrade later if needed.</Text>
           </View>
         </View>
-
-        <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('SystemSummary')}>
-          <Text style={styles.primaryText}>Continue to System Summary</Text>
-          <ArrowRight color="#111827" size={20} strokeWidth={2.7} />
-        </Pressable>
 
         <Pressable style={styles.secondaryButton} onPress={() => navigation.goBack()}>
           <Text style={styles.secondaryText}>Recalculate</Text>

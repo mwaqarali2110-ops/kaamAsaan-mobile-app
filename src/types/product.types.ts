@@ -1,4 +1,4 @@
-export type ProductCategory = 'inverter' | 'panel' | 'battery' | 'accessory';
+export type ProductCategory = 'inverter' | 'panel' | 'battery' | 'accessory' | 'ev_charger';
 
 export type Product = {
   id: string;
@@ -60,6 +60,9 @@ export type Product = {
   compatibleBatteryBrandIds?: string[];
   panelWidthMm?: number | null;
   panelHeightMm?: number | null;
+  chargerType?: 'ac' | 'dc' | null;
+  chargerPowerKw?: number | null;
+  connectorType?: string | null;
   commercialSpecStatus?: 'ready' | 'needs_review' | 'invalid' | null;
   sameBrandCompatibilityEnabled?: boolean;
   packageEligible?: boolean | null;

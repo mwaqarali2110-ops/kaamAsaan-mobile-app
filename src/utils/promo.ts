@@ -1,5 +1,6 @@
 import type { PromoContext, PromoState } from '@/types/promo.types';
 import type { RecommendedPackage } from '@/utils/packageBuilder';
+import type { Product } from '@/types/product.types';
 
 export const normalizePromoCode = (value: string) =>
   value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
@@ -77,5 +78,52 @@ export const buildPackagePromoContext = (
     inverterQuantity: selectedPackage.inverterQuantity,
     batteryProductId: selectedPackage.battery?.product.id ?? null,
     batteryQuantity: selectedPackage.batteryQuantity
+  };
+};
+
+/** Promo context for a customer-built system (Add to My System flow), as
+ * opposed to a pre-defined recommended package. Uses the same 'solar_package'
+ * promo service type and a stable synthetic packageId since custom builds
+ * don't have one. */
+export const buildCustomSystemPromoContext = ({
+  panel,
+  inverter,
+  battery,
+  panelQuantity,
+  inverterQuantity,
+  batteryQuantity,
+  pricing
+}: {
+  panel: Product;
+  inverter: Product;
+  battery: Product | null;
+  panelQuantity: number;
+  inverterQuantity: number;
+  batteryQuantity: number;
+  pricing: { panelsPrice: number; inverterPrice: number; batteryPrice: number; additionalCharges: number; total: number };
+}): PromoContext | null => {
+  if (!pricing.total || pricing.total <= 0) return null;
+  const brandIds = [panel.brandId, inverter.brandId, battery?.brandId].filter((value): value is string => Boolean(value));
+
+  return {
+    originalTotal: pricing.total,
+    packageId: 'custom-system',
+    packageName: 'Custom Designed System',
+    serviceType: 'solar_package',
+    brandIds: Array.from(new Set(brandIds)),
+    priceBreakdown: {
+      panelPrice: safeAmount(pricing.panelsPrice),
+      inverterPrice: safeAmount(pricing.inverterPrice),
+      batteryPrice: safeAmount(pricing.batteryPrice),
+      installationCharges: safeAmount(pricing.additionalCharges),
+      otherExistingCharges: 0,
+      grossTotal: pricing.total
+    },
+    panelProductId: panel.id,
+    panelQuantity,
+    inverterProductId: inverter.id,
+    inverterQuantity,
+    batteryProductId: battery?.id ?? null,
+    batteryQuantity
   };
 };

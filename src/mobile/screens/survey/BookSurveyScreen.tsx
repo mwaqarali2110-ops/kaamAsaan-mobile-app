@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, ArrowRight, Building2, CalendarCheck2, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Clock3, Home, MapPin, MessageCircle, Phone, ShieldCheck, ShoppingBag, User, Wrench } from 'lucide-react-native';
+import { ArrowLeft, ArrowRight, Building2, CalendarCheck2, CalendarDays, Check, ChevronDown, Clock3, Home, MapPin, MessageCircle, Phone, ShieldCheck, ShoppingBag, User, Wrench } from 'lucide-react-native';
 import { surveyBookingSchema, SurveyBookingForm } from '@/schemas/survey.schema';
 import { systemApi } from '@/services/system.api';
 import { useSystemStore, type BookingContext } from '@/store/useSystemStore';
@@ -16,45 +16,22 @@ import { notificationsApi } from '@/services/notifications.api';
 import { formatPkrAmount } from '@/utils/cleaningPricing';
 import { buildPackagePromoContext, formatPkrCurrency, promoContextSignature } from '@/utils/promo';
 import { createSelectedPackageSnapshot } from '@/utils/surveyPackageSnapshot';
+import { DatePickerSheet, formatDateKey, formatDisplayDate } from '@/components/ui/DatePickerSheet';
+import {
+  buildCustomSystemPricing,
+  buildCustomSystemSnapshot,
+  calculateCustomSystemSizeKw,
+  isCustomSystemComplete,
+  resolvePanelQuantity,
+  resolvePanelWattage
+} from '@/utils/customSystem';
+import { useRecommendationConfiguration } from '@/hooks/useRecommendationConfiguration';
+import { DEFAULT_COMMERCIAL_RECOMMENDATION_CONFIGURATION } from '@/utils/commercialRecommendation';
+import { formatKw } from '@/utils/formatters';
 
 const solarHouse = require("../../../assets/home/hero-house.png");
 
 const TEAM_CONFIRMED_TIME_SLOT = "To be confirmed by team";
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-const formatDateKey = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
-const formatDisplayDate = (date: Date) =>
-  date.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "2-digit",
-    year: "numeric",
-  });
-
-const formatMonthTitle = (date: Date) =>
-  date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-
-const startOfLocalDay = (date: Date) =>
-  new Date(date.getFullYear(), date.getMonth(), date.getDate());
-
-const getCalendarDays = (monthDate: Date) => {
-  const firstDay = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
-  const firstGridDate = new Date(firstDay);
-  firstGridDate.setDate(firstDay.getDate() - firstDay.getDay());
-
-  return Array.from({ length: 42 }, (_, index) => {
-    const value = new Date(firstGridDate);
-    value.setDate(firstGridDate.getDate() + index);
-    return value;
-  });
-};
-
 const bottomTabs = [
   { title: "Home", Icon: Home, route: "MainTabs", params: { screen: "Home" } },
   {
@@ -120,10 +97,7 @@ const SummaryLine = ({ label, value, strong = false }: { label: string; value: s
 export const BookSurveyScreen = ({ navigation, route }: any) => {
   const insets = useSafeAreaInsets();
   const safeBottom = insets.bottom || 16;
-  const today = useMemo(() => startOfLocalDay(new Date()), []);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [draftDate, setDraftDate] = useState<Date | null>(null);
-  const [calendarMonth, setCalendarMonth] = useState(today);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [dateError, setDateError] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -134,16 +108,13 @@ export const BookSurveyScreen = ({ navigation, route }: any) => {
   const clearCleaningEstimate = useSystemStore((state) => state.clearCleaningEstimate);
   const installationDetails = useSystemStore((state) => state.installationDetails);
   const clearInstallationDetails = useSystemStore((state) => state.clearInstallationDetails);
+  const clearCustomSystem = useSystemStore((state) => state.clearCustomSystem);
   const selectedRecommendedPackageId = useSystemStore((state) => state.selectedRecommendedPackageId);
   const selectedRecommendedPackage = useSystemStore((state) => state.selectedRecommendedPackage);
   const promo = useSystemStore((state) => state.promo);
   const applyPromo = useSystemStore((state) => state.applyPromo);
   const session = useAuthStore((state) => state.session);
   const profile = useAuthStore((state) => state.profile);
-  const calendarDays = useMemo(
-    () => getCalendarDays(calendarMonth),
-    [calendarMonth],
-  );
   const form = useForm<SurveyBookingForm>({
     resolver: zodResolver(surveyBookingSchema),
     defaultValues: {
@@ -169,9 +140,69 @@ export const BookSurveyScreen = ({ navigation, route }: any) => {
   const isInstallationBooking = bookingContext === 'installation';
   const isPackageBooking = bookingContext === 'solar_package';
   const isElectricalBooking = bookingContext === 'electrical';
+  const isCustomSystemBooking = bookingContext === 'custom_system';
   const systemSummary = getSummary();
   const packageSummary = selectedRecommendedPackage ?? systemSummary.selectedRecommendedPackage;
   const promoContext = useMemo(() => buildPackagePromoContext(packageSummary), [packageSummary]);
+
+  // --- Custom System Builder booking (no recommended package involved) ---
+  const customSystem = useSystemStore((state) => state.customSystem);
+  const selectedPanels = useSystemStore((state) => state.selectedPanels);
+  const selectedInverter = useSystemStore((state) => state.selectedInverter);
+  const selectedBattery = useSystemStore((state) => state.selectedBattery);
+  const panelWattageSetting = useSystemStore((state) => state.panelWattage);
+  const panelQuantityOverride = useSystemStore((state) => state.panelQuantityOverride);
+  const recommendedSolarKw = useSystemStore((state) => state.recommendedSolarKw);
+  const recommendationConfigurationQuery = useRecommendationConfiguration();
+  const customSystemSnapshot = useMemo(() => {
+    if (!isCustomSystemBooking) return null;
+    const selection = {
+      selectedPanel: selectedPanels,
+      selectedInverter,
+      selectedBattery
+    };
+    if (!isCustomSystemComplete(selection)) return null;
+
+    const settings = (recommendationConfigurationQuery.data ?? DEFAULT_COMMERCIAL_RECOMMENDATION_CONFIGURATION).settings;
+    const additionalCharges =
+      (settings.configuredInstallationCost ?? 0) +
+      (settings.configuredStructureCost ?? 0) +
+      (settings.configuredAccessoriesCost ?? 0);
+    const panelWattage = resolvePanelWattage(selectedPanels, customSystem.panelWattage ?? panelWattageSetting);
+    const panelQuantity = resolvePanelQuantity({
+      explicitQuantity: customSystem.panelQuantity,
+      panelQuantityOverride,
+      targetSolarKw: recommendedSolarKw,
+      panelWattage
+    });
+    const batteryQuantity = Math.max(1, customSystem.batteryQuantity || 1);
+    const pricing = buildCustomSystemPricing({
+      ...selection,
+      panelQuantity,
+      batteryQuantity,
+      additionalCharges
+    });
+
+    return buildCustomSystemSnapshot({
+      ...selection,
+      panelQuantity,
+      panelWattage,
+      batteryQuantity,
+      pricing
+    });
+  }, [
+    customSystem.batteryQuantity,
+    customSystem.panelQuantity,
+    customSystem.panelWattage,
+    isCustomSystemBooking,
+    panelQuantityOverride,
+    panelWattageSetting,
+    recommendationConfigurationQuery.data,
+    recommendedSolarKw,
+    selectedBattery,
+    selectedInverter,
+    selectedPanels
+  ]);
   const hasAppliedPackagePromo = Boolean(
     isPackageBooking &&
     promoContext &&
@@ -180,35 +211,7 @@ export const BookSurveyScreen = ({ navigation, route }: any) => {
     promo.appliedPackageId === promoContext.packageId &&
     promo.appliedContextSignature === promoContextSignature(promoContext)
   );
-  const draftDateKey = draftDate ? formatDateKey(draftDate) : null;
-  const todayKey = formatDateKey(today);
-
-  const openCalendar = () => {
-    const initialDate = selectedDate ?? today;
-    setDraftDate(initialDate);
-    setCalendarMonth(
-      new Date(initialDate.getFullYear(), initialDate.getMonth(), 1),
-    );
-    setCalendarOpen(true);
-  };
-
-  const closeCalendar = () => {
-    setCalendarOpen(false);
-  };
-
-  const confirmCalendarDate = () => {
-    if (!draftDate) return;
-    setSelectedDate(draftDate);
-    setDateError("");
-    setCalendarOpen(false);
-  };
-
-  const moveCalendarMonth = (direction: -1 | 1) => {
-    setCalendarMonth(
-      (current) =>
-        new Date(current.getFullYear(), current.getMonth() + direction, 1),
-    );
-  };
+  const openCalendar = () => setCalendarOpen(true);
 
   useEffect(() => {
     startBooking(bookingContext);
@@ -243,20 +246,24 @@ export const BookSurveyScreen = ({ navigation, route }: any) => {
           ? 'cleaning'
           : isElectricalBooking
             ? 'electrical'
-            : isPackageBooking
+            // A custom build is still a solar package purchase as far as the
+            // backend is concerned — it just has no recommendedPackageId.
+            : isPackageBooking || isCustomSystemBooking
               ? 'solar_package'
               : 'solar_survey';
-      const selectedPackageSnapshot = isPackageBooking && packageSummary
-        ? createSelectedPackageSnapshot({
-            selectedPackage: packageSummary,
-            grossTotal: promoContext?.originalTotal ?? packageSummary.totalPrice ?? 0,
-            discountAmount: hasAppliedPackagePromo ? promo.discountAmount : 0,
-            finalTotal: hasAppliedPackagePromo
-              ? promo.finalTotal
-              : promoContext?.originalTotal ?? packageSummary.totalPrice ?? 0,
-            promoCode: hasAppliedPackagePromo ? promo.appliedCode : null
-          })
-        : null;
+      const selectedPackageSnapshot = isCustomSystemBooking
+        ? customSystemSnapshot
+        : isPackageBooking && packageSummary
+          ? createSelectedPackageSnapshot({
+              selectedPackage: packageSummary,
+              grossTotal: promoContext?.originalTotal ?? packageSummary.totalPrice ?? 0,
+              discountAmount: hasAppliedPackagePromo ? promo.discountAmount : 0,
+              finalTotal: hasAppliedPackagePromo
+                ? promo.finalTotal
+                : promoContext?.originalTotal ?? packageSummary.totalPrice ?? 0,
+              promoCode: hasAppliedPackagePromo ? promo.appliedCode : null
+            })
+          : null;
       const result = await mutation.mutateAsync({
         userId: session.user.id,
         idempotencyKey: bookingIdempotencyKey.current,
@@ -277,12 +284,15 @@ export const BookSurveyScreen = ({ navigation, route }: any) => {
           systemSummary,
           serviceType,
           serviceSubType: isElectricalBooking ? route?.params?.selectedServiceType ?? null : null,
+          customSystem: isCustomSystemBooking ? customSystemSnapshot : null,
           selectedServiceTitle: isInstallationBooking
             ? 'Solar Panel Installation'
             : isCleaningBooking
               ? 'Solar Panel Cleaning'
-              : isPackageBooking
-                ? packageSummary?.packageName ?? systemSummary.packageName ?? 'Selected Solar Package'
+              : isCustomSystemBooking
+                ? 'Custom Designed System'
+                : isPackageBooking
+                  ? packageSummary?.packageName ?? systemSummary.packageName ?? 'Selected Solar Package'
                 : route?.params?.selectedServiceTitle ?? null,
           cleaning: isCleaningBooking ? cleaningEstimate : null,
           installation: isInstallationBooking ? installationDetails : null,
@@ -334,6 +344,7 @@ export const BookSurveyScreen = ({ navigation, route }: any) => {
       await queryClient.invalidateQueries({ queryKey: latestWelcomeNotificationQueryKey(session.user.id) });
       if (isCleaningBooking) clearCleaningEstimate();
       if (isInstallationBooking) clearInstallationDetails();
+      if (isCustomSystemBooking) clearCustomSystem();
       navigation.replace('SurveyConfirmation', { bookingId: result.bookingId });
     } catch {
       // Mutation error is shown inline below the trust card.
@@ -410,6 +421,45 @@ export const BookSurveyScreen = ({ navigation, route }: any) => {
                 value={hasAppliedPackagePromo
                   ? formatPkrCurrency(promo.finalTotal)
                   : formatPkrAmount(packageSummary.totalPrice)}
+                strong
+              />
+            </View>
+          </View>
+        ) : null}
+
+        {isCustomSystemBooking && customSystemSnapshot ? (
+          <View style={styles.cleaningSummaryCard}>
+            <Text style={styles.cleaningSummaryKicker}>Your Designed System</Text>
+            <Text style={styles.cleaningSummaryTitle}>{customSystemSnapshot.packageName}</Text>
+            <View style={styles.cleaningSummaryRows}>
+              <SummaryLine
+                label="System Size"
+                value={formatKw(calculateCustomSystemSizeKw(
+                  customSystemSnapshot.panel?.quantity ?? 0,
+                  customSystemSnapshot.panel?.wattage ?? 0
+                ))}
+              />
+              {customSystemSnapshot.panel ? (
+                <SummaryLine
+                  label="Solar Panels"
+                  value={`${customSystemSnapshot.panel.quantity} x ${customSystemSnapshot.panel.wattage}W`}
+                />
+              ) : null}
+              {customSystemSnapshot.inverter ? (
+                <SummaryLine
+                  label="Inverter"
+                  value={`${customSystemSnapshot.inverter.brand} ${customSystemSnapshot.inverter.capacityKw} kW`}
+                />
+              ) : null}
+              {customSystemSnapshot.battery ? (
+                <SummaryLine
+                  label="Battery"
+                  value={`${customSystemSnapshot.battery.brand} ${customSystemSnapshot.battery.totalCapacityKwh} kWh`}
+                />
+              ) : null}
+              <SummaryLine
+                label="Total Estimated Price"
+                value={formatPkrAmount(customSystemSnapshot.finalTotal)}
                 strong
               />
             </View>
@@ -549,101 +599,16 @@ export const BookSurveyScreen = ({ navigation, route }: any) => {
         </Pressable>
       </View>
 
-      <Modal
+      <DatePickerSheet
         visible={calendarOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={closeCalendar}
-      >
-        <Pressable style={styles.modalBackdrop} onPress={closeCalendar}>
-          <Pressable
-            style={[
-              styles.calendarSheet,
-              { paddingBottom: Math.max(18, insets.bottom + 12) },
-            ]}
-          >
-            <View style={styles.calendarHeader}>
-              <Pressable
-                style={styles.calendarNavButton}
-                onPress={() => moveCalendarMonth(-1)}
-                accessibilityRole="button"
-              >
-                <ChevronLeft color="#0F1E33" size={22} strokeWidth={2.5} />
-              </Pressable>
-              <Text style={styles.calendarMonthTitle}>
-                {formatMonthTitle(calendarMonth)}
-              </Text>
-              <Pressable
-                style={styles.calendarNavButton}
-                onPress={() => moveCalendarMonth(1)}
-                accessibilityRole="button"
-              >
-                <ChevronRight color="#0F1E33" size={22} strokeWidth={2.5} />
-              </Pressable>
-            </View>
-
-            <View style={styles.weekdayRow}>
-              {WEEKDAYS.map((day) => (
-                <Text
-                  key={day}
-                  style={[
-                    styles.weekdayText,
-                    day === "Sun" && styles.sundayText,
-                  ]}
-                >
-                  {day}
-                </Text>
-              ))}
-            </View>
-
-            <View style={styles.calendarGrid}>
-              {calendarDays.map((day) => {
-                const dayKey = formatDateKey(day);
-                const inCurrentMonth =
-                  day.getMonth() === calendarMonth.getMonth();
-                const selected = draftDateKey === dayKey;
-                const todayDate = todayKey === dayKey;
-
-                return (
-                  <Pressable
-                    key={dayKey}
-                    style={[
-                      styles.calendarDay,
-                      selected && styles.calendarDaySelected,
-                      todayDate && !selected && styles.calendarDayToday,
-                    ]}
-                    onPress={() => setDraftDate(startOfLocalDay(day))}
-                    accessibilityRole="button"
-                  >
-                    <Text
-                      style={[
-                        styles.calendarDayText,
-                        !inCurrentMonth && styles.calendarDayMuted,
-                        todayDate && !selected && styles.calendarDayTodayText,
-                        selected && styles.calendarDaySelectedText,
-                      ]}
-                    >
-                      {day.getDate()}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            <View style={styles.calendarActions}>
-              <Pressable style={styles.calendarCancel} onPress={closeCalendar}>
-                <Text style={styles.calendarCancelText}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                style={styles.calendarConfirm}
-                onPress={confirmCalendarDate}
-              >
-                <Text style={styles.calendarConfirmText}>Confirm</Text>
-              </Pressable>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        value={selectedDate}
+        onCancel={() => setCalendarOpen(false)}
+        onConfirm={(date) => {
+          setSelectedDate(date);
+          setDateError("");
+          setCalendarOpen(false);
+        }}
+      />
 
       <View
         style={[
@@ -993,127 +958,6 @@ const styles = StyleSheet.create({
   cleaningSummaryStrong: {
     color: '#0F1E33',
     fontSize: 13
-  },
-  modalBackdrop: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(15, 23, 42, 0.34)",
-  },
-  calendarSheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    backgroundColor: "#FFFBF2",
-    paddingHorizontal: 18,
-    paddingTop: 18,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 18,
-    elevation: 10,
-  },
-  calendarHeader: {
-    height: 42,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  calendarNavButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 13,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#E8DED2",
-  },
-  calendarMonthTitle: {
-    color: "#0F1E33",
-    fontSize: 16,
-    fontWeight: "900",
-  },
-  weekdayRow: {
-    flexDirection: "row",
-    marginTop: 14,
-    marginBottom: 8,
-  },
-  weekdayText: {
-    flex: 1,
-    color: "#64748B",
-    textAlign: "center",
-    fontSize: 11,
-    fontWeight: "900",
-  },
-  sundayText: {
-    color: "#B42318",
-  },
-  calendarGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  calendarDay: {
-    width: `${100 / 7}%`,
-    height: 42,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 4,
-  },
-  calendarDaySelected: {
-    borderRadius: 14,
-    backgroundColor: "#F5A400",
-  },
-  calendarDayToday: {
-    borderRadius: 14,
-    backgroundColor: "#FFF3D4",
-    borderWidth: 1,
-    borderColor: "#F5A400",
-  },
-  calendarDayText: {
-    color: "#0F1E33",
-    fontSize: 13,
-    fontWeight: "800",
-  },
-  calendarDayMuted: {
-    color: "#C0B7A8",
-  },
-  calendarDayTodayText: {
-    color: "#B77900",
-  },
-  calendarDaySelectedText: {
-    color: "#FFFFFF",
-  },
-  calendarActions: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 12,
-  },
-  calendarCancel: {
-    flex: 1,
-    height: 48,
-    borderRadius: 15,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E8DED2",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  calendarCancelText: {
-    color: "#64748B",
-    fontSize: 14,
-    fontWeight: "900",
-  },
-  calendarConfirm: {
-    flex: 1,
-    height: 48,
-    borderRadius: 15,
-    backgroundColor: "#F7B500",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  calendarConfirmText: {
-    color: "#0F1E33",
-    fontSize: 14,
-    fontWeight: "900",
   },
   bottomNav: {
     position: "absolute",

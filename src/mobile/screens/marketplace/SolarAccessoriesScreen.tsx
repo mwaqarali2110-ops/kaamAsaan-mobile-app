@@ -1,9 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, CheckCircle2, Search, ShieldCheck, SlidersHorizontal, SunMedium, Wind, Wrench } from 'lucide-react-native';
+import { ArrowLeft, Search, ShieldCheck, SlidersHorizontal, SunMedium, Wind, Wrench } from 'lucide-react-native';
 import { ProductCard } from '@/components/cards/ProductCard';
-import { useMarketplaceStore } from '@/store/useMarketplaceStore';
 import type { Product } from '@/types/product.types';
 
 const NAVY = '#0F2744';
@@ -34,34 +33,27 @@ export function SolarAccessoriesScreen({ navigation, query, onSelectProduct }: {
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [stockOnly, setStockOnly] = useState(false);
-  const [confirmation, setConfirmation] = useState('');
-  const addToCart = useMarketplaceStore((state) => state.addToCart);
-  const cartCount = useMarketplaceStore((state) => state.cartItems.reduce((sum, item) => sum + item.quantity, 0));
   const products = useMemo(() => [...(query.data ?? [])].filter((product) => {
     const matchesCategory = selectedCategory === 'all' || normalize(product.accessorySubcategory ?? product.subCategory) === selectedCategory;
     const matchesSearch = `${product.name} ${product.brand} ${product.shortSpec ?? ''}`.toLowerCase().includes(search.trim().toLowerCase());
     return matchesCategory && matchesSearch && (!stockOnly || stockInfo(product.stockStatus).kind === 'in');
   }).sort((a,b) => Number(b.isFeatured) - Number(a.isFeatured) || Number(a.priority ?? 0) - Number(b.priority ?? 0) || String(b.updatedAt ?? '').localeCompare(String(a.updatedAt ?? ''))), [query.data, search, selectedCategory, stockOnly]);
 
-  const handleAdd = (product: Product) => {
-    const status = stockInfo(product.stockStatus);
-    if (status.kind === 'out') return;
-    if (status.kind === 'request') { onSelectProduct(product); return; }
-    addToCart(product);
-    setConfirmation(`${product.name} added to cart`);
-    setTimeout(() => setConfirmation(''), 1800);
+  // Accessories are order-only: every action routes to the product's order flow.
+  const handleOrder = (product: Product) => {
+    if (stockInfo(product.stockStatus).kind === 'out') return;
+    onSelectProduct(product);
   };
 
   const header = <>
-    <View style={styles.header}><Pressable style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="Back"><ArrowLeft color={NAVY} size={24} /></Pressable><View style={styles.headerCopy}><Text style={styles.headerTitle}>Solar Accessories</Text><Text style={styles.headerSubtitle}>Mounting & installation products</Text></View><Pressable style={styles.headerIcon} onPress={() => setSearchOpen((value) => !value)} accessibilityLabel="Search accessories"><Search color={NAVY} size={23} /></Pressable><Pressable style={styles.headerIcon} onPress={() => setStockOnly((value) => !value)} accessibilityLabel="Filter in-stock accessories"><SlidersHorizontal color={stockOnly ? '#C27A00' : NAVY} size={23} /></Pressable>{cartCount ? <View style={styles.cartBadge}><Text style={styles.cartBadgeText}>{cartCount > 99 ? '99+' : cartCount}</Text></View> : null}</View>
+    <View style={styles.header}><Pressable style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="Back"><ArrowLeft color={NAVY} size={24} /></Pressable><View style={styles.headerCopy}><Text style={styles.headerTitle}>Solar Accessories</Text><Text style={styles.headerSubtitle}>Mounting & installation products</Text></View><Pressable style={styles.headerIcon} onPress={() => setSearchOpen((value) => !value)} accessibilityLabel="Search accessories"><Search color={NAVY} size={23} /></Pressable><Pressable style={styles.headerIcon} onPress={() => setStockOnly((value) => !value)} accessibilityLabel="Filter in-stock accessories"><SlidersHorizontal color={stockOnly ? '#C27A00' : NAVY} size={23} /></Pressable></View>
     {searchOpen ? <View style={styles.searchBox}><Search color="#87909D" size={18} /><TextInput autoFocus value={search} onChangeText={setSearch} placeholder="Search solar accessories" placeholderTextColor="#8B93A1" style={styles.searchInput} /></View> : null}
     <View style={styles.hero}><View style={styles.heroIcon}><SunMedium color={NAVY} size={36} /><View style={styles.heroPanel}><View /><View /><View /><View /></View></View><View style={styles.heroContent}><Text style={styles.heroTitle}>Solar Accessories</Text><Text style={styles.heroSubtitle}>Cleaning, maintenance & installation essentials</Text><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.benefits}><View style={styles.benefit}><ShieldCheck color={NAVY} size={15} /><Text style={styles.benefitText}>Durable</Text></View><View style={styles.benefit}><Wind color={NAVY} size={15} /><Text style={styles.benefitText}>Weather Resistant</Text></View><View style={styles.benefit}><Wrench color={NAVY} size={15} /><Text style={styles.benefitText}>Installation Ready</Text></View></ScrollView></View></View>
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categories}>{categoryOptions.map(([value,label]) => <Pressable key={value} style={[styles.category, selectedCategory === value && styles.categorySelected]} onPress={() => setSelectedCategory(value)}><Text style={[styles.categoryText, selectedCategory === value && styles.categoryTextSelected]}>{label}</Text></Pressable>)}</ScrollView>
   </>;
 
   return <SafeAreaView style={styles.screen} edges={['top','left','right']}>
-    {confirmation ? <View pointerEvents="none" style={styles.toast}><CheckCircle2 color="#15803D" size={16} /><Text style={styles.toastText}>{confirmation}</Text></View> : null}
-    <FlatList data={query.isLoading ? [] : products} keyExtractor={(item) => item.id} contentContainerStyle={[styles.content, { paddingBottom: Math.max(insets.bottom, 16) + 24 }]} ListHeaderComponent={header} ItemSeparatorComponent={() => <View style={{ height: 12 }} />} renderItem={({ item }) => <ProductCard product={item} variant="accessory" onPress={() => onSelectProduct(item)} onAdd={() => handleAdd(item)} />} refreshControl={<RefreshControl refreshing={query.isRefetching} onRefresh={() => void query.refetch()} tintColor={GOLD} />}
+    <FlatList data={query.isLoading ? [] : products} keyExtractor={(item) => item.id} contentContainerStyle={[styles.content, { paddingBottom: Math.max(insets.bottom, 16) + 24 }]} ListHeaderComponent={header} ItemSeparatorComponent={() => <View style={{ height: 12 }} />} renderItem={({ item }) => <ProductCard product={item} variant="accessory" onPress={() => onSelectProduct(item)} onAdd={() => handleOrder(item)} />} refreshControl={<RefreshControl refreshing={query.isRefetching} onRefresh={() => void query.refetch()} tintColor={GOLD} />}
       ListEmptyComponent={query.isLoading ? <View style={styles.skeletonList}><ProductSkeleton /><ProductSkeleton /><ProductSkeleton /></View> : query.isError ? <View style={styles.stateBox}><Text style={styles.stateTitle}>Accessories could not be loaded.</Text><Text style={styles.stateText}>Please check your connection and try again.</Text><Pressable style={styles.retry} onPress={() => void query.refetch()}><Text style={styles.retryText}>Retry</Text></Pressable></View> : <View style={styles.stateBox}><Text style={styles.stateTitle}>No products are available in this category yet.</Text><Text style={styles.stateText}>Try another category or clear the in-stock filter.</Text></View>}
       ListFooterComponent={!query.isLoading && !query.isError && products.length ? <View style={styles.trust}><ShieldCheck color={GOLD} size={19} /><Text style={styles.trustText}>Trusted quality  •  Fast delivery  •  Easy returns</Text></View> : null} />
   </SafeAreaView>;

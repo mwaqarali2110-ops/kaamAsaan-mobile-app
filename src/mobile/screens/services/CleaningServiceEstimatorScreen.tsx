@@ -15,10 +15,12 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowDownUp, ArrowLeft, ArrowRight, Check, ChevronDown, Headphones, ShieldCheck } from 'lucide-react-native';
 import { useSystemStore } from '@/store/useSystemStore';
+import { useServicePricing } from '@/hooks/useProducts';
 import {
   calculateCleaningEstimate,
   CLEANING_PRICING,
   formatPkrAmount,
+  type CleaningPricingRates,
   type CleaningStructureType
 } from '@/utils/cleaningPricing';
 
@@ -41,6 +43,19 @@ export const CleaningServiceEstimatorScreen = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const stackHeightFields = width < 350;
+  const servicePricingQuery = useServicePricing();
+  const pricing = useMemo((): CleaningPricingRates => {
+    const live = servicePricingQuery.data;
+    if (!live) return CLEANING_PRICING;
+    return {
+      baseVisitCharge: live.cleaningBaseVisitCharge,
+      standardRatePerKw: live.cleaningStandardRatePerKw,
+      elevatedRatePerKw: live.cleaningElevatedRatePerKw,
+      elevatedHeightRate: live.cleaningElevatedHeightRate,
+      minimumCharge: live.cleaningMinimumCharge,
+      taxRate: live.cleaningTaxRate
+    };
+  }, [servicePricingQuery.data]);
   const storedEstimate = useSystemStore((state) => state.cleaningEstimate);
   const setCleaningEstimate = useSystemStore((state) => state.setCleaningEstimate);
   const clearCleaningEstimate = useSystemStore((state) => state.clearCleaningEstimate);
@@ -78,9 +93,10 @@ export const CleaningServiceEstimatorScreen = ({ navigation }: any) => {
       systemSizeKw,
       structureType,
       frontHeightFt: elevated ? frontHeightFt : null,
-      backHeightFt: elevated ? backHeightFt : null
+      backHeightFt: elevated ? backHeightFt : null,
+      pricing
     });
-  }, [backHeightFt, elevated, frontHeightFt, isValid, structureType, systemSizeKw]);
+  }, [backHeightFt, elevated, frontHeightFt, isValid, pricing, structureType, systemSizeKw]);
 
   const saveEstimate = () => {
     if (!estimate) return false;

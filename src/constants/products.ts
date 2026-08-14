@@ -5,7 +5,8 @@ export const marketplaceCategories: MarketplaceCategory[] = [
   { id: 'inverter', title: 'Inverter', subtitle: 'Brand Selection' },
   { id: 'panel', title: 'Solar Panel', subtitle: 'Brand Selection' },
   { id: 'battery', title: 'Batteries', subtitle: 'Brand Selection' },
-  { id: 'accessory', title: 'Solar Accessories', subtitle: 'Select Products' }
+  { id: 'accessory', title: 'Solar Accessories', subtitle: 'Select Products' },
+  { id: 'ev_charger', title: 'EV Chargers', subtitle: 'Select Products' }
 ];
 
 export const defaultAppliances: Appliance[] = [

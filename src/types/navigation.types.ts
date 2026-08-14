@@ -11,7 +11,26 @@ export type RootStackParamList = {
   ForgotPassword: undefined;
   DesignFlow: { screen?: string; packageNotice?: string } | undefined;
   MarketplaceFlow: { category?: ProductCategory } | undefined;
-  ProductDetail: { productId: string };
+  ProductDetail: {
+    productId: string;
+    /** Opens a Custom System Builder picker straight away (used by summary "Edit"). */
+    initialStep?: 'panelSize' | 'inverterSelect' | 'batterySelect';
+    /** Where to go once that picker is confirmed. */
+    returnTo?: 'CustomSystemSummary';
+  };
+  CustomSystemSummary: undefined;
+  ProductOrderSummary: {
+    productId: string;
+    quantity: number;
+    serviceOption: 'product-only' | 'product-installation';
+    city: string;
+    phone: string;
+  };
+  OrderPlaced: {
+    orderId: string;
+    referenceCode: string;
+    serviceOption: 'product-only' | 'product-installation';
+  };
   SystemSummary: {
     packageId?: string;
     selectedAppliances?: Appliance[];

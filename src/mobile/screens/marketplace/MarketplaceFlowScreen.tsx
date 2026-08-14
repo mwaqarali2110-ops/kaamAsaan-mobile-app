@@ -16,12 +16,14 @@ import type { MarketplaceBrand, Product, ProductCategory } from '@/types/product
 import { colors } from '@/constants/colors';
 import { brandIdentitiesMatch } from '@/utils/brandLogo';
 import { SolarAccessoriesScreen } from './SolarAccessoriesScreen';
+import { EvChargersScreen } from './EvChargersScreen';
 
-const categoryTitle = {
+const categoryTitle: Record<ProductCategory, string> = {
   inverter: 'Inverter',
   panel: 'Solar Panel',
   battery: 'Batteries',
-  accessory: 'Solar Accessories'
+  accessory: 'Solar Accessories',
+  ev_charger: 'EV Chargers'
 };
 
 const inverterBrands = [
@@ -259,7 +261,8 @@ const modelSubtitleByCategory: Record<ProductCategory, string> = {
   inverter: 'Premium inverter models',
   panel: 'Premium solar panel models',
   battery: 'Premium battery models',
-  accessory: 'Mounting & installation products'
+  accessory: 'Mounting & installation products',
+  ev_charger: 'Home and commercial chargers'
 };
 
 const getBrandLabel = (category: ProductCategory, productBrand: string | null) => {
@@ -743,12 +746,20 @@ export const MarketplaceFlowScreen = ({ route, navigation }: any) => {
   }, [brand, category, productsQuery.data, productsQuery.error, visibleProducts.length]);
 
   const chooseProduct = (product: Product) => {
-    setSelectedProduct(product);
+    // EV chargers must never enter the solar Custom System Builder state —
+    // setSelectedProduct() is what feeds that builder (panel/inverter/battery
+    // slots, plus a general accessories bucket), so it is simply never called
+    // for this category.
+    if (product.category !== 'ev_charger') setSelectedProduct(product);
     navigation.navigate('ProductDetail', { productId: product.id });
   };
 
   if (category === 'accessory') {
     return <SolarAccessoriesScreen navigation={navigation} query={productsQuery} onSelectProduct={chooseProduct} />;
+  }
+
+  if (category === 'ev_charger') {
+    return <EvChargersScreen navigation={navigation} query={productsQuery} onSelectProduct={chooseProduct} />;
   }
 
   if (category === 'inverter' && !brand) {
@@ -778,13 +789,15 @@ export const MarketplaceFlowScreen = ({ route, navigation }: any) => {
         </View>
       ) : null}
 
-      <View className="mb-4 flex-row flex-wrap gap-2">
-        {(['inverter', 'panel', 'battery', 'accessory'] as ProductCategory[]).map((item) => (
+      {/* Five categories no longer fit one non-wrapping row on small phones —
+          horizontally scrollable instead of wrapping or shrinking text. */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4" contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
+        {(['inverter', 'panel', 'battery', 'accessory', 'ev_charger'] as ProductCategory[]).map((item) => (
           <Pressable key={item} className={`rounded-full px-4 py-2 ${category === item ? 'bg-kaam-yellow' : 'bg-white'}`} onPress={() => { setCategory(item); setBrand(null); }}>
             <Text className="text-xs font-extrabold text-kaam-navy">{categoryTitle[item]}</Text>
           </Pressable>
         ))}
-      </View>
+      </ScrollView>
 
       <View className="mb-4 flex-row flex-wrap gap-2">
         {isBrandProductList ? (

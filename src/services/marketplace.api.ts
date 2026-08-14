@@ -83,6 +83,9 @@ type BackendProduct = {
   currency_code?: string | null;
   stock_quantity?: number | null;
   sku?: string | null;
+  charger_type?: 'ac' | 'dc' | null;
+  charger_power_kw?: number | null;
+  connector_type?: string | null;
   gallery_images?: string[] | null;
   usage_instructions?: string | null;
   package_contents?: string | null;
@@ -142,7 +145,29 @@ const backendCategories: Record<ProductCategory, BackendCategory[]> = {
   inverter: ['inverter', 'hybrid_inverter', 'hv_hybrid_inverter'],
   panel: ['solar_panel', 'solar_panels', 'panel', 'panels', 'pv_panel', 'pv_module', 'module', 'modules'],
   battery: ['battery', 'batteries', 'battery_storage', 'energy_storage', 'lithium_battery', 'lithium'],
-  accessory: ['mounting_structure', 'accessory', 'accessories']
+  accessory: ['mounting_structure', 'accessory', 'accessories'],
+  ev_charger: ['ev_charger', 'ev_chargers', 'ev charger']
+};
+
+export const connectorTypeLabels: Record<string, string> = {
+  type_1: 'Type 1',
+  type_2: 'Type 2',
+  ccs_2: 'CCS2',
+  chademo: 'CHAdeMO',
+  gb_t: 'GB/T',
+  other: 'Other'
+};
+
+// Only used as a fallback when the admin leaves short_spec blank — the
+// admin-entered value always wins (see mapProduct below).
+const evChargerShortSpecLabel = (product: BackendProduct) => {
+  const parts: string[] = [];
+  if (product.charger_power_kw) parts.push(`${Number(product.charger_power_kw)}kW`);
+  if (product.charger_type) parts.push(product.charger_type === 'dc' ? 'DC Fast Charging' : 'AC');
+  if (product.connector_type) parts.push(connectorTypeLabels[product.connector_type] ?? product.connector_type);
+  if (product.phase === 'single') parts.push('Single Phase');
+  if (product.phase === 'three') parts.push('Three Phase');
+  return parts.length ? parts.join(' • ') : null;
 };
 
 const normalizeLabel = normalizeCategoryText;
@@ -302,6 +327,9 @@ const mapProduct = (product: BackendProduct): Product => {
     compatibleBatteryBrandIds: product.compatible_battery_brand_ids ?? [],
     panelWidthMm: product.panel_width_mm,
     panelHeightMm: product.panel_height_mm,
+    chargerType: product.charger_type ?? null,
+    chargerPowerKw: product.charger_power_kw ?? null,
+    connectorType: product.connector_type ?? null,
     commercialSpecStatus: product.commercial_spec_status,
     sameBrandCompatibilityEnabled: product.same_brand_compatibility_enabled ?? true,
     packageEligible: product.package_eligible,
@@ -317,7 +345,7 @@ const mapProduct = (product: BackendProduct): Product => {
     price: product.price,
     description: product.description,
     accessorySubcategory: product.accessory_subcategory ?? product.sub_category,
-    shortSpec: product.short_spec,
+    shortSpec: product.short_spec || (category === 'ev_charger' ? evChargerShortSpecLabel(product) : null),
     secondarySpec: product.secondary_spec,
     compareAtPrice: product.compare_at_price,
     currencyCode: product.currency_code ?? 'PKR',
@@ -801,5 +829,108 @@ export const marketplaceApi = {
       .filter((rule) => normalizeLabel(rule.inverter?.name) === normalizedInverterBrand && rule.battery?.name)
       .map((rule) => rule.battery!.name);
   },
-  submitProductOrder: async (product: Product) => ({ ok: true, productId: product.id })
+  /** Reverse of getCompatibleBatteryBrands: which inverters work with this battery. */
+  getCompatibleInverterBrands: async (batteryBrand?: string) => {
+    if (!batteryBrand) return [];
+    requireSupabase();
+    const { data, error } = await supabase
+      .from('product_compatibility')
+      .select('inverter:brands!product_compatibility_inverter_brand_id_fkey(name), battery:brands!product_compatibility_compatible_battery_brand_id_fkey(name)')
+      .eq('is_active', true);
+    if (error) throw error;
+    const normalizedBatteryBrand = normalizeLabel(batteryBrand);
+    return (data as unknown as { inverter: { name: string } | null; battery: { name: string } | null }[])
+      .filter((rule) => normalizeLabel(rule.battery?.name) === normalizedBatteryBrand && rule.inverter?.name)
+      .map((rule) => rule.inverter!.name);
+  },
+  submitProductOrder: async (product: Product) => ({ ok: true, productId: product.id }),
+
+  /** Admin-adjustable global charges (service_pricing_settings). Returns null on
+   * any failure so callers can fall back to their own hardcoded defaults. */
+  fetchServicePricing: async (): Promise<{
+    transportationCharge: number;
+    productInstallationCharge: number;
+    cleaningBaseVisitCharge: number;
+    cleaningStandardRatePerKw: number;
+    cleaningElevatedRatePerKw: number;
+    cleaningElevatedHeightRate: number;
+    cleaningMinimumCharge: number;
+    cleaningTaxRate: number;
+  } | null> => {
+    if (!isSupabaseConfigured) return null;
+    const { data, error } = await supabase
+      .from('service_pricing_settings')
+      .select('*')
+      .eq('id', true)
+      .maybeSingle();
+    if (error || !data) {
+      if (__DEV__ && error) console.warn('Failed to fetch service pricing settings:', error.message);
+      return null;
+    }
+    return {
+      transportationCharge: Number(data.transportation_charge) || 0,
+      productInstallationCharge: Number(data.product_installation_charge) || 0,
+      cleaningBaseVisitCharge: Number(data.cleaning_base_visit_charge) || 0,
+      cleaningStandardRatePerKw: Number(data.cleaning_standard_rate_per_kw) || 0,
+      cleaningElevatedRatePerKw: Number(data.cleaning_elevated_rate_per_kw) || 0,
+      cleaningElevatedHeightRate: Number(data.cleaning_elevated_height_rate) || 0,
+      cleaningMinimumCharge: Number(data.cleaning_minimum_charge) || 0,
+      cleaningTaxRate: Number(data.cleaning_tax_rate) || 0
+    };
+  },
+
+  placeProductOrder: async (input: {
+    userId: string;
+    product: Product;
+    quantity: number;
+    serviceOption: 'product-only' | 'product-installation';
+    fullName: string;
+    phone: string;
+    city: string;
+    deliveryAddress?: string | null;
+    transportationCharge: number;
+    installationCharge: number;
+    discountAmount?: number;
+    promoId?: string | null;
+    promoCode?: string | null;
+    notes?: string | null;
+  }): Promise<{ id: string; referenceCode: string; status: string; total: number }> => {
+    requireSupabase();
+    const unitPrice = input.product.price ?? 0;
+    const hasInstallation = input.serviceOption === 'product-installation';
+    const installationCharge = hasInstallation ? input.installationCharge : 0;
+    const subtotal = unitPrice * input.quantity + input.transportationCharge + installationCharge;
+    const total = Math.max(0, subtotal - (input.discountAmount ?? 0));
+
+    const { data, error } = await supabase
+      .from('product_orders')
+      .insert({
+        user_id: input.userId,
+        product_id: input.product.id,
+        product_name: input.product.name,
+        product_brand: input.product.brand ?? null,
+        product_category: input.product.category,
+        product_image_url: input.product.image ?? null,
+        quantity: input.quantity,
+        service_option: hasInstallation ? 'product_installation' : 'product_only',
+        unit_price: unitPrice,
+        transportation_charge: input.transportationCharge,
+        installation_charge: installationCharge,
+        promo_id: input.promoId ?? null,
+        promo_code: input.promoCode ?? null,
+        discount_amount: input.discountAmount ?? 0,
+        subtotal,
+        total,
+        full_name: input.fullName,
+        phone: input.phone,
+        city: input.city,
+        delivery_address: input.deliveryAddress ?? null,
+        notes: input.notes ?? null
+      })
+      .select('id, reference_code, status, total')
+      .single();
+
+    if (error) throw error;
+    return { id: data.id, referenceCode: data.reference_code, status: data.status, total: data.total };
+  }
 };

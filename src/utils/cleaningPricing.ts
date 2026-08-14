@@ -20,7 +20,10 @@ export type CleaningEstimate = {
   pricingVersion: string;
 };
 
-// TODO: Move these values to admin-controlled service pricing once that backend configuration exists.
+// Fallback defaults, used when the admin-controlled service_pricing_settings
+// row (see useServicePricing / marketplaceApi.fetchServicePricing) hasn't
+// loaded yet or the app is offline. maxSystemSizeKw/pricingVersion stay
+// client-side constants — only the charge fields are admin-adjustable.
 export const CLEANING_PRICING = {
   pricingVersion: 'cleaning-estimator-v1',
   maxSystemSizeKw: 200,
@@ -32,6 +35,15 @@ export const CLEANING_PRICING = {
   taxRate: 0
 } as const;
 
+export type CleaningPricingRates = {
+  baseVisitCharge: number;
+  standardRatePerKw: number;
+  elevatedRatePerKw: number;
+  elevatedHeightRate: number;
+  minimumCharge: number;
+  taxRate: number;
+};
+
 export const formatPkrAmount = (value?: number | null) =>
   value == null || !Number.isFinite(value)
     ? 'PKR 0'
@@ -41,23 +53,25 @@ export const calculateCleaningEstimate = ({
   systemSizeKw,
   structureType,
   frontHeightFt = null,
-  backHeightFt = null
+  backHeightFt = null,
+  pricing = CLEANING_PRICING
 }: {
   systemSizeKw: number;
   structureType: CleaningStructureType;
   frontHeightFt?: number | null;
   backHeightFt?: number | null;
+  pricing?: CleaningPricingRates;
 }): CleaningEstimate => {
   const normalizedSize = Math.max(0, Number(systemSizeKw) || 0);
   const isElevated = structureType === 'elevated';
-  const baseCharge = CLEANING_PRICING.baseVisitCharge;
-  const rate = isElevated ? CLEANING_PRICING.elevatedRatePerKw : CLEANING_PRICING.standardRatePerKw;
+  const baseCharge = pricing.baseVisitCharge;
+  const rate = isElevated ? pricing.elevatedRatePerKw : pricing.standardRatePerKw;
   const sizeCharge = normalizedSize * rate;
   const averageHeight = isElevated && frontHeightFt && backHeightFt ? (frontHeightFt + backHeightFt) / 2 : 0;
   const elevatedSurcharge = isElevated ? normalizedSize * 200 : 0;
-  const heightSurcharge = isElevated ? normalizedSize * averageHeight * CLEANING_PRICING.elevatedHeightRate : 0;
+  const heightSurcharge = isElevated ? normalizedSize * averageHeight * pricing.elevatedHeightRate : 0;
   const subtotal = baseCharge + sizeCharge + elevatedSurcharge + heightSurcharge;
-  const total = Math.max(CLEANING_PRICING.minimumCharge, subtotal * (1 + CLEANING_PRICING.taxRate));
+  const total = Math.max(pricing.minimumCharge, subtotal * (1 + pricing.taxRate));
 
   return {
     serviceType: 'cleaning',

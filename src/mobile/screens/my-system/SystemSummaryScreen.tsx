@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useIsFocused } from '@react-navigation/native';
 import { ArrowLeft, BatteryCharging, CalendarDays, Home, PanelsTopLeft, ShieldCheck, Sun, Wrench, Zap } from 'lucide-react-native';
 import { SafeImage } from '@/components/ui/SafeImage';
 import { PromoCodeCard } from '@/components/promo/PromoCodeCard';
@@ -37,6 +38,7 @@ const formatQuantity = (quantity: number, label: string) =>
 
 export const SystemSummaryScreen = ({ navigation, route }: any) => {
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
   const recommendedSolarKw = useSystemStore((state) => state.recommendedSolarKw);
   const selectedBatteryKwh = useSystemStore((state) => state.selectedBatteryKwh);
   const batteryRecommendationRequirementKwh = useSystemStore((state) => state.batteryRecommendationRequirementKwh);
@@ -152,6 +154,11 @@ export const SystemSummaryScreen = ({ navigation, route }: any) => {
       return;
     }
 
+    // Only redirect while this screen is actually the active one. After a survey
+    // is booked this screen still sits in the stack, and firing a navigation
+    // action from it while it is unfocused/being popped corrupts the stack.
+    if (!isFocused) return;
+
     clearSelectedRecommendedPackage();
     navigation.replace('DesignFlow', {
       screen: 'packages',
@@ -159,6 +166,7 @@ export const SystemSummaryScreen = ({ navigation, route }: any) => {
     });
   }, [
     clearSelectedRecommendedPackage,
+    isFocused,
     isLoading,
     navigation,
     compatibilityQuery.isError,

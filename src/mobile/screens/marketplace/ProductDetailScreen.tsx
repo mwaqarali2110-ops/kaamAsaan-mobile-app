@@ -1,46 +1,73 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, ArrowRight, Award, BatteryCharging, Bookmark, Box, Calculator, Check, ChevronDown, ChevronRight, ClipboardList, Clock3, HelpCircle, Info, MessageCircle, Package, PenLine, Settings, Share2, ShieldCheck, ShoppingCart, Star, Sun, Tag, Wrench, X, Zap } from 'lucide-react-native';
+import { ArrowLeft, ArrowRight, Award, BatteryCharging, Bookmark, Box, Calculator, Check, ChevronDown, ChevronRight, ClipboardList, Clock3, EvCharger, Grid3X3, HelpCircle, Info, MessageCircle, Package, PenLine, Settings, Share2, ShieldCheck, Star, Sun, Tag, Wrench, X, Zap } from 'lucide-react-native';
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
-import { AppButton } from '@/components/ui/AppButton';
 import { InfoCard } from '@/components/cards/InfoCard';
 import { SafeImage } from '@/components/ui/SafeImage';
 import { SafeBottomActionBar, getFixedFooterContentPadding, getSafeBottomPadding } from '@/components/ui/SafeAreaLayout';
-import { useBrands, useCompatibleBatteryBrands, useProduct, useProducts } from '@/hooks/useProducts';
+import { useBrands, useCompatibleBatteryBrands, useCompatibleInverterBrands, useProduct, useProducts } from '@/hooks/useProducts';
 import { useSystemStore } from '@/store/useSystemStore';
-import { useMarketplaceStore } from '@/store/useMarketplaceStore';
+import { connectorTypeLabels } from '@/services/marketplace.api';
 import type { Product } from '@/types/product.types';
 import { formatPkr } from '@/utils/formatters';
+import { getNextMissingSystemComponent } from '@/utils/customSystem';
+
+// Never route an EV charger into the solar Add-to-My-System builder — it is
+// order/quote-only, same treatment as accessories.
+const isBuilderExcluded = (category: Product['category']) => category === 'accessory' || category === 'ev_charger';
+
+const phaseLabel = (phase?: Product['phase']) => phase === 'three' ? 'Three Phase' : phase === 'single' ? 'Single Phase' : null;
+
+const evChargerSpecRows = (product: Product): [string, string][] => {
+  const specs = (product.specifications ?? {}) as Record<string, unknown>;
+  const rows: [string, string][] = [['Category', 'EV Charger']];
+  if (product.chargerType) rows.push(['Charger Type', product.chargerType === 'dc' ? 'DC Fast Charger' : 'AC Charger']);
+  if (product.chargerPowerKw) rows.push(['Rated Power', `${Number(product.chargerPowerKw)} kW`]);
+  if (product.connectorType) rows.push(['Connector', connectorTypeLabels[product.connectorType] ?? product.connectorType]);
+  const phase = phaseLabel(product.phase);
+  if (phase) rows.push(['Phase', phase]);
+  const installationType = specs.installation_type;
+  if (typeof installationType === 'string' && installationType.trim()) {
+    rows.push(['Installation Type', installationType.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())]);
+  }
+  const ipRating = specs.ip_rating;
+  if (typeof ipRating === 'string' && ipRating.trim()) rows.push(['IP Rating', ipRating.trim()]);
+  const cableLength = specs.cable_length_m ?? specs.cable_length;
+  if (typeof cableLength === 'number' || (typeof cableLength === 'string' && cableLength.trim())) rows.push(['Cable Length', `${cableLength} m`]);
+  const connectivity = specs.connectivity;
+  if (typeof connectivity === 'string' && connectivity.trim()) rows.push(['Connectivity', connectivity.trim()]);
+  if (product.warranty) rows.push(['Warranty', product.warranty]);
+  return rows;
+};
 
 type BuilderStep =
   | 'panelSize'
-  | 'inverterType'
-  | 'inverterSize'
   | 'inverterSelect'
-  | 'batteryDecision'
   | 'batterySelect'
   | 'orderProduct';
 
-const INVERTER_SIZES = [3, 5, 6, 8, 10, 12, 15, 20];
 const WATTAGE_OPTIONS = [550, 575, 585, 600, 610, 620];
-const INVERTER_TYPES = ['Hybrid', 'On-Grid', 'Off-Grid'];
 const batteryImage = require('../../../assets/home/battery.webp');
 
 const toKw = (value: number) => Number.isInteger(value) ? `${value}kW` : `${value.toFixed(1)}kW`;
 
-const productCategoryLabel = {
+const normalizeBrandLabel = (value?: string | null) => (value ?? '').trim().toLowerCase();
+
+const productCategoryLabel: Record<Product['category'], string> = {
   panel: 'SOLAR PANEL',
   inverter: 'INVERTER',
   battery: 'BATTERY',
-  accessory: 'SOLAR ACCESSORY'
+  accessory: 'SOLAR ACCESSORY',
+  ev_charger: 'EV CHARGER'
 };
 
 const detailSubtitle = (product: Product) => {
   if (product.category === 'panel') return `${product.specs[0] ?? '550W'} | ${product.specs[1] ?? 'Monocrystalline PERC'}`;
   if (product.category === 'inverter') return `${product.specs[0] ?? 'Hybrid'} | ${product.specs[1] ?? 'Smart inverter'}`;
   if (product.category === 'battery') return `${product.specs[0] ?? 'Lithium'} | ${product.specs[1] ?? 'Backup storage'}`;
+  if (product.category === 'ev_charger') return product.shortSpec || [product.chargerPowerKw ? `${Number(product.chargerPowerKw)}kW` : null, product.chargerType === 'dc' ? 'DC Fast Charging' : product.chargerType === 'ac' ? 'AC' : null].filter(Boolean).join(' | ') || 'EV charging station';
   return product.specs.join(' | ') || 'Installation accessory';
 };
 
@@ -78,6 +105,8 @@ const detailSpecRows = (product: Product) => {
     ];
   }
 
+  if (product.category === 'ev_charger') return evChargerSpecRows(product);
+
   return [
     ['Category', 'Solar Accessory'],
     ['Type', product.accessorySubcategory?.replace(/_/g, ' ') ?? 'Accessory'],
@@ -105,21 +134,11 @@ const detailBenefits = (product: Product) => {
   ];
 };
 
-const OptionGrid = ({ options, selected, onSelect, suffix = '' }: { options: number[]; selected: number; onSelect: (value: number) => void; suffix?: string }) => (
-  <View className="flex-row flex-wrap gap-2">
-    {options.map((item) => (
-      <Pressable key={item} className={`rounded-2xl px-4 py-3 ${selected === item ? 'bg-kaam-yellow' : 'bg-white'}`} onPress={() => onSelect(item)}>
-        <Text className="text-xs font-extrabold text-kaam-navy">{item}{suffix}</Text>
-      </Pressable>
-    ))}
-  </View>
-);
-
-const ProductListPicker = ({ title, subtitle, options, onSelect }: { title: string; subtitle: string; options: Product[]; onSelect: (product: Product) => void }) => (
+const ProductListPicker = ({ title, subtitle, options, onSelect, onBack, emptyTitle, emptySubtitle }: { title: string; subtitle: string; options: Product[]; onSelect: (product: Product) => void; onBack?: () => void; emptyTitle?: string; emptySubtitle?: string }) => (
   <Screen>
-    <Header title={title} subtitle={subtitle} />
+    <Header title={title} subtitle={subtitle} onBack={onBack} />
     <View className="gap-3">
-      {options.length === 0 ? <InfoCard title="No active products available" subtitle="Add matching products in the admin dashboard, then try again." /> : null}
+      {options.length === 0 ? <InfoCard title={emptyTitle ?? 'No active products available'} subtitle={emptySubtitle ?? 'Add matching products in the admin dashboard, then try again.'} /> : null}
       {options.map((item, index) => (
         <Pressable key={item.id} className={`rounded-3xl border bg-white p-4 shadow-sm ${index === 0 ? 'border-kaam-yellow' : 'border-kaam-line'}`} onPress={() => onSelect(item)}>
           <View className="flex-row items-center justify-between gap-3">
@@ -141,86 +160,149 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
   const { data: product } = productQuery;
   const productsQuery = useProducts();
   const panelBrandsQuery = useBrands('panel');
-  const setSelectedProduct = useSystemStore((state) => state.setSelectedProduct);
-  const setRecommendedSolarKw = useSystemStore((state) => state.setRecommendedSolarKw);
-  const setPanelWattage = useSystemStore((state) => state.setPanelWattage);
   const setSelectedPanelBrand = useSystemStore((state) => state.setSelectedPanelBrand);
-  const setBackupDecision = useSystemStore((state) => state.setBackupDecision);
-  const addToCart = useMarketplaceStore((state) => state.addToCart);
+  const startCustomSystem = useSystemStore((state) => state.startCustomSystem);
+  const setCustomSystemComponent = useSystemStore((state) => state.setCustomSystemComponent);
+  const setCustomSystemPanelSelection = useSystemStore((state) => state.setCustomSystemPanelSelection);
   const selectedInverter = useSystemStore((state) => state.selectedInverter);
-  const selectedPanels = useSystemStore((state) => state.selectedPanels);
   const selectedBattery = useSystemStore((state) => state.selectedBattery);
+  const storedPanelWattage = useSystemStore((state) => state.panelWattage);
   const [step, setStep] = useState<BuilderStep | null>(null);
   const [guidedVisible, setGuidedVisible] = useState(false);
   const [solarKw, setSolarKw] = useState(10);
   const [customSolarKw, setCustomSolarKw] = useState('');
-  const [inverterSize, setInverterSize] = useState(6);
-  const [wattage, setWattage] = useState(550);
+  // Seed from the store so "Edit" from the Custom System Summary reopens the
+  // picker on the customer's current choice rather than a default.
+  const [wattage, setWattage] = useState(() =>
+    WATTAGE_OPTIONS.includes(storedPanelWattage) ? storedPanelWattage : 550
+  );
   const [panelBrand, setPanelBrand] = useState('Longi');
   const [wattageOpen, setWattageOpen] = useState(false);
   const [panelBrandOpen, setPanelBrandOpen] = useState(false);
-  const [batteryChoiceId, setBatteryChoiceId] = useState('fox-batt-5');
-  const [inverterType, setInverterType] = useState('Hybrid');
+  const [batteryChoiceId, setBatteryChoiceId] = useState(() => selectedBattery?.id ?? 'fox-batt-5');
+  const [panelQuantityOverride, setPanelQuantityOverride] = useState<number | null>(null);
   const [quantity, setQuantity] = useState('1');
   const [city, setCity] = useState('Islamabad');
   const [phone, setPhone] = useState('+923351351472');
   const [serviceOption, setServiceOption] = useState<'product-only' | 'product-installation'>('product-only');
   const [submitted, setSubmitted] = useState(false);
-  const [cartConfirmation, setCartConfirmation] = useState(false);
 
-  const inverterOptions = useMemo(() => (productsQuery.data ?? []).filter((item) => item.category === 'inverter'), [productsQuery.data]);
+  // Compatibility is enforced in whichever order the customer builds:
+  // inverter chosen first  -> batteries filtered by that inverter's rules
+  // battery chosen first   -> inverters filtered by that battery's rules
   const compatibleBatteryBrandsQuery = useCompatibleBatteryBrands(selectedInverter?.brand);
+  const compatibleInverterBrandsQuery = useCompatibleInverterBrands(selectedBattery?.brand);
   const batteryOptions = useMemo(() => {
     const all = (productsQuery.data ?? []).filter((item) => item.category === 'battery');
     if (!selectedInverter) return all;
-    const brands = compatibleBatteryBrandsQuery.data ?? [];
-    return all.filter((item) => brands.includes(item.brand));
+    const brands = (compatibleBatteryBrandsQuery.data ?? []).map(normalizeBrandLabel);
+    return all.filter((item) => brands.includes(normalizeBrandLabel(item.brandName ?? item.brand)));
   }, [compatibleBatteryBrandsQuery.data, productsQuery.data, selectedInverter]);
+  const inverterOptions = useMemo(() => {
+    const all = (productsQuery.data ?? []).filter((item) => item.category === 'inverter');
+    if (!selectedBattery) return all;
+    const brands = (compatibleInverterBrandsQuery.data ?? []).map(normalizeBrandLabel);
+    return all.filter((item) => brands.includes(normalizeBrandLabel(item.brandName ?? item.brand)));
+  }, [compatibleInverterBrandsQuery.data, productsQuery.data, selectedBattery]);
   const panelBrandOptions = useMemo(() => panelBrandsQuery.data?.map((item) => item.name) ?? [], [panelBrandsQuery.data]);
 
   useEffect(() => {
     if (panelBrandOptions.length && !panelBrandOptions.includes(panelBrand)) setPanelBrand(panelBrandOptions[0]);
   }, [panelBrand, panelBrandOptions]);
 
+  // "Edit" from the Custom System Summary deep-links straight into one picker.
+  const initialStep = route.params?.initialStep as BuilderStep | undefined;
+  const isEditingFromSummary = route.params?.returnTo === 'CustomSystemSummary';
+  useEffect(() => {
+    if (initialStep) setStep(initialStep);
+  }, [initialStep]);
+
   if (!product) {
     return <Screen><Header title="Product" onBack={() => navigation.goBack()} /><InfoCard title={productQuery.isError ? 'Unable to load product' : 'Loading product...'} subtitle={productQuery.isError ? 'Please go back and try again.' : 'Fetching live marketplace details.'} /></Screen>;
   }
 
-  const goSummary = () => navigation.navigate('SystemSummary');
-
-  const startAddToSystem = () => {
-    if (product.category === 'accessory') {
-      if (product.stockStatus === 'out_of_stock') return;
-      addToCart(product);
-      setCartConfirmation(true);
-      setTimeout(() => setCartConfirmation(false), 1800);
+  /**
+   * Centralised Custom System Builder router. Reads the live store (zustand
+   * setters are synchronous) and sends the customer to whichever component
+   * group is still missing — never to Recommended Packages.
+   */
+  const goToNextMissingComponent = () => {
+    if (isEditingFromSummary) {
+      setStep(null);
+      navigation.navigate('CustomSystemSummary');
       return;
     }
-    setSelectedProduct(product);
-    if (product.category === 'battery') setBackupDecision('yes');
+
+    const state = useSystemStore.getState();
+    const next = getNextMissingSystemComponent({
+      selectedPanel: state.selectedPanels,
+      selectedInverter: state.selectedInverter,
+      selectedBattery: state.selectedBattery
+    });
+
+    if (next === 'solar-panels') {
+      setStep('panelSize');
+      return;
+    }
+    if (next === 'inverter') {
+      setStep('inverterSelect');
+      return;
+    }
+    if (next === 'battery') {
+      setStep('batterySelect');
+      return;
+    }
+    setStep(null);
+    navigation.navigate('CustomSystemSummary');
+  };
+
+  const startAddToSystem = () => {
+    // Accessories and EV chargers never enter the system builder — they are
+    // order/quote-only (see isBuilderExcluded).
+    if (isBuilderExcluded(product.category)) return;
+
+    // Begin a fresh custom build seeded with this product only.
+    startCustomSystem(product);
+
+    // Starting from an inverter leaves battery + panels missing in a fixed
+    // order (spec B), so skip the choice sheet and go straight to the battery.
+    if (product.category === 'inverter') {
+      setStep('batterySelect');
+      return;
+    }
+
+    // Battery / panel starts leave two components missing — let the customer
+    // pick which one to do first (spec D and G).
     setGuidedVisible(true);
   };
 
   const handleGuidedChoice = (target: 'panels' | 'inverter' | 'batteries' | 'summary') => {
     setGuidedVisible(false);
-    setSelectedProduct(product);
     if (target === 'summary') {
-      goSummary();
-    } else if (target === 'panels') {
-      setStep('panelSize');
-    } else if (target === 'inverter') {
-      setStep(product.category === 'panel' ? 'inverterType' : 'inverterSize');
-    } else {
-      setBackupDecision('yes');
-      setStep('batterySelect');
+      goToNextMissingComponent();
+      return;
     }
+    if (target === 'panels') {
+      setStep('panelSize');
+      return;
+    }
+    if (target === 'inverter') {
+      setStep('inverterSelect');
+      return;
+    }
+    setStep('batterySelect');
   };
 
   const submitOrder = () => {
     setSubmitted(true);
     if (Number(quantity) < 1 || city.trim().length < 2 || phone.trim().length < 7) return;
-    setSelectedProduct(product);
-    goSummary();
+    navigation.navigate('ProductOrderSummary', {
+      productId: product.id,
+      quantity: Math.max(1, Number(quantity) || 1),
+      serviceOption,
+      city: city.trim(),
+      phone: phone.trim()
+    });
   };
 
   if (step === 'orderProduct') {
@@ -332,7 +414,7 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
 
         <SafeBottomActionBar style={orderStyles.footer}>
           <Pressable style={orderStyles.continueButton} onPress={submitOrder}>
-            <Text style={orderStyles.continueText}>Continue to System Summary</Text>
+            <Text style={orderStyles.continueText}>Continue to Summary</Text>
             <ArrowRight size={20} color="#111827" strokeWidth={2.7} />
           </Pressable>
         </SafeBottomActionBar>
@@ -347,7 +429,9 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
     const validCustomSolarSize = !hasCustomSolarSize || (Number.isFinite(customSolarValue) && customSolarValue >= 1 && customSolarValue <= 100);
     const activeSolarKw = hasCustomSolarSize && validCustomSolarSize ? customSolarValue : solarKw;
     const estimatedPanelCount = Math.ceil((activeSolarKw * 1000) / wattage);
-    const estimatedRoofSpace = estimatedPanelCount * 25;
+    const finalPanelCount = panelQuantityOverride ?? estimatedPanelCount;
+    const changePanelQuantity = (delta: number) => setPanelQuantityOverride(Math.max(1, finalPanelCount + delta));
+    const estimatedRoofSpace = finalPanelCount * 25;
     const savePanelSelection = () => {
       const normalizedBrand = panelBrand;
       const exactPanel = (productsQuery.data ?? []).find((item) => item.category === 'panel' && item.brand === normalizedBrand && item.specs.some((spec) => spec.includes(`${wattage}W`)));
@@ -362,7 +446,7 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
         specs: [`${wattage}W`, brandPanel?.specs[1] ?? 'Solar Panel', brandPanel?.specs[2] ?? '25 Years']
       };
       setSelectedPanelBrand(panelBrand);
-      setSelectedProduct(selectedPanel);
+      return selectedPanel;
     };
 
     const ctaTitle = 'Continue';
@@ -412,6 +496,7 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
                       onPress={() => {
                         setSolarKw(item);
                         setCustomSolarKw('');
+                        setPanelQuantityOverride(null);
                       }}
                     >
                       <Text style={[solarSizeStyles.sizeText, active && solarSizeStyles.sizeTextActive]}>{item}kW</Text>
@@ -444,7 +529,10 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
                   placeholder="7"
                   placeholderTextColor="#9CA3AF"
                   value={customSolarKw}
-                  onChangeText={(value) => setCustomSolarKw(value.replace(/[^0-9.]/g, ''))}
+                  onChangeText={(value) => {
+                    setCustomSolarKw(value.replace(/[^0-9.]/g, ''));
+                    setPanelQuantityOverride(null);
+                  }}
                 />
                 <View style={solarSizeStyles.inputDivider} />
                 <Text style={solarSizeStyles.inputSuffix}>kW</Text>
@@ -478,6 +566,7 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
                       onPress={() => {
                         setWattage(item);
                         setWattageOpen(false);
+                        setPanelQuantityOverride(null);
                       }}
                     >
                       <Text style={[solarSizeStyles.dropdownOptionText, wattage === item && solarSizeStyles.dropdownOptionTextActive]}>{item}W</Text>
@@ -486,6 +575,32 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
                   ))}
                 </View>
               ) : null}
+            </View>
+
+            <View style={solarSizeStyles.softDivider} />
+
+            <View style={solarSizeStyles.controlSection}>
+              <View style={solarSizeStyles.sectionHeader}>
+                <View style={[solarSizeStyles.sectionIcon, solarSizeStyles.greenSectionIcon]}>
+                  <Grid3X3 size={20} color="#15803D" />
+                </View>
+                <View style={solarSizeStyles.sectionText}>
+                  <Text style={solarSizeStyles.sectionTitle}>Number of Panels</Text>
+                  <Text style={solarSizeStyles.sectionSubtitle}>Adjust if you need more or fewer panels than estimated</Text>
+                </View>
+              </View>
+              <View style={orderStyles.quantityRow}>
+                <Text style={orderStyles.fieldLabel}>Quantity</Text>
+                <View style={orderStyles.stepper}>
+                  <Pressable style={orderStyles.stepperButton} onPress={() => changePanelQuantity(-1)}>
+                    <Text style={orderStyles.stepperText}>-</Text>
+                  </Pressable>
+                  <Text style={orderStyles.quantityValue}>{finalPanelCount}</Text>
+                  <Pressable style={[orderStyles.stepperButton, orderStyles.stepperButtonPlus]} onPress={() => changePanelQuantity(1)}>
+                    <Text style={orderStyles.stepperText}>+</Text>
+                  </Pressable>
+                </View>
+              </View>
             </View>
 
             <View style={solarSizeStyles.softDivider} />
@@ -529,7 +644,7 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
                 <Sun size={32} color="#15803D" />
               </View>
               <View>
-                <Text style={solarSizeStyles.summaryTitle}>{estimatedPanelCount} Panels Required</Text>
+                <Text style={solarSizeStyles.summaryTitle}>{finalPanelCount} Panels Required</Text>
                 <Text style={solarSizeStyles.summarySubtitle}>{toKw(activeSolarKw)} System • {wattage}W Panels • {panelBrand}</Text>
               </View>
             </View>
@@ -553,11 +668,12 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
             style={[solarSizeStyles.ctaButton, !validCustomSolarSize && solarSizeStyles.ctaButtonDisabled]}
             onPress={() => {
               setSolarKw(activeSolarKw);
-              setRecommendedSolarKw(activeSolarKw);
-              setPanelWattage(wattage);
-              savePanelSelection();
-              if (product.category === 'battery') goSummary();
-              else setStep(product.category === 'panel' ? 'inverterType' : 'batteryDecision');
+              setCustomSystemPanelSelection({
+                panelProduct: savePanelSelection(),
+                panelQuantity: finalPanelCount,
+                panelWattage: wattage
+              });
+              goToNextMissingComponent();
             }}
           >
             <Text style={solarSizeStyles.ctaText}>{ctaTitle}</Text>
@@ -568,50 +684,34 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
     );
   }
 
-  if (step === 'inverterType') {
-    return (
-      <Screen>
-        <Header title="Choose Inverter Type" subtitle={`Matched to your ${toKw(solarKw)} panel setup`} onBack={() => setStep('panelSize')} />
-        <View className="gap-3">
-          {INVERTER_TYPES.map((type) => (
-            <Pressable key={type} className={`rounded-3xl border p-4 ${inverterType === type ? 'border-kaam-yellow bg-kaam-yellow/20' : 'border-kaam-line bg-white'}`} onPress={() => setInverterType(type)}>
-              <Text className="text-base font-extrabold text-kaam-navy">{type}</Text>
-              <Text className="mt-1 text-xs font-bold text-kaam-muted">{type === 'Hybrid' ? 'Solar + battery + grid, recommended for load shedding.' : type === 'On-Grid' ? 'Grid-tied solar only, lower upfront cost.' : 'Standalone system with battery backup.'}</Text>
-            </Pressable>
-          ))}
-          <AppButton title="View Compatible Inverters" onPress={() => setStep('inverterSize')} />
-        </View>
-      </Screen>
-    );
-  }
-
-  if (step === 'inverterSize') {
-    return (
-      <Screen>
-        <Header title="Select Inverter Size" subtitle={product.category === 'battery' ? 'Choose a compatible inverter capacity' : 'Choose inverter capacity'} onBack={() => setStep(product.category === 'panel' ? 'inverterType' : null)} />
-        <View className="gap-4">
-          <OptionGrid options={INVERTER_SIZES} selected={inverterSize} onSelect={setInverterSize} suffix="kW" />
-          <InfoCard title={`${toKw(inverterSize)} selected`} subtitle="Next, choose a compatible inverter model." />
-          <AppButton title="Select Inverter" onPress={() => setStep('inverterSelect')} />
-        </View>
-      </Screen>
-    );
-  }
-
   if (step === 'inverterSelect') {
-    return <ProductListPicker title="Select Inverter" subtitle={`${toKw(inverterSize)} preferred size`} options={inverterOptions} onSelect={(item) => { setSelectedProduct(item); setStep(product.category === 'battery' ? 'panelSize' : 'batteryDecision'); }} />;
-  }
-
-  if (step === 'batteryDecision') {
+    const isLoadingInverters = productsQuery.isLoading ||
+      (Boolean(selectedBattery) && compatibleInverterBrandsQuery.isLoading);
+    const invertersFailed = productsQuery.isError ||
+      (Boolean(selectedBattery) && compatibleInverterBrandsQuery.isError);
     return (
-      <Screen>
-        <Header title="Battery Backup" subtitle="Need backup during load shedding?" onBack={() => setStep(product.category === 'panel' ? 'inverterSelect' : 'panelSize')} />
-        <View className="gap-3">
-          <InfoCard title="Need backup during load shedding?" subtitle="Battery backup keeps essential appliances running." />
-          <AppButton title="Yes, Add Battery" onPress={() => { setBackupDecision('yes'); setStep('batterySelect'); }} />
-          <AppButton title="No, Go to Summary" tone="secondary" onPress={() => { setBackupDecision('no'); goSummary(); }} />
-        </View>
-      </Screen>
+      <ProductListPicker
+        title="Select Inverter"
+        subtitle={selectedBattery
+          ? `Compatible with ${selectedBattery.brandName ?? selectedBattery.brand}`
+          : 'Choose the inverter for your system'}
+        options={inverterOptions}
+        onBack={() => setStep(null)}
+        emptyTitle={isLoadingInverters
+          ? 'Loading compatible inverters...'
+          : selectedBattery
+            ? 'No compatible inverters available'
+            : 'No active products available'}
+        emptySubtitle={invertersFailed
+          ? 'Unable to load live inverter options. Please try again.'
+          : selectedBattery
+            ? `Add an active inverter that is compatible with ${selectedBattery.brandName ?? selectedBattery.brand} batteries in the admin dashboard.`
+            : 'Add matching products in the admin dashboard, then try again.'}
+        onSelect={(item) => {
+          setCustomSystemComponent(item);
+          goToNextMissingComponent();
+        }}
+      />
     );
   }
 
@@ -619,14 +719,14 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
     const inverterBrand = selectedInverter?.brand ?? 'Selected';
     const guidedBatteryOptions = batteryOptions;
     const selectedChoice = guidedBatteryOptions.find((item) => item.id === batteryChoiceId) ?? guidedBatteryOptions[0];
-    if (!selectedChoice) return <Screen><Header title="Select Battery" subtitle={`Compatible with ${inverterBrand}`} onBack={() => setStep('batteryDecision')} /><InfoCard title={compatibleBatteryBrandsQuery.isLoading || productsQuery.isLoading ? 'Loading compatible batteries...' : 'No compatible batteries available'} subtitle={compatibleBatteryBrandsQuery.isError || productsQuery.isError ? 'Unable to load live battery options. Please try again.' : 'Add a compatible active battery product in the admin dashboard.'} /></Screen>;
+    if (!selectedChoice) return <Screen><Header title="Select Battery" subtitle={`Compatible with ${inverterBrand}`} onBack={() => setStep(null)} /><InfoCard title={compatibleBatteryBrandsQuery.isLoading || productsQuery.isLoading ? 'Loading compatible batteries...' : 'No compatible batteries available'} subtitle={compatibleBatteryBrandsQuery.isError || productsQuery.isError ? 'Unable to load live battery options. Please try again.' : 'Add a compatible active battery product in the admin dashboard.'} /></Screen>;
     const capacity = selectedChoice.capacity ?? selectedChoice.specs[0] ?? 'Capacity on request';
     const backupEstimate = selectedChoice.capacity && Number.parseFloat(selectedChoice.capacity) >= 10 ? '7-8 hours' : selectedChoice.capacity && Number.parseFloat(selectedChoice.capacity) < 5 ? '2-3 hours' : '3-4 hours';
 
     return (
       <SafeAreaView style={batterySelectStyles.screen} edges={['top', 'left', 'right']}>
         <View style={batterySelectStyles.header}>
-          <Pressable style={batterySelectStyles.headerButton} onPress={() => setStep('batteryDecision')}>
+          <Pressable style={batterySelectStyles.headerButton} onPress={() => setStep(null)}>
             <ArrowLeft size={22} color="#10213A" strokeWidth={2.4} />
           </Pressable>
           <View style={batterySelectStyles.headerCopy}>
@@ -711,9 +811,8 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
           <Pressable
             style={batterySelectStyles.continueButton}
             onPress={() => {
-              setSelectedProduct(selectedChoice);
-              setBackupDecision('yes');
-              goSummary();
+              setCustomSystemComponent(selectedChoice);
+              goToNextMissingComponent();
             }}
           >
             <Text style={batterySelectStyles.continueText}>Continue</Text>
@@ -788,62 +887,75 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
           ))}
         </View>
 
-        {product.category === 'accessory' && product.description ? <><Text style={detailStyles.sectionTitle}>Description</Text><View style={detailStyles.benefitsCard}><Text style={detailStyles.benefitText}>{product.description}</Text></View></> : null}
+        {(product.category === 'accessory' || product.category === 'ev_charger') && product.description ? <><Text style={detailStyles.sectionTitle}>Description</Text><View style={detailStyles.benefitsCard}><Text style={detailStyles.benefitText}>{product.description}</Text></View></> : null}
         {product.category === 'accessory' && product.usageInstructions ? <><Text style={detailStyles.sectionTitle}>Usage Instructions</Text><View style={detailStyles.benefitsCard}><Text style={detailStyles.benefitText}>{product.usageInstructions}</Text></View></> : null}
         {product.category === 'accessory' && product.packageContents ? <><Text style={detailStyles.sectionTitle}>Package Contents</Text><View style={detailStyles.benefitsCard}><Text style={detailStyles.benefitText}>{product.packageContents}</Text></View></> : null}
 
-        <Text style={detailStyles.sectionTitle}>Benefits</Text>
-        <View style={detailStyles.benefitsCard}>
-          {benefits.map((item) => (
-            <View key={item} style={detailStyles.benefitRow}>
-              <View style={detailStyles.checkDot}>
-                <Check color="#047857" size={12} strokeWidth={2.5} />
-              </View>
-              <Text style={detailStyles.benefitText}>{item}</Text>
+        {product.category === 'accessory' ? (
+          <>
+            <Text style={detailStyles.sectionTitle}>Benefits</Text>
+            <View style={detailStyles.benefitsCard}>
+              {benefits.map((item) => (
+                <View key={item} style={detailStyles.benefitRow}>
+                  <View style={detailStyles.checkDot}>
+                    <Check color="#047857" size={12} strokeWidth={2.5} />
+                  </View>
+                  <Text style={detailStyles.benefitText}>{item}</Text>
+                </View>
+              ))}
             </View>
-          ))}
-        </View>
+          </>
+        ) : null}
 
-        {product.category !== 'accessory' ? <><Text style={detailStyles.sectionTitle}>Compatible with</Text>
-        <View style={detailStyles.compatWrap}>
-          <Text style={detailStyles.compatChip}>Works with 10kW system using about 19 panels</Text>
-          <Text style={detailStyles.compatChip}>Hybrid ready for residential systems</Text>
-        </View></> : null}
-
-        <View style={detailStyles.installCard}>
-          <View style={detailStyles.installCopy}>
-            <Text style={detailStyles.installTitle}>Need installation?</Text>
-            <Text style={detailStyles.installText}>Get matched with KaamAsaan-vetted installers for survey.</Text>
-          </View>
-          <Pressable style={detailStyles.quoteButton}>
-            <Text style={detailStyles.quoteText}>Get Quote</Text>
-          </Pressable>
-        </View>
       </ScrollView>
 
       <Pressable style={[detailStyles.chatButton, { bottom: 74 + getSafeBottomPadding(insets.bottom) }]}>
         <MessageCircle color="#FFFFFF" size={18} strokeWidth={2.2} />
       </Pressable>
 
-      {product.category !== 'accessory' ? <GuidedAddSheet
+      {!isBuilderExcluded(product.category) ? <GuidedAddSheet
         visible={guidedVisible}
         product={product}
-        hasPanels={Boolean(selectedPanels || product.category === 'panel')}
-        hasInverter={Boolean(selectedInverter || product.category === 'inverter')}
-        hasBattery={Boolean(selectedBattery || product.category === 'battery')}
         onClose={() => setGuidedVisible(false)}
         onChoose={handleGuidedChoice}
       /> : null}
 
-      {cartConfirmation ? <View pointerEvents="none" style={{ position: 'absolute', top: 78, alignSelf: 'center', zIndex: 20, borderRadius: 16, backgroundColor: '#ECFDF3', paddingHorizontal: 16, height: 40, flexDirection: 'row', alignItems: 'center', gap: 7 }}><Check color="#15803D" size={16} /><Text style={{ color: '#166534', fontWeight: '800', fontSize: 12 }}>Added to cart</Text></View> : null}
-
       <SafeBottomActionBar style={detailStyles.footer}>
-        <Pressable disabled={product.category === 'accessory' && product.stockStatus === 'out_of_stock'} style={[detailStyles.addButton, product.category === 'accessory' && product.stockStatus === 'out_of_stock' && { opacity: 0.45 }]} onPress={startAddToSystem}>
-          {product.category === 'accessory' ? <ShoppingCart color="#10213A" size={17} /> : null}
-          <Text style={detailStyles.addText}>{product.category === 'accessory' ? product.stockStatus === 'on_request' ? 'Request Product' : product.stockStatus === 'out_of_stock' ? 'Out of Stock' : 'Add to Cart' : 'Add to My System'}</Text>
-        </Pressable>
-        <Pressable style={detailStyles.orderButton} onPress={() => setStep('orderProduct')}>
-          <Text style={detailStyles.orderText}>Order Product</Text>
+        {/* Accessories and EV chargers are order-only — no "Add to My
+            System" and no solar system builder. EV chargers get a
+            "Book Installation" secondary action instead (reuses the same
+            order flow with the installation service option pre-selected;
+            see product_orders.service_option in marketplace.api.ts). */}
+        {!isBuilderExcluded(product.category) ? (
+          <Pressable style={detailStyles.addButton} onPress={startAddToSystem}>
+            <Text style={detailStyles.addText}>Add to My System</Text>
+          </Pressable>
+        ) : product.category === 'ev_charger' && product.stockStatus !== 'out_of_stock' ? (
+          <Pressable
+            style={detailStyles.addButton}
+            onPress={() => { setServiceOption('product-installation'); setStep('orderProduct'); }}
+          >
+            <Text style={detailStyles.addText}>Book Installation</Text>
+          </Pressable>
+        ) : null}
+        <Pressable
+          disabled={isBuilderExcluded(product.category) && product.stockStatus === 'out_of_stock'}
+          style={[
+            detailStyles.orderButton,
+            product.category === 'accessory' && detailStyles.orderButtonSolo,
+            isBuilderExcluded(product.category) && product.stockStatus === 'out_of_stock' && { opacity: 0.45 }
+          ]}
+          onPress={() => { setServiceOption('product-only'); setStep('orderProduct'); }}
+        >
+          <Text style={detailStyles.orderText}>
+            {isBuilderExcluded(product.category) && product.stockStatus === 'out_of_stock'
+              ? 'Out of Stock'
+              : product.category === 'accessory' && product.stockStatus === 'on_request'
+                ? 'Request Product'
+                : product.category === 'ev_charger' && product.stockStatus === 'on_request'
+                  ? 'Request Quote'
+                  : 'Order Product'}
+          </Text>
         </Pressable>
       </SafeBottomActionBar>
     </SafeAreaView>
@@ -866,6 +978,10 @@ const ProductVisual = ({ product }: { product: Product }) => (
       <View style={detailStyles.inverterVisual}>
         <Zap color="#047857" size={32} strokeWidth={2.1} />
       </View>
+    ) : product.category === 'ev_charger' ? (
+      <View style={detailStyles.inverterVisual}>
+        <EvCharger color="#047857" size={32} strokeWidth={2.1} />
+      </View>
     ) : (
       <View style={detailStyles.accessoryVisual}>
         <Sun color="#B07800" size={40} strokeWidth={1.8} />
@@ -887,6 +1003,10 @@ const ProductFallbackVisual = ({ category }: { category: Product['category'] }) 
   ) : category === 'inverter' ? (
     <View style={detailStyles.inverterVisual}>
       <Zap color="#047857" size={32} strokeWidth={2.1} />
+    </View>
+  ) : category === 'ev_charger' ? (
+    <View style={detailStyles.inverterVisual}>
+      <EvCharger color="#047857" size={32} strokeWidth={2.1} />
     </View>
   ) : (
     <View style={detailStyles.accessoryVisual}>
@@ -937,36 +1057,25 @@ const TrustChip = ({ Icon, text, wide }: { Icon: any; text: string; wide?: boole
 const GuidedAddSheet = ({
   visible,
   product,
-  hasPanels,
-  hasInverter,
-  hasBattery,
   onClose,
   onChoose
 }: {
   visible: boolean;
   product: Product;
-  hasPanels: boolean;
-  hasInverter: boolean;
-  hasBattery: boolean;
   onClose: () => void;
   onChoose: (target: 'panels' | 'inverter' | 'batteries' | 'summary') => void;
 }) => {
   const insets = useSafeAreaInsets();
+  // Exactly two choices: the two component groups still missing (spec D and G).
   const options = product.category === 'battery'
     ? [
-        { target: 'panels' as const, Icon: Sun, title: 'Select Panels', helper: 'Choose solar panels that match your battery backup.' },
-        { target: 'inverter' as const, Icon: Zap, title: 'Select Inverter', helper: 'Pick a compatible inverter for charging and backup.' }
+        { target: 'panels' as const, Icon: Sun, title: 'Select Solar Panels' },
+        { target: 'inverter' as const, Icon: Zap, title: 'Select Inverter' }
       ]
-    : product.category === 'panel'
-      ? [
-          { target: 'inverter' as const, Icon: Zap, title: 'Select Inverter', helper: 'Match an inverter size with your selected panels.' },
-          { target: 'batteries' as const, Icon: BatteryCharging, title: 'Select Batteries', helper: 'Add backup storage if you need load-shedding support.' }
-        ]
-      : [
-          { target: 'batteries' as const, Icon: BatteryCharging, title: 'Select Batteries', helper: 'Choose compatible backup batteries for this inverter.' },
-          { target: 'panels' as const, Icon: Sun, title: 'Select Panels', helper: 'Add solar panels to complete your generation setup.' }
-        ];
-  const complete = hasPanels && hasInverter && hasBattery;
+    : [
+        { target: 'inverter' as const, Icon: Zap, title: 'Select Inverter' },
+        { target: 'batteries' as const, Icon: BatteryCharging, title: 'Select Battery' }
+      ];
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -975,45 +1084,27 @@ const GuidedAddSheet = ({
         <View style={[guidedStyles.sheet, { paddingBottom: getSafeBottomPadding(insets.bottom, 22) }]}>
           <View style={guidedStyles.handle} />
           <View style={guidedStyles.header}>
-            <View>
+            <View style={guidedStyles.headerCopy}>
               <Text style={guidedStyles.title}>Complete Your System</Text>
-              <Text style={guidedStyles.subtitle}>Select the remaining components to build a compatible solar setup.</Text>
+              <Text style={guidedStyles.subtitle}>Choose what you would like to select next.</Text>
             </View>
             <Pressable style={guidedStyles.closeButton} onPress={onClose}>
               <X color="#10213A" size={18} strokeWidth={2.4} />
             </Pressable>
           </View>
 
-          <View style={guidedStyles.messageCard}>
-            <Text style={guidedStyles.messageText}>You’ve selected <Text style={guidedStyles.messageStrong}>{product.name}</Text>.</Text>
-            <Text style={guidedStyles.messageSub}>To complete your system, choose:</Text>
-          </View>
-
           <View style={guidedStyles.options}>
-            {options.map(({ target, Icon, title, helper }) => (
+            {options.map(({ target, Icon, title }) => (
               <Pressable key={target} style={guidedStyles.optionCard} onPress={() => onChoose(target)}>
                 <View style={guidedStyles.optionIcon}>
                   <Icon color="#B07800" size={20} strokeWidth={2.3} />
                 </View>
                 <View style={guidedStyles.optionCopy}>
                   <Text style={guidedStyles.optionTitle}>{title}</Text>
-                  <Text style={guidedStyles.optionHelper}>{helper}</Text>
                 </View>
                 <ChevronRight color="#94A3B8" size={20} strokeWidth={2.4} />
               </Pressable>
             ))}
-            {complete ? (
-              <Pressable style={[guidedStyles.optionCard, guidedStyles.summaryCard]} onPress={() => onChoose('summary')}>
-                <View style={guidedStyles.optionIcon}>
-                  <ShieldCheck color="#047857" size={20} strokeWidth={2.3} />
-                </View>
-                <View style={guidedStyles.optionCopy}>
-                  <Text style={guidedStyles.optionTitle}>View System Summary</Text>
-                  <Text style={guidedStyles.optionHelper}>All core components are selected.</Text>
-                </View>
-                <ChevronRight color="#047857" size={20} strokeWidth={2.4} />
-              </Pressable>
-            ) : null}
           </View>
         </View>
       </View>
@@ -1040,8 +1131,9 @@ const guidedStyles = StyleSheet.create({
   },
   handle: { alignSelf: 'center', width: 42, height: 4, borderRadius: 999, backgroundColor: '#D8CBB2', marginBottom: 14 },
   header: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', justifyContent: 'space-between' },
+  headerCopy: { flex: 1 },
   title: { color: '#10213A', fontSize: 20, fontWeight: '900' },
-  subtitle: { marginTop: 5, maxWidth: 268, color: '#64748B', fontSize: 12, fontWeight: '700', lineHeight: 17 },
+  subtitle: { marginTop: 5, color: '#64748B', fontSize: 12, fontWeight: '700', lineHeight: 17 },
   closeButton: {
     width: 34,
     height: 34,
@@ -1050,18 +1142,7 @@ const guidedStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center'
   },
-  messageCard: {
-    marginTop: 14,
-    borderRadius: 18,
-    backgroundColor: '#FFF7E8',
-    borderWidth: 1,
-    borderColor: '#F5D482',
-    padding: 13
-  },
-  messageText: { color: '#10213A', fontSize: 13, fontWeight: '700', lineHeight: 18 },
-  messageStrong: { fontWeight: '900' },
-  messageSub: { marginTop: 5, color: '#7A5600', fontSize: 12, fontWeight: '800' },
-  options: { marginTop: 12, gap: 10 },
+  options: { marginTop: 16, gap: 10 },
   optionCard: {
     minHeight: 76,
     borderRadius: 18,
@@ -1073,7 +1154,6 @@ const guidedStyles = StyleSheet.create({
     paddingHorizontal: 12,
     gap: 11
   },
-  summaryCard: { borderColor: '#A7F3D0', backgroundColor: '#F0FDF4' },
   optionIcon: {
     width: 42,
     height: 42,
@@ -1083,8 +1163,7 @@ const guidedStyles = StyleSheet.create({
     justifyContent: 'center'
   },
   optionCopy: { flex: 1 },
-  optionTitle: { color: '#10213A', fontSize: 14, fontWeight: '900' },
-  optionHelper: { marginTop: 4, color: '#64748B', fontSize: 11, fontWeight: '700', lineHeight: 15 }
+  optionTitle: { color: '#10213A', fontSize: 14, fontWeight: '900' }
 });
 
 const batterySelectStyles = StyleSheet.create({
@@ -1416,6 +1495,7 @@ const detailStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center'
   },
+  orderButtonSolo: { height: 54 },
   orderText: { color: '#FFFFFF', fontSize: 13, fontWeight: '900' }
 });
 

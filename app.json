@@ -48,9 +48,9 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/branding/kaamasaan-native-splash-logo.png",
+          "image": "./assets/branding/logo4-splash.png",
           "backgroundColor": "#FFF5DE",
-          "imageWidth": 220,
+          "imageWidth": 260,
           "resizeMode": "contain"
         }
       ]

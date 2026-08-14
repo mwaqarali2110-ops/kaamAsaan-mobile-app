@@ -1,7 +1,7 @@
 import React from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowRight, BatteryCharging, Cable, Cpu, Grid2X2 } from 'lucide-react-native';
+import { ArrowRight, BatteryCharging, Cable, Cpu, EvCharger, Grid2X2 } from 'lucide-react-native';
 import type { ProductCategory } from '@/types/product.types';
 
 type MarketplaceCategory = {
@@ -9,7 +9,10 @@ type MarketplaceCategory = {
   title: string;
   subtitle: string;
   icon: typeof Cpu;
-  image: ImageSourcePropType;
+  // Categories with a real product photo set `image`; categories without one
+  // (no photographic asset available yet) render their icon large in the
+  // product-stage slot instead — same card shell, no new visual system.
+  image?: ImageSourcePropType;
   routeCategory: ProductCategory;
 };
 
@@ -50,6 +53,13 @@ const marketplaceCategories: MarketplaceCategory[] = [
     icon: Cable,
     image: require('../../../../public/DC wires.jpg'),
     routeCategory: 'accessory'
+  },
+  {
+    id: 'ev_charger',
+    title: 'EV Chargers',
+    subtitle: 'Home and commercial charging',
+    icon: EvCharger,
+    routeCategory: 'ev_charger'
   }
 ];
 
@@ -77,7 +87,11 @@ const MarketplaceCategoryCard = ({ category, onPress }: MarketplaceCategoryCardP
 
       <View style={styles.productStage}>
         <View style={styles.imageBackgroundCircle} />
-        <Image source={category.image} style={[styles.productImage, category.id === 'accessory' && styles.accessoryImage]} />
+        {category.image ? (
+          <Image source={category.image} style={[styles.productImage, category.id === 'accessory' && styles.accessoryImage]} />
+        ) : (
+          <Icon color="#F59A00" size={40} strokeWidth={1.8} />
+        )}
       </View>
 
       <Pressable

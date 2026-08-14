@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { Bookmark, Check, CheckCircle2, ChevronRight, ShoppingCart, Sparkles, Wrench } from 'lucide-react-native';
+import { Bookmark, Check, CheckCircle2, ChevronRight, Package, Sparkles, Wrench } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeImage } from '@/components/ui/SafeImage';
 import type { Product } from '@/types/product.types';
@@ -64,7 +64,7 @@ export const ProductCard = ({ product, selected, compared, onPress, onCompare, v
           {isAccessory ? (
             <>
               <Pressable className="flex-1 flex-row items-center justify-center gap-1" onPress={onPress}><Text className="text-xs font-extrabold text-[#173A86]">View Details</Text><ChevronRight color="#173A86" size={15} /></Pressable>
-              <Pressable disabled={stock.kind === 'out'} className={`h-11 flex-row items-center justify-center gap-1 rounded-xl px-2 ${stock.kind === 'out' ? 'opacity-40' : 'bg-kaam-yellow'}`} onPress={onAdd}><ShoppingCart color={colors.navy} size={17} /><Text className="text-[10px] font-extrabold text-kaam-navy">{stock.kind === 'request' ? 'Request' : 'Add to Cart'}</Text></Pressable>
+              <Pressable disabled={stock.kind === 'out'} className={`h-11 flex-row items-center justify-center gap-1 rounded-xl px-3 ${stock.kind === 'out' ? 'opacity-40' : 'bg-kaam-yellow'}`} onPress={onAdd}><Package color={colors.navy} size={16} /><Text className="text-[10px] font-extrabold text-kaam-navy">{stock.kind === 'request' ? 'Request' : 'Order'}</Text></Pressable>
             </>
           ) : (
             <>

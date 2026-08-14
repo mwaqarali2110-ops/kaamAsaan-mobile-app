@@ -25,6 +25,15 @@ export const normalizeProductCategory = (source: ProductCategorySource): Product
   const combined = `${category} ${detail}`.trim();
 
   if (
+    category === 'ev_charger' ||
+    category === 'ev charger' ||
+    category === 'ev chargers' ||
+    combined.includes('ev charger') ||
+    combined.includes('ev charging') ||
+    combined.includes('car charger')
+  ) return 'ev_charger';
+
+  if (
     category === 'battery' ||
     category === 'batteries' ||
     category === 'solar battery' ||

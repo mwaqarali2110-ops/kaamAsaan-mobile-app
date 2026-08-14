@@ -12,6 +12,12 @@ import {
   type PanelOrientation
 } from '@/utils/calculations';
 import { getRecommendedPackageById, type RecommendedPackage } from '@/utils/packageBuilder';
+import {
+  customSystemComponentForProduct,
+  resolvePanelQuantity,
+  resolvePanelWattage,
+  type CustomSystemComponent
+} from '@/utils/customSystem';
 import type { BatteryConfiguration } from '@/utils/batteryRecommendation';
 import { BATTERY_RECOMMENDATION_ENGINE_VERSION } from '@/utils/commercialRecommendation';
 import type { CleaningEstimate } from '@/utils/cleaningPricing';
@@ -20,7 +26,39 @@ import { promoApi } from '@/services/promo.api';
 import { createInitialPromoState, promoContextSignature, sanitizePromoInput } from '@/utils/promo';
 
 export type InstallationStructureType = 'standard' | 'elevated' | 'ground_mounted' | 'shed';
-export type BookingContext = 'general' | 'solar_package' | 'cleaning' | 'installation' | 'electrical';
+export type BookingContext =
+  | 'general'
+  | 'solar_package'
+  | 'custom_system'
+  | 'cleaning'
+  | 'installation'
+  | 'electrical';
+
+/**
+ * Custom System Builder metadata. The selected products themselves live in the
+ * existing selectedPanels / selectedInverter / selectedBattery fields so there is
+ * only ever one source of truth for a chosen component.
+ */
+export type CustomSystemState = {
+  active: boolean;
+  sourceComponent: CustomSystemComponent | null;
+  selectedComponentOrder: CustomSystemComponent[];
+  panelQuantity: number | null;
+  panelWattage: number | null;
+  batteryQuantity: number;
+};
+
+const createInitialCustomSystemState = (): CustomSystemState => ({
+  active: false,
+  sourceComponent: null,
+  selectedComponentOrder: [],
+  panelQuantity: null,
+  panelWattage: null,
+  batteryQuantity: 1
+});
+
+const appendComponentOrder = (order: CustomSystemComponent[], component: CustomSystemComponent) =>
+  order.includes(component) ? order : [...order, component];
 
 export type InstallationDetails = {
   panelWattage: number;
@@ -60,6 +98,7 @@ type SystemState = {
   selectedRecommendedPackageId: string | null;
   selectedRecommendedPackage: RecommendedPackage | null;
   bookingContext: BookingContext;
+  customSystem: CustomSystemState;
   cleaningEstimate: CleaningEstimate | null;
   installationDetails: InstallationDetails | null;
   promo: PromoState;
@@ -92,6 +131,14 @@ type SystemState = {
   setRecommendedPackages: (packages: RecommendedPackage[]) => void;
   setSelectedRecommendedPackage: (recommendedPackage: RecommendedPackage | null) => void;
   clearSelectedRecommendedPackage: () => void;
+  startCustomSystem: (product: Product) => void;
+  setCustomSystemComponent: (product: Product, options?: { quantity?: number }) => void;
+  setCustomSystemPanelSelection: (selection: {
+    panelProduct: Product | null;
+    panelQuantity: number;
+    panelWattage: number;
+  }) => void;
+  clearCustomSystem: () => void;
   startBooking: (context: BookingContext) => void;
   setCleaningEstimate: (estimate: CleaningEstimate) => void;
   clearCleaningEstimate: () => void;
@@ -135,6 +182,7 @@ export const useSystemStore = create<SystemState>()(persist((set, get) => ({
   selectedRecommendedPackageId: null,
   selectedRecommendedPackage: null,
   bookingContext: 'general',
+  customSystem: createInitialCustomSystemState(),
   cleaningEstimate: null,
   installationDetails: null,
   promo: createInitialPromoState(),
@@ -324,6 +372,117 @@ export const useSystemStore = create<SystemState>()(persist((set, get) => ({
     selectedRecommendedPackageId: null,
     selectedRecommendedPackage: null
   }),
+  /**
+   * "Add to My System" from a marketplace product. Starts a NEW custom build
+   * seeded with only that product, so leftover components from a previous
+   * journey can never make the router skip a step. Never carries a recommended
+   * package (spec Q).
+   */
+  startCustomSystem: (product) => set((state) => {
+    const sourceComponent = customSystemComponentForProduct(product);
+    if (!sourceComponent) return {};
+
+    const isPanel = sourceComponent === 'panel';
+    const panelWattage = isPanel ? resolvePanelWattage(product, state.panelWattage) : null;
+    const panelQuantity = isPanel
+      ? resolvePanelQuantity({
+          panelQuantityOverride: state.panelQuantityOverride,
+          targetSolarKw: state.recommendedSolarKw,
+          panelWattage: panelWattage ?? state.panelWattage
+        })
+      : null;
+
+    return {
+      designStarted: true,
+      selectedPanels: isPanel ? product : null,
+      selectedInverter: sourceComponent === 'inverter' ? product : null,
+      selectedBattery: sourceComponent === 'battery' ? product : null,
+      selectedPanelBrand: isPanel ? product.brandName ?? product.brand ?? null : null,
+      panelWattage: panelWattage ?? state.panelWattage,
+      backupDecision: sourceComponent === 'battery' ? 'yes' : state.backupDecision,
+      recommendedPackages: [],
+      selectedRecommendedPackageId: null,
+      selectedRecommendedPackage: null,
+      bookingContext: 'custom_system',
+      cleaningEstimate: null,
+      installationDetails: null,
+      promo: createInitialPromoState(),
+      customSystem: {
+        active: true,
+        sourceComponent,
+        selectedComponentOrder: [sourceComponent],
+        panelQuantity,
+        panelWattage,
+        batteryQuantity: 1
+      }
+    };
+  }),
+  /** Records one component chosen during a custom build. Never touches the others (spec K). */
+  setCustomSystemComponent: (product, options) => set((state) => {
+    const component = customSystemComponentForProduct(product);
+    if (!component) return {};
+
+    const quantity = Math.max(1, Math.round(options?.quantity ?? 1));
+    const base = {
+      designStarted: true,
+      customSystem: {
+        ...state.customSystem,
+        active: true,
+        sourceComponent: state.customSystem.sourceComponent ?? component,
+        selectedComponentOrder: appendComponentOrder(state.customSystem.selectedComponentOrder, component)
+      }
+    };
+
+    if (component === 'inverter') {
+      return { ...base, selectedInverter: product };
+    }
+
+    if (component === 'battery') {
+      return {
+        ...base,
+        selectedBattery: product,
+        backupDecision: 'yes' as BackupDecision,
+        customSystem: { ...base.customSystem, batteryQuantity: quantity }
+      };
+    }
+
+    const panelWattage = resolvePanelWattage(product, state.panelWattage);
+    const panelQuantity = resolvePanelQuantity({
+      explicitQuantity: options?.quantity,
+      panelQuantityOverride: state.panelQuantityOverride,
+      targetSolarKw: state.recommendedSolarKw,
+      panelWattage
+    });
+    return {
+      ...base,
+      selectedPanels: product,
+      selectedPanelBrand: product.brandName ?? product.brand ?? null,
+      panelWattage,
+      customSystem: { ...base.customSystem, panelQuantity, panelWattage }
+    };
+  }),
+  /** Result of the existing Choose Solar Size / panel step inside a custom build. */
+  setCustomSystemPanelSelection: ({ panelProduct, panelQuantity, panelWattage }) => set((state) => {
+    const quantity = Math.max(1, Math.round(panelQuantity || 1));
+    const wattage = Math.max(1, Math.round(panelWattage || state.panelWattage));
+    return {
+      designStarted: true,
+      selectedPanels: panelProduct ?? state.selectedPanels,
+      selectedPanelBrand: panelProduct?.brandName ?? panelProduct?.brand ?? state.selectedPanelBrand,
+      panelWattage: wattage,
+      panelQuantityOverride: quantity,
+      recommendedSolarKw: (quantity * wattage) / 1000,
+      customSystem: {
+        ...state.customSystem,
+        active: true,
+        sourceComponent: state.customSystem.sourceComponent ?? 'panel',
+        selectedComponentOrder: appendComponentOrder(state.customSystem.selectedComponentOrder, 'panel'),
+        panelQuantity: quantity,
+        panelWattage: wattage
+      }
+    };
+  }),
+  clearCustomSystem: () => set({ customSystem: createInitialCustomSystemState() }),
   startBooking: (bookingContext) => set(() => {
     if (bookingContext === 'cleaning') {
       return {
@@ -346,6 +505,16 @@ export const useSystemStore = create<SystemState>()(persist((set, get) => ({
     if (bookingContext === 'solar_package') {
       return {
         bookingContext,
+        cleaningEstimate: null,
+        installationDetails: null
+      };
+    }
+    if (bookingContext === 'custom_system') {
+      // Keep the custom build intact; it is the payload for this booking.
+      return {
+        bookingContext,
+        selectedRecommendedPackageId: null,
+        selectedRecommendedPackage: null,
         cleaningEstimate: null,
         installationDetails: null
       };
@@ -535,6 +704,7 @@ export const useSystemStore = create<SystemState>()(persist((set, get) => ({
     selectedRecommendedPackageId: null,
     selectedRecommendedPackage: null,
     bookingContext: 'general',
+    customSystem: createInitialCustomSystemState(),
     cleaningEstimate: null,
     installationDetails: null,
     promo: createInitialPromoState()
@@ -566,11 +736,12 @@ export const useSystemStore = create<SystemState>()(persist((set, get) => ({
     selectedRecommendedPackageId: state.selectedRecommendedPackageId,
     selectedRecommendedPackage: state.selectedRecommendedPackage,
     bookingContext: state.bookingContext,
+    customSystem: state.customSystem,
     cleaningEstimate: state.cleaningEstimate,
     installationDetails: state.installationDetails,
     promo: state.promo
   }),
-  version: 6,
+  version: 7,
   migrate: (persistedState) => {
     const state = persistedState as Partial<SystemState> | undefined;
     return {
@@ -586,6 +757,7 @@ export const useSystemStore = create<SystemState>()(persist((set, get) => ({
       selectedRecommendedPackageId: null,
       selectedRecommendedPackage: null,
       bookingContext: state?.bookingContext ?? 'general',
+      customSystem: state?.customSystem ?? createInitialCustomSystemState(),
       promo: state?.promo ?? createInitialPromoState()
     };
   }

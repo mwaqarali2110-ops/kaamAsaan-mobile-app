@@ -30,6 +30,7 @@ import { getMaintenancePlan } from '@/data/maintenancePlans';
 import { useMaintenanceBookingStore } from '@/store/useMaintenanceBookingStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useActiveSurveyJourney } from '@/hooks/useSurveyJourney';
+import { useApiLoader } from '@/hooks/useApiLoader';
 
 const includedServices = [
   'Quarterly panel cleaning',
@@ -102,6 +103,7 @@ export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
   const setSelectedPlan = useMaintenanceBookingStore((state) => state.setSelectedPlan);
   const isNavigatingRef = useRef(false);
   const activeJourneyQuery = useActiveSurveyJourney(userId);
+  const { withApiLoader } = useApiLoader();
   const [showBlockedInfo, setShowBlockedInfo] = useState(Boolean(route.params?.showActiveInstallationBlocked));
   const [checklistSize, setChecklistSize] = useState({ width: 0, height: 0 });
   const [checklistAnimationStarted, setChecklistAnimationStarted] = useState(false);
@@ -139,10 +141,19 @@ export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
       false
     );
 
+    // Stop the loop the moment the screen loses focus, not just on unmount —
+    // native-stack keeps this screen mounted for part of the push/pop
+    // transition, and an in-flight repeat can otherwise still be pumping
+    // frame updates into the SVG node while it's being torn down.
+    const unsubscribeBlur = navigation.addListener?.('blur', () => {
+      cancelAnimation(borderProgress);
+    });
+
     return () => {
+      unsubscribeBlur?.();
       cancelAnimation(borderProgress);
     };
-  }, [borderProgress]);
+  }, [borderProgress, navigation]);
 
   const currentBorderAnimatedProps = useAnimatedProps(() => ({
     strokeDashoffset: -borderProgress.value * checklistPerimeter
@@ -163,7 +174,9 @@ export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
     if (isNavigatingRef.current) return;
     isNavigatingRef.current = true;
 
-    const activeJourney = activeJourneyQuery.data ?? (userId ? (await activeJourneyQuery.refetch()).data : null);
+    const activeJourney = activeJourneyQuery.data ?? (userId
+      ? await withApiLoader(async () => (await activeJourneyQuery.refetch()).data, 'Checking eligibility…')
+      : null);
     if (activeJourney) {
       setShowBlockedInfo(true);
       isNavigatingRef.current = false;

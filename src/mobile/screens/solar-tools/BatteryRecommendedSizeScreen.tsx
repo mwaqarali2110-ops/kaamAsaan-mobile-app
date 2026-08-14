@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, ArrowRight, BatteryCharging, CheckCircle2, Clock3, RefreshCw, ShieldCheck, TrendingUp, Zap } from 'lucide-react-native';
+import { ArrowLeft, BatteryCharging, CheckCircle2, Clock3, RefreshCw, ShieldCheck, TrendingUp, Zap } from 'lucide-react-native';
 import type { Appliance } from '@/types/system.types';
 
 type BatteryRecommendedSizeParams = {
@@ -29,14 +29,6 @@ export const BatteryRecommendedSizeScreen = ({ navigation, route }: any) => {
   const rawEnergyKwh = (totalBackupWatts * backupHours) / 1000;
   const requiredBatteryKwh = (rawEnergyKwh / (batteryEfficiency * depthOfDischarge)) * safetyMargin;
   const recommendedBatteryKwh = getRecommendedBatteryKwh(requiredBatteryKwh);
-  const systemSummaryParams = {
-    selectedAppliances,
-    totalBackupWatts,
-    runningLoadKw,
-    backupHours,
-    rawEnergyKwh,
-    recommendedBatteryKwh
-  };
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -99,11 +91,6 @@ export const BatteryRecommendedSizeScreen = ({ navigation, route }: any) => {
           </Text>
           <Text style={styles.formulaResult}>Recommended size = {formatNumber(recommendedBatteryKwh)} kWh</Text>
         </View>
-
-        <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('SystemSummary', systemSummaryParams)}>
-          <Text style={styles.primaryText}>Continue to System Summary</Text>
-          <ArrowRight color="#111827" size={20} strokeWidth={2.7} />
-        </Pressable>
 
         <Pressable style={styles.secondaryButton} onPress={() => navigation.pop(2)}>
           <ArrowLeft color="#10213A" size={16} strokeWidth={2.4} />

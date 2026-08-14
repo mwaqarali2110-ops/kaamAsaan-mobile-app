@@ -15,8 +15,11 @@ import { DesignSystemFlowScreen } from '@/mobile/screens/design-system/DesignSys
 import { ExploreMarketplaceScreen } from '@/mobile/screens/marketplace/ExploreMarketplaceScreen';
 import { MarketplaceFlowScreen } from '@/mobile/screens/marketplace/MarketplaceFlowScreen';
 import { ProductDetailScreen } from '@/mobile/screens/marketplace/ProductDetailScreen';
+import { ProductOrderSummaryScreen } from '@/mobile/screens/marketplace/ProductOrderSummaryScreen';
+import { OrderPlacedScreen } from '@/mobile/screens/marketplace/OrderPlacedScreen';
 import { MySystemScreen } from '@/mobile/screens/my-system/MySystemScreen';
 import { SystemSummaryScreen } from '@/mobile/screens/my-system/SystemSummaryScreen';
+import { CustomSystemSummaryScreen } from '@/mobile/screens/my-system/CustomSystemSummaryScreen';
 import { MyProjectScreen } from '@/mobile/screens/my-project/MyProjectScreen';
 import { ProfileScreen } from '@/mobile/screens/profile/ProfileScreen';
 import { BookSurveyScreen } from '@/mobile/screens/survey/BookSurveyScreen';
@@ -161,7 +164,10 @@ export const RootNavigator = ({ onReady }: RootNavigatorProps) => {
         <Stack.Screen name="DesignFlow" component={DesignSystemFlowScreen} />
         <Stack.Screen name="MarketplaceFlow" component={MarketplaceFlowScreen} />
         <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
+        <Stack.Screen name="ProductOrderSummary" component={ProductOrderSummaryScreen} />
+        <Stack.Screen name="OrderPlaced" component={OrderPlacedScreen} />
         <Stack.Screen name="SystemSummary" component={SystemSummaryScreen} />
+        <Stack.Screen name="CustomSystemSummary" component={CustomSystemSummaryScreen} />
         <Stack.Screen name="BookSurvey" component={ProtectedBookSurveyScreen} />
         <Stack.Screen name="SurveyConfirmation" component={SurveyConfirmationScreen} />
         <Stack.Screen name="MySolarJourney" component={MySolarJourneyScreen} />

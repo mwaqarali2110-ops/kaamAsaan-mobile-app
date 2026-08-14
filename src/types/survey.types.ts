@@ -1,13 +1,28 @@
 import {
-  SOLAR_JOURNEY_MILESTONES,
-  SOLAR_JOURNEY_MILESTONE_KEYS,
+  CLEANING_JOURNEY_MILESTONES,
+  CLEANING_JOURNEY_MILESTONE_KEYS,
+  INSTALLATION_JOURNEY_MILESTONES,
+  INSTALLATION_JOURNEY_MILESTONE_KEYS,
+  PRODUCT_ORDER_JOURNEY_MILESTONES,
+  PRODUCT_ORDER_JOURNEY_MILESTONE_KEYS,
+  type SolarJourneyKind,
   type SolarJourneyLifecycle,
   type SolarJourneyMilestone,
-} from '../../../backend-development/supabase/contracts/solarJourneyMilestones';
+} from '@/contracts/solarJourneyMilestones';
 
-export const SURVEY_MILESTONE_DEFINITIONS = SOLAR_JOURNEY_MILESTONES;
+// Installation/solar-survey journey remains the default export name for backwards
+// compatibility with existing imports — cleaning and product-order journeys are
+// separate lists (see src/contracts/solarJourneyMilestones.ts).
+export const SURVEY_MILESTONE_DEFINITIONS = INSTALLATION_JOURNEY_MILESTONES;
+export const SURVEY_MILESTONES = INSTALLATION_JOURNEY_MILESTONE_KEYS;
+export {
+  CLEANING_JOURNEY_MILESTONES,
+  CLEANING_JOURNEY_MILESTONE_KEYS,
+  PRODUCT_ORDER_JOURNEY_MILESTONES,
+  PRODUCT_ORDER_JOURNEY_MILESTONE_KEYS,
+};
 export type SurveyMilestone = SolarJourneyMilestone;
-export const SURVEY_MILESTONES = SOLAR_JOURNEY_MILESTONE_KEYS;
+export type SurveyJourneyKind = SolarJourneyKind;
 export type SurveyJourneyLifecycle = SolarJourneyLifecycle;
 export type SurveyMilestoneState = SurveyMilestone | Exclude<SurveyJourneyLifecycle, 'active'>;
 
