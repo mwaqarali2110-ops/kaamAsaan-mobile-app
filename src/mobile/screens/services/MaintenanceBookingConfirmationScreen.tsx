@@ -133,7 +133,7 @@ export const MaintenanceBookingConfirmationScreen = ({ navigation, route }: any)
                   accessibilityLabel="Cancel maintenance request"
                   accessibilityHint="Opens a confirmation dialog for this destructive action"
                 >
-                  <XCircle size={19} color="#A44B4B" />
+                  <XCircle size={20} color="#A44B4B" />
                   <Text style={styles.cancelActionText}>Cancel Request</Text>
                 </Pressable>
               ) : null}
@@ -164,7 +164,7 @@ export const MaintenanceBookingConfirmationScreen = ({ navigation, route }: any)
               showsVerticalScrollIndicator={false}
             >
             <View style={styles.modalIcon}>
-              <XCircle size={25} color="#A44B4B" strokeWidth={2.2} />
+              <XCircle size={24} color="#A44B4B" strokeWidth={2.2} />
             </View>
             <Text style={styles.modalTitle}>Cancel maintenance request?</Text>
             <Text style={styles.modalMessage}>
@@ -217,7 +217,7 @@ export const MaintenanceBookingConfirmationScreen = ({ navigation, route }: any)
                 accessibilityLabel={cancelling ? 'Cancelling maintenance request' : 'Confirm cancel maintenance request'}
                 accessibilityState={{ disabled: cancelling, busy: cancelling }}
               >
-                {cancelling ? <ActivityIndicator size="small" color="#FFFFFF" /> : <XCircle size={17} color="#FFFFFF" />}
+                {cancelling ? <ActivityIndicator size="small" color="#FFFFFF" /> : <XCircle size={16} color="#FFFFFF" />}
                 <Text style={styles.confirmCancelText}>{cancelling ? 'Cancelling...' : 'Cancel Request'}</Text>
               </Pressable>
             </View>
@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
     marginBottom: 14
   },
   modalTitle: { color: '#0F172A', fontSize: 20, lineHeight: 25, fontWeight: '900' },
-  modalMessage: { color: '#64748B', fontSize: 13.5, lineHeight: 20, fontWeight: '600', marginTop: 7 },
+  modalMessage: { color: '#64748B', fontSize: 14, lineHeight: 20, fontWeight: '600', marginTop: 7 },
   reasonLabel: { color: '#334155', fontSize: 12, fontWeight: '800', marginTop: 17, marginBottom: 9 },
   reasonList: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   reasonChip: {
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   reasonChipSelected: { borderColor: '#D9A3A3', backgroundColor: '#FCEAEA' },
-  reasonChipText: { color: '#526174', fontSize: 11.5, fontWeight: '700' },
+  reasonChipText: { color: '#526174', fontSize: 12, fontWeight: '700' },
   reasonChipTextSelected: { color: '#8D3F3F', fontWeight: '800' },
   otherInput: {
     height: 46,

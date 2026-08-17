@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo } from 'react';
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight, ClipboardCheck, Home, PanelsTopLeft, ShoppingBag, Sun, X } from 'lucide-react-native';
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
+import { AppTopBar } from '@/components/ui/AppTopBar';
 import { useActiveSurveyJourney, useLatestSurveyJourney } from '@/hooks/useSurveyJourney';
 import { useAppStore } from '@/store/useAppStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -16,35 +18,43 @@ import { getPrimaryActiveProject } from '@/utils/activeProject';
 
 const myProjectImage = require('../../../../my project.png');
 
+// Not built on the generic <Screen> wrapper because Screen puts everything
+// (including any header passed as a child) inside its ScrollView — AppTopBar
+// needs to stay fixed above the scrolling content, matching every other tab.
 const EmptyProjectScreen = ({ navigation }: any) => (
-  <Screen includeBottomInset={false}>
-    <Header title="My Project" subtitle="Start your solar journey" />
-    <View style={styles.emptyHero}>
-      <View style={styles.illustrationWrap}>
-        <Image source={myProjectImage} style={styles.projectImage} resizeMode="contain" />
-      </View>
+  <SafeAreaView className="flex-1 bg-kaam-cream" edges={['top', 'left', 'right']}>
+    <AppTopBar navigation={navigation} activeRoute="MyProject" />
+    <ScrollView showsVerticalScrollIndicator={false}>
+      <View className="px-4 pb-8">
+        <Header title="My Project" subtitle="Start your solar journey" />
+        <View style={styles.emptyHero}>
+          <View style={styles.illustrationWrap}>
+            <Image source={myProjectImage} style={styles.projectImage} resizeMode="contain" />
+          </View>
 
-      <View style={styles.emptyCopy}>
-        <Text style={styles.emptyEyebrow}>My Project</Text>
-        <Text style={styles.emptyTitle}>Ready to Start Your Solar Journey?</Text>
-        <Text style={styles.emptySubtitle}>
-          Design your solar system and book a survey to get started.
-        </Text>
-      </View>
+          <View style={styles.emptyCopy}>
+            <Text style={styles.emptyEyebrow}>My Project</Text>
+            <Text style={styles.emptyTitle}>Ready to Start Your Solar Journey?</Text>
+            <Text style={styles.emptySubtitle}>
+              Design your solar system and book a survey to get started.
+            </Text>
+          </View>
 
-      <View style={styles.emptyActions}>
-        <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('DesignFlow')}>
-          <PanelsTopLeft color="#10213A" size={18} strokeWidth={2.4} />
-          <Text style={styles.primaryButtonText}>Design My System</Text>
-          <ArrowRight color="#10213A" size={16} strokeWidth={2.5} />
-        </Pressable>
-        <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('Marketplace')}>
-          <ShoppingBag color="#E8A000" size={18} strokeWidth={2.4} />
-          <Text style={styles.secondaryButtonText}>Explore Marketplace</Text>
-        </Pressable>
+          <View style={styles.emptyActions}>
+            <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('DesignFlow')}>
+              <PanelsTopLeft color="#10213A" size={18} strokeWidth={2.4} />
+              <Text style={styles.primaryButtonText}>Design My System</Text>
+              <ArrowRight color="#10213A" size={16} strokeWidth={2.5} />
+            </Pressable>
+            <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('Marketplace')}>
+              <ShoppingBag color="#E8A000" size={18} strokeWidth={2.4} />
+              <Text style={styles.secondaryButtonText}>Explore Marketplace</Text>
+            </Pressable>
+          </View>
+        </View>
       </View>
-    </View>
-  </Screen>
+    </ScrollView>
+  </SafeAreaView>
 );
 
 const CancelledSurveyMotivationCard = ({ navigation, onDismiss }: { navigation: any; onDismiss: () => void }) => (
@@ -56,7 +66,7 @@ const CancelledSurveyMotivationCard = ({ navigation, onDismiss }: { navigation: 
       accessibilityRole="button"
       accessibilityLabel="Dismiss cancelled survey message"
     >
-      <X color="#6B7280" size={17} strokeWidth={2.5} />
+      <X color="#6B7280" size={16} strokeWidth={2.5} />
     </Pressable>
     <View style={styles.motivationIconWrap}>
       <View style={styles.motivationSun}>
@@ -69,9 +79,9 @@ const CancelledSurveyMotivationCard = ({ navigation, onDismiss }: { navigation: 
       Your survey booking was cancelled, but you can start again anytime. Book a new survey and let KaamAsaan help you plan the right solar solution for your home.
     </Text>
     <Pressable style={styles.motivationCta} onPress={() => navigation.navigate('BookSurvey')} accessibilityRole="button">
-      <ClipboardCheck color="#10213A" size={17} strokeWidth={2.4} />
+      <ClipboardCheck color="#10213A" size={16} strokeWidth={2.4} />
       <Text style={styles.motivationCtaText}>Book Survey</Text>
-      <ArrowRight color="#10213A" size={15} strokeWidth={2.6} />
+      <ArrowRight color="#10213A" size={16} strokeWidth={2.6} />
     </Pressable>
   </View>
 );
@@ -118,9 +128,12 @@ export const MyProjectScreen = ({ navigation }: any) => {
 
   if (activeJourney.isLoading || latestJourney.isLoading || activeMaintenancePlan.isLoading || !appHasHydrated || !maintenanceHasHydrated) {
     return (
-      <Screen scroll={false} includeBottomInset={false} className="flex-1 items-center justify-center">
-        <ActivityIndicator color="#F5A623" size="large" />
-        <Text style={styles.loadingText}>{t('project.loading')}</Text>
+      <Screen scroll={false} includeBottomInset={false} className="flex-1">
+        <AppTopBar navigation={navigation} activeRoute="MyProject" />
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator color="#F5A623" size="large" />
+          <Text style={styles.loadingText}>{t('project.loading')}</Text>
+        </View>
       </Screen>
     );
   }
@@ -319,7 +332,7 @@ const styles = StyleSheet.create({
   motivationMessage: {
     marginTop: 8,
     color: '#64748B',
-    fontSize: 12.5,
+    fontSize: 13,
     lineHeight: 18,
     fontWeight: '700'
   },
@@ -350,7 +363,7 @@ const styles = StyleSheet.create({
   },
   emptyFallbackText: {
     color: '#64748B',
-    fontSize: 12.5,
+    fontSize: 13,
     lineHeight: 18,
     fontWeight: '700'
   },

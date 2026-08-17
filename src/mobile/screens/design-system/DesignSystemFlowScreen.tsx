@@ -471,7 +471,7 @@ const RecommendedPackagesStepScreen = ({
               ? 'Our package configuration is being updated. Please retry shortly or request expert support.'
               : 'No valid combination matches your recommended system. You can request expert support and our team will suggest the closest available option.'}</Text>
             <Pressable style={packagesStyles.emptyPackageButton} onPress={onExpertOpinion}>
-              <Headphones color="#10213A" size={17} strokeWidth={2.4} />
+              <Headphones color="#10213A" size={16} strokeWidth={2.4} />
               <Text style={packagesStyles.emptyPackageButtonText}>Get Expert Recommendation</Text>
             </Pressable>
           </View>
@@ -561,7 +561,7 @@ const ProductLine = ({ label, product, size, onEdit }: { label: string; product:
     <View style={packagesStyles.productLineHeader}>
       <Text style={packagesStyles.productLineLabel}>{label}</Text>
       <Pressable style={packagesStyles.productEditButton} onPress={onEdit} accessibilityRole="button" accessibilityLabel={`Edit ${label}`}>
-        <Pencil color="#9A6B00" size={11} strokeWidth={2.4} />
+        <Pencil color="#9A6B00" size={12} strokeWidth={2.4} />
         <Text style={packagesStyles.productEditText}>Edit</Text>
       </Pressable>
     </View>
@@ -696,7 +696,7 @@ const RecommendedPackageCard = ({
             ]}
             accessibilityLabel={`${pkg.title} selected`}
           >
-            <Check color="#FFFFFF" size={11} strokeWidth={3} />
+            <Check color="#FFFFFF" size={12} strokeWidth={3} />
             <Text style={packagesStyles.selectedIndicatorText}>Selected</Text>
           </Animated.View>
         ) : null}
@@ -744,7 +744,7 @@ const RecommendedPackageCard = ({
             accessibilityLabel={`View details for ${pkg.title}`}
           >
             <Text style={packagesStyles.detailsText}>View Details</Text>
-            <ArrowRight color="#10213A" size={15} strokeWidth={2.5} />
+            <ArrowRight color="#10213A" size={16} strokeWidth={2.5} />
           </Pressable>
         </View>
       </Pressable>
@@ -1066,7 +1066,7 @@ const packagesStyles = StyleSheet.create({
   },
   packageSubtitle: {
     color: '#64748B',
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '800',
     marginTop: 3
   },
@@ -1087,7 +1087,7 @@ const packagesStyles = StyleSheet.create({
   miniBadgeGreen: { backgroundColor: '#DCFCE7' },
   miniBadgeText: {
     color: '#7A5600',
-    fontSize: 8,
+    fontSize: 10,
     fontWeight: '900'
   },
   miniBadgeTextBlue: { color: '#1D4ED8' },
@@ -1137,12 +1137,12 @@ const packagesStyles = StyleSheet.create({
   },
   productEditText: {
     color: '#8A6100',
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '900'
   },
   productLineLabel: {
     color: '#C48A00',
-    fontSize: 8.5,
+    fontSize: 10,
     fontWeight: '900',
     letterSpacing: 0.5
   },
@@ -1268,7 +1268,7 @@ const packagesStyles = StyleSheet.create({
   },
   selectionMessageText: {
     color: '#8A5B00',
-    fontSize: 11.5,
+    fontSize: 12,
     lineHeight: 16,
     fontWeight: '800'
   },
@@ -1287,7 +1287,7 @@ const packagesStyles = StyleSheet.create({
   },
   selectedIndicatorText: {
     color: '#FFFFFF',
-    fontSize: 8.5,
+    fontSize: 10,
     fontWeight: '900'
   },
   compactPackageBody: {
@@ -1339,7 +1339,7 @@ const packagesStyles = StyleSheet.create({
   },
   compactPackageTitle: {
     color: '#10213A',
-    fontSize: 17,
+    fontSize: 18,
     lineHeight: 20,
     fontWeight: '900',
     textAlign: 'left',
@@ -1348,7 +1348,7 @@ const packagesStyles = StyleSheet.create({
   compactUnavailableText: {
     marginTop: 3,
     color: '#C2410C',
-    fontSize: 8.5,
+    fontSize: 10,
     fontWeight: '800'
   },
   compactWarrantyRow: {
@@ -1375,7 +1375,7 @@ const packagesStyles = StyleSheet.create({
   },
   compactWarrantyLabel: {
     color: '#64748B',
-    fontSize: 9,
+    fontSize: 10,
     lineHeight: 11,
     fontWeight: '800'
   },
@@ -1457,7 +1457,7 @@ const packagesStyles = StyleSheet.create({
   },
   warrantyLabel: {
     color: '#64748B',
-    fontSize: 8.5,
+    fontSize: 10,
     fontWeight: '800'
   },
   divider: {
@@ -1541,7 +1541,7 @@ const packagesStyles = StyleSheet.create({
   },
   trustText: {
     color: '#047857',
-    fontSize: 10.5,
+    fontSize: 11,
     lineHeight: 13,
     fontWeight: '700',
     marginTop: 2
@@ -1580,7 +1580,7 @@ const packagesStyles = StyleSheet.create({
   },
   reviewText: {
     color: '#10213A',
-    fontSize: 11.5,
+    fontSize: 12,
     fontWeight: '900'
   },
   expertButton: {
@@ -1597,7 +1597,7 @@ const packagesStyles = StyleSheet.create({
   },
   expertText: {
     color: '#10213A',
-    fontSize: 11.5,
+    fontSize: 12,
     fontWeight: '900'
   },
   modalOverlay: {
@@ -1643,7 +1643,7 @@ const packagesStyles = StyleSheet.create({
   },
   resetPackageText: {
     color: '#8A6100',
-    fontSize: 9.5,
+    fontSize: 10,
     fontWeight: '900'
   },
   detailsEyebrow: {
@@ -1680,14 +1680,14 @@ const packagesStyles = StyleSheet.create({
   },
   batteryCapacityWarningTitle: {
     color: '#8A5600',
-    fontSize: 10.5,
+    fontSize: 11,
     lineHeight: 14,
     fontWeight: '900'
   },
   batteryCapacityWarningMeta: {
     marginTop: 3,
     color: '#9A6B00',
-    fontSize: 9.5,
+    fontSize: 10,
     fontWeight: '800'
   },
   editorOverlay: {
@@ -1715,7 +1715,7 @@ const packagesStyles = StyleSheet.create({
   },
   editorEyebrow: {
     color: '#B77900',
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '900',
     letterSpacing: 0.5,
     textTransform: 'uppercase'
@@ -1773,14 +1773,14 @@ const packagesStyles = StyleSheet.create({
   editorProductMeta: {
     marginTop: 3,
     color: '#475569',
-    fontSize: 9.5,
+    fontSize: 10,
     lineHeight: 13,
     fontWeight: '800'
   },
   editorProductWarranty: {
     marginTop: 2,
     color: '#64748B',
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '700'
   },
   editorProductBottomRow: {
@@ -1792,12 +1792,12 @@ const packagesStyles = StyleSheet.create({
   },
   editorProductPrice: {
     color: '#10213A',
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '900'
   },
   editorAvailable: {
     color: '#0F8F54',
-    fontSize: 8.5,
+    fontSize: 10,
     fontWeight: '900'
   },
   editorRadio: {
@@ -1851,7 +1851,7 @@ const packagesStyles = StyleSheet.create({
   editorQuantityMeta: {
     marginTop: 3,
     color: '#8A6100',
-    fontSize: 9.5,
+    fontSize: 10,
     fontWeight: '800'
   },
   editorQuantityControl: {
@@ -1953,11 +1953,11 @@ const ApplianceStepScreen = ({ store, onPrevious, onContinue }: { store: any; on
     <SafeAreaView style={applianceStyles.shell} edges={['top']}>
       <View style={applianceStyles.topbar}>
         <Pressable style={applianceStyles.topIconButton} onPress={onPrevious} accessibilityLabel="Back">
-          <ArrowLeft color="#172031" size={15} strokeWidth={2.4} />
+          <ArrowLeft color="#172031" size={16} strokeWidth={2.4} />
         </Pressable>
         <Text style={applianceStyles.topTitle}>Solar Size</Text>
         <View style={applianceStyles.topIconButton}>
-          <Zap color="#F5B700" size={15} strokeWidth={2.3} />
+          <Zap color="#F5B700" size={16} strokeWidth={2.3} />
         </View>
       </View>
 
@@ -2235,7 +2235,7 @@ const SolarRecommendationStepScreen = ({ navigation, store, onPrevious, onContin
         <Text style={solarStyles.runningLoad}>Running Load: <Text style={solarStyles.runningLoadStrong}>{runningLoadKw.toFixed(1)} kW</Text></Text>
 
         <Pressable style={solarStyles.recalculateButton} onPress={store.calculateRecommendation}>
-          <RotateCcw color="#253247" size={15} strokeWidth={2.2} />
+          <RotateCcw color="#253247" size={16} strokeWidth={2.2} />
           <Text style={solarStyles.recalculateText}>Recalculate</Text>
         </Pressable>
 
@@ -2689,7 +2689,7 @@ const QuantityStepper = ({ value, onChange }: { value: number; onChange: (quanti
       accessibilityRole="button"
       accessibilityLabel="Decrease quantity"
     >
-      <Minus color={value <= 1 ? '#CBD5E1' : '#10213A'} size={15} strokeWidth={2.5} />
+      <Minus color={value <= 1 ? '#CBD5E1' : '#10213A'} size={16} strokeWidth={2.5} />
     </Pressable>
     <Text style={packagesStyles.editorQuantityValue}>{value}</Text>
     <Pressable
@@ -2698,7 +2698,7 @@ const QuantityStepper = ({ value, onChange }: { value: number; onChange: (quanti
       accessibilityRole="button"
       accessibilityLabel="Increase quantity"
     >
-      <Plus color="#10213A" size={15} strokeWidth={2.5} />
+      <Plus color="#10213A" size={16} strokeWidth={2.5} />
     </Pressable>
   </View>
 );
@@ -2778,7 +2778,7 @@ const PackageComponentEditorModal = ({
                       source={product.image ? { uri: product.image } : undefined}
                       style={packagesStyles.editorProductImage}
                       resizeMode="contain"
-                      fallback={<ProductIcon color="#B77900" size={27} strokeWidth={1.9} />}
+                      fallback={<ProductIcon color="#B77900" size={28} strokeWidth={1.9} />}
                     />
                   </View>
                   <View style={packagesStyles.editorProductCopy}>
@@ -2875,7 +2875,7 @@ const RecommendedSystemStepScreen = ({
           </View>
           <View style={recommendedStyles.specPane}>
             <View style={recommendedStyles.specRow}>
-              <View style={recommendedStyles.specIcon}><Sun color="#F5A400" size={15} strokeWidth={2.4} /></View>
+              <View style={recommendedStyles.specIcon}><Sun color="#F5A400" size={16} strokeWidth={2.4} /></View>
               <View>
                 <Text style={recommendedStyles.specValue}>{solarSize} kW</Text>
                 <Text style={recommendedStyles.specLabel}>Solar Panels</Text>
@@ -2883,7 +2883,7 @@ const RecommendedSystemStepScreen = ({
             </View>
             <View style={recommendedStyles.specDivider} />
             <View style={recommendedStyles.specRow}>
-              <View style={recommendedStyles.specIcon}><Zap color="#F5A400" size={15} strokeWidth={2.4} /></View>
+              <View style={recommendedStyles.specIcon}><Zap color="#F5A400" size={16} strokeWidth={2.4} /></View>
               <View>
                 <Text style={recommendedStyles.specValue}>{inverterSize} kW</Text>
                 <Text style={recommendedStyles.specLabel}>Inverter</Text>
@@ -2891,7 +2891,7 @@ const RecommendedSystemStepScreen = ({
             </View>
             <View style={recommendedStyles.specDivider} />
             <View style={recommendedStyles.specRow}>
-              <View style={recommendedStyles.specIcon}><BatteryCharging color="#F5A400" size={15} strokeWidth={2.4} /></View>
+              <View style={recommendedStyles.specIcon}><BatteryCharging color="#F5A400" size={16} strokeWidth={2.4} /></View>
               <View>
                 <Text style={recommendedStyles.specValue}>{batterySize} kWh</Text>
                 <Text style={recommendedStyles.specLabel}>Battery Bank</Text>
@@ -3119,7 +3119,7 @@ const BatteryChoiceStepScreen = ({
           <Image source={batteryBackupHeroImage} style={batteryChoiceStyles.heroImage} resizeMode="cover" />
         </View>
         <Pressable style={[batteryChoiceStyles.optionCard, selected !== 'no' && batteryChoiceStyles.optionSelected]} onPress={handleYes}>
-          <View style={batteryChoiceStyles.checkIcon}><Check color="#FFFFFF" size={23} strokeWidth={2.8} /></View>
+          <View style={batteryChoiceStyles.checkIcon}><Check color="#FFFFFF" size={24} strokeWidth={2.8} /></View>
           <View style={batteryChoiceStyles.optionCopy}>
             <Text style={batteryChoiceStyles.optionTitle}>Yes, I want backup</Text>
             <Text style={batteryChoiceStyles.optionSub}>Let's calculate my battery size</Text>
@@ -3127,7 +3127,7 @@ const BatteryChoiceStepScreen = ({
           <View style={batteryChoiceStyles.badge}><Text style={batteryChoiceStyles.badgeText}>RECOMMENDED</Text></View>
         </Pressable>
         <Pressable style={batteryChoiceStyles.optionCard} onPress={handleNo}>
-          <View style={batteryChoiceStyles.xIcon}><X color="#FFFFFF" size={23} strokeWidth={2.8} /></View>
+          <View style={batteryChoiceStyles.xIcon}><X color="#FFFFFF" size={24} strokeWidth={2.8} /></View>
           <View style={batteryChoiceStyles.optionCopy}>
             <Text style={batteryChoiceStyles.optionTitle}>No, I don't need backup</Text>
             <Text style={batteryChoiceStyles.optionSub}>I'll continue without battery</Text>
@@ -3279,7 +3279,7 @@ const LegacyBackupCalculationDetailsCard = ({
           <Text style={backupStyles.detailsActionText}>{expanded ? 'Hide' : 'View'}</Text>
           <ChevronDown
             color="#C48A00"
-            size={15}
+            size={16}
             strokeWidth={2.5}
             style={expanded && backupStyles.chevronUp}
           />
@@ -3300,7 +3300,7 @@ const LegacyBackupCalculationDetailsCard = ({
                   <View key={item.id}>
                     <View style={backupStyles.calcRow}>
                       <View style={backupStyles.calcIcon}>
-                        <Icon color="#B98900" size={13} strokeWidth={2} />
+                        <Icon color="#B98900" size={12} strokeWidth={2} />
                       </View>
                       <View style={backupStyles.calcCopy}>
                         <Text style={backupStyles.calcName} numberOfLines={1}>{item.name}</Text>
@@ -3447,7 +3447,7 @@ const CalculationDetailsAttentionRow = ({ onPress }: { onPress: () => void }) =>
         }}
       >
         <View style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center' }}>
-          <ClipboardList size={19} color="#667085" strokeWidth={2.15} />
+          <ClipboardList size={20} color="#667085" strokeWidth={2.15} />
           <Text
             numberOfLines={1}
             ellipsizeMode="tail"
@@ -3517,7 +3517,7 @@ const CalculationDetailsAttentionRow = ({ onPress }: { onPress: () => void }) =>
           alignItems: 'center',
         }}
       >
-        <ClipboardList size={19} color="#667085" strokeWidth={2.15} />
+        <ClipboardList size={20} color="#667085" strokeWidth={2.15} />
         <Text
           numberOfLines={1}
           ellipsizeMode="tail"
@@ -3611,11 +3611,11 @@ const BackupAppliancesStepScreen = ({ store, onPrevious, onContinue }: { store: 
     <SafeAreaView style={applianceStyles.shell} edges={['top']}>
       <View style={applianceStyles.topbar}>
         <Pressable style={applianceStyles.topIconButton} onPress={onPrevious} accessibilityLabel="Back">
-          <ArrowLeft color="#172031" size={15} strokeWidth={2.4} />
+          <ArrowLeft color="#172031" size={16} strokeWidth={2.4} />
         </Pressable>
         <Text style={applianceStyles.topTitle}>Battery Size</Text>
         <View style={applianceStyles.topIconButton}>
-          <Zap color="#F5B700" size={15} strokeWidth={2.3} />
+          <Zap color="#F5B700" size={16} strokeWidth={2.3} />
         </View>
       </View>
 
@@ -4248,7 +4248,7 @@ const backupPlanStyles = StyleSheet.create({
   partialOptionMeta: {
     marginTop: 3,
     color: '#64748B',
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '700'
   },
   partialOptionCoverage: {
@@ -4332,7 +4332,7 @@ const backupPlanStyles = StyleSheet.create({
   heroRecommendationLabel: {
     alignSelf: 'flex-start',
     color: '#15803D',
-    fontSize: 8.5,
+    fontSize: 10,
     fontWeight: '900',
     letterSpacing: 0.5,
     marginBottom: 2
@@ -4412,7 +4412,7 @@ const backupPlanStyles = StyleSheet.create({
   },
   productBrand: {
     color: '#A27500',
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '900'
   },
   productModel: {
@@ -4424,7 +4424,7 @@ const backupPlanStyles = StyleSheet.create({
   productQuantity: {
     marginTop: 2,
     color: '#64748B',
-    fontSize: 8.5,
+    fontSize: 10,
     fontWeight: '800'
   },
   productPrice: {
@@ -4451,7 +4451,7 @@ const backupPlanStyles = StyleSheet.create({
   },
   statLabel: {
     color: '#A27500',
-    fontSize: 8.3,
+    fontSize: 10,
     fontWeight: '900',
     textAlign: 'center',
     lineHeight: 11
@@ -4465,14 +4465,14 @@ const backupPlanStyles = StyleSheet.create({
   statSub: {
     marginTop: 4,
     color: '#64748B',
-    fontSize: 8.5,
+    fontSize: 10,
     fontWeight: '800',
     textAlign: 'center'
   },
   explanationText: {
     marginTop: 14,
     color: '#46566C',
-    fontSize: 10.5,
+    fontSize: 11,
     lineHeight: 15,
     fontWeight: '700',
     textAlign: 'center'
@@ -4487,19 +4487,19 @@ const backupPlanStyles = StyleSheet.create({
   },
   whyTitle: {
     color: '#172031',
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '900',
     marginBottom: 2
   },
   whyText: {
     color: '#46566C',
-    fontSize: 9.2,
+    fontSize: 10,
     lineHeight: 13,
     fontWeight: '700'
   },
   preliminaryDisclaimer: {
     color: '#64748B',
-    fontSize: 9.5,
+    fontSize: 10,
     lineHeight: 14,
     fontWeight: '700',
     textAlign: 'center'
@@ -4534,7 +4534,7 @@ const backupPlanStyles = StyleSheet.create({
   },
   selectedLabel: {
     color: '#16A34A',
-    fontSize: 7.5,
+    fontSize: 10,
     fontWeight: '900',
     marginBottom: 2
   },
@@ -4546,20 +4546,20 @@ const backupPlanStyles = StyleSheet.create({
   optionBackupTime: {
     marginTop: 3,
     color: '#C48A00',
-    fontSize: 9.5,
+    fontSize: 10,
     fontWeight: '900',
     textAlign: 'center'
   },
   optionTier: {
     marginTop: 2,
     color: '#A27500',
-    fontSize: 8.5,
+    fontSize: 10,
     fontWeight: '900'
   },
   optionNote: {
     marginTop: 3,
     color: '#64748B',
-    fontSize: 8.2,
+    fontSize: 10,
     fontWeight: '800',
     lineHeight: 11,
     textAlign: 'center'
@@ -4643,7 +4643,7 @@ const recommendedStyles = StyleSheet.create({
   },
   subtitle: {
     color: '#6B7D93',
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '800',
     textAlign: 'center'
   },
@@ -4694,7 +4694,7 @@ const recommendedStyles = StyleSheet.create({
   },
   specLabel: {
     color: '#64748B',
-    fontSize: 8.5,
+    fontSize: 10,
     fontWeight: '800',
     marginTop: 1
   },
@@ -4706,7 +4706,7 @@ const recommendedStyles = StyleSheet.create({
   designedText: {
     textAlign: 'center',
     color: '#46566C',
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '900',
     marginTop: 1
   },
@@ -4726,13 +4726,13 @@ const recommendedStyles = StyleSheet.create({
   },
   exploreText: {
     color: '#111827',
-    fontSize: 12.5,
+    fontSize: 13,
     fontWeight: '900'
   },
   trustText: {
     textAlign: 'center',
     color: '#94A3B8',
-    fontSize: 9.2,
+    fontSize: 10,
     fontWeight: '900'
   },
   footer: {
@@ -4862,7 +4862,7 @@ const roofStyles = StyleSheet.create({
   heroCopy: { marginTop: 4, textAlign: 'center', color: '#6B7280', fontSize: 12, fontWeight: '900', lineHeight: 17 },
   metricCard: { minHeight: 90, borderRadius: 16, backgroundColor: '#FFFFFF', padding: 16, justifyContent: 'center' },
   metricLabel: { color: '#A27500', fontSize: 11, fontWeight: '900', letterSpacing: 0.4 },
-  metricValue: { marginTop: 6, color: '#1F2A3D', fontSize: 23, fontWeight: '900' },
+  metricValue: { marginTop: 6, color: '#1F2A3D', fontSize: 24, fontWeight: '900' },
   metricSub: { marginTop: 6, color: '#64748B', fontSize: 12, fontWeight: '500' },
   selectedPanelText: { marginTop: 8, color: '#475569', fontSize: 12, fontWeight: '800', lineHeight: 16 },
   wattageSelector: { marginTop: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
@@ -4910,16 +4910,16 @@ const batteryChoiceStyles = StyleSheet.create({
   optionTitle: { color: '#172031', fontSize: 14, fontWeight: '900' },
   optionSub: { marginTop: 4, color: '#64748B', fontSize: 12, fontWeight: '800' },
   badge: { alignSelf: 'flex-start', borderRadius: 999, backgroundColor: '#FFF0BC', paddingHorizontal: 8, paddingVertical: 4 },
-  badgeText: { color: '#A27500', fontSize: 8, fontWeight: '900' },
+  badgeText: { color: '#A27500', fontSize: 10, fontWeight: '900' },
   laterText: { marginTop: 12, textAlign: 'center', color: '#64748B', fontSize: 12, fontWeight: '800' }
 });
 
 const backupStyles = StyleSheet.create({
   content: { paddingHorizontal: 16, paddingBottom: 116, gap: 7 },
-  title: { color: '#172031', fontSize: 19, fontWeight: '900', letterSpacing: -0.3 },
+  title: { color: '#172031', fontSize: 20, fontWeight: '900', letterSpacing: -0.3 },
   subtitle: { marginTop: 6, color: '#46566C', fontSize: 12, fontWeight: '600', lineHeight: 16 },
   tableHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 46, paddingRight: 20 },
-  headerText: { color: '#64748B', fontSize: 9, fontWeight: '900' },
+  headerText: { color: '#64748B', fontSize: 10, fontWeight: '900' },
   rows: { gap: 6 },
   rowCard: { minHeight: 50, borderRadius: 14, backgroundColor: '#FFFFFF', paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', gap: 7 },
   rowSelected: { borderWidth: 1.2, borderColor: 'rgba(245,183,0,0.45)', backgroundColor: '#FFF9EB' },
@@ -4927,8 +4927,8 @@ const backupStyles = StyleSheet.create({
   checkboxSelected: { backgroundColor: '#F5B700', borderColor: '#F5B700' },
   rowIcon: { width: 28, height: 28, borderRadius: 8, backgroundColor: '#FFF3D8', alignItems: 'center', justifyContent: 'center' },
   rowCopy: { flex: 1, minWidth: 0 },
-  rowName: { color: '#172031', fontSize: 10.5, fontWeight: '900' },
-  rowWatts: { marginTop: 1, color: '#64748B', fontSize: 7.5, fontWeight: '800' },
+  rowName: { color: '#172031', fontSize: 11, fontWeight: '900' },
+  rowWatts: { marginTop: 1, color: '#64748B', fontSize: 10, fontWeight: '800' },
   qtyPill: { width: 62, height: 27, borderRadius: 999, borderWidth: 1, borderColor: '#DEE5EF', backgroundColor: '#F8FAFC', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
   qtyButton: { color: '#94A3B8', fontSize: 14, fontWeight: '900' },
   qtyValue: { color: '#172031', fontSize: 11, fontWeight: '900' },
@@ -4939,7 +4939,7 @@ const backupStyles = StyleSheet.create({
   capacityCard: { minHeight: 58, borderRadius: 14, borderWidth: 1.2, borderColor: 'rgba(245,183,0,0.4)', backgroundColor: '#FFF9EB', padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   capacityTitle: { color: '#172031', fontSize: 13, fontWeight: '900' },
   capacitySub: { marginTop: 5, color: '#64748B', fontSize: 10, fontWeight: '800' },
-  capacityValue: { color: '#D89100', fontSize: 21, fontWeight: '900' },
+  capacityValue: { color: '#D89100', fontSize: 22, fontWeight: '900' },
   detailsCard: {
     minHeight: 50,
     borderRadius: 14,
@@ -4958,14 +4958,14 @@ const backupStyles = StyleSheet.create({
   detailsAction: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   detailsActionText: { color: '#C48A00', fontSize: 11, fontWeight: '900' },
   chevronUp: { transform: [{ rotate: '180deg' }] },
-  detailsSheetTitle: { color: '#172031', fontSize: 17, lineHeight: 22, fontWeight: '900' },
-  detailsSheetSubtitle: { marginTop: 6, color: '#64748B', fontSize: 11.5, lineHeight: 16, fontWeight: '700' },
+  detailsSheetTitle: { color: '#172031', fontSize: 18, lineHeight: 22, fontWeight: '900' },
+  detailsSheetSubtitle: { marginTop: 6, color: '#64748B', fontSize: 12, lineHeight: 16, fontWeight: '700' },
   detailsScroll: { flexShrink: 1 },
   detailsBody: { marginTop: 14, gap: 9 },
   emptyDetails: { color: '#64748B', fontSize: 12, fontWeight: '700', lineHeight: 17 },
   calcSection: { borderRadius: 12, borderWidth: 1, borderColor: 'rgba(243,210,122,0.5)', backgroundColor: '#FFFDF8', padding: 10 },
-  calcSectionTitle: { color: '#172031', fontSize: 12.5, fontWeight: '900' },
-  calcSectionFormula: { marginTop: 2, marginBottom: 8, color: '#64748B', fontSize: 10.5, lineHeight: 15, fontWeight: '700' },
+  calcSectionTitle: { color: '#172031', fontSize: 13, fontWeight: '900' },
+  calcSectionFormula: { marginTop: 2, marginBottom: 8, color: '#64748B', fontSize: 11, lineHeight: 15, fontWeight: '700' },
   calcRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   calcIcon: { width: 24, height: 24, borderRadius: 8, backgroundColor: '#FFF3D8', alignItems: 'center', justifyContent: 'center' },
   calcCopy: { flex: 1, minWidth: 0 },
@@ -4976,10 +4976,10 @@ const backupStyles = StyleSheet.create({
   totalRow: { minHeight: 42, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(243,210,122,0.5)', backgroundColor: '#FFFFFF', paddingHorizontal: 10, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   totalCopy: { flex: 1, minWidth: 0 },
   totalLabel: { flex: 1, color: '#172031', fontSize: 11, fontWeight: '900' },
-  totalHelper: { marginTop: 2, color: '#64748B', fontSize: 9.5, fontWeight: '700' },
+  totalHelper: { marginTop: 2, color: '#64748B', fontSize: 10, fontWeight: '700' },
   totalValues: { alignItems: 'flex-end' },
   totalWh: { color: '#334155', fontSize: 11, fontWeight: '900' },
-  totalValue: { color: '#334155', fontSize: 11.5, fontWeight: '900', textAlign: 'right' },
+  totalValue: { color: '#334155', fontSize: 12, fontWeight: '900', textAlign: 'right' },
   totalKwh: { marginTop: 2, color: '#64748B', fontSize: 10, fontWeight: '800' },
   totalHighlight: { color: '#D89100' },
   addOther: { height: 34, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 5 },
@@ -5066,7 +5066,7 @@ const solarStyles = StyleSheet.create({
   },
   title: {
     color: '#1F2A3D',
-    fontSize: 19,
+    fontSize: 20,
     fontWeight: '900',
     letterSpacing: -0.45
   },
@@ -5131,7 +5131,7 @@ const solarStyles = StyleSheet.create({
     letterSpacing: -1.7
   },
   sizeUnit: {
-    fontSize: 27,
+    fontSize: 28,
     letterSpacing: -1
   },
   sizeLabel: {
@@ -5179,7 +5179,7 @@ const solarStyles = StyleSheet.create({
   insightText: {
     color: '#1F2A3D',
     textAlign: 'center',
-    fontSize: 9.5,
+    fontSize: 10,
     fontWeight: '800'
   },
   chartCard: {
@@ -5208,13 +5208,13 @@ const solarStyles = StyleSheet.create({
   },
   chartTitle: {
     color: '#101828',
-    fontSize: 14.5,
+    fontSize: 15,
     fontWeight: '900'
   },
   chartSubtitle: {
     marginTop: 6,
     color: '#667085',
-    fontSize: 10.5,
+    fontSize: 11,
     lineHeight: 15,
     fontWeight: '600'
   },
@@ -5287,7 +5287,7 @@ const solarStyles = StyleSheet.create({
   },
   productionTooltipTime: {
     color: '#667085',
-    fontSize: 9.5,
+    fontSize: 10,
     lineHeight: 11,
     fontWeight: '800'
   },
@@ -5302,7 +5302,7 @@ const solarStyles = StyleSheet.create({
     marginTop: 2,
     color: '#667085',
     textAlign: 'center',
-    fontSize: 9.8,
+    fontSize: 10,
     lineHeight: 14,
     fontWeight: '600',
     paddingHorizontal: 4
@@ -5495,7 +5495,7 @@ const applianceStyles = StyleSheet.create({
     maxWidth: 260,
     color: '#10213A',
     textAlign: 'left',
-    fontSize: 21,
+    fontSize: 22,
     fontWeight: '900',
     lineHeight: 23,
     letterSpacing: -0.55
@@ -5515,7 +5515,7 @@ const applianceStyles = StyleSheet.create({
   },
   sectionTitle: {
     color: '#64748B',
-    fontSize: 8,
+    fontSize: 10,
     fontWeight: '900',
     letterSpacing: 0.8,
     paddingHorizontal: 14,
@@ -5581,13 +5581,13 @@ const applianceStyles = StyleSheet.create({
   },
   cardTitle: {
     color: '#10213A',
-    fontSize: 10.2,
+    fontSize: 10,
     fontWeight: '900',
     lineHeight: 13
   },
   cardWatts: {
     color: '#64748B',
-    fontSize: 7.6,
+    fontSize: 10,
     fontWeight: '800'
   },
   stepper: {
@@ -5631,7 +5631,7 @@ const applianceStyles = StyleSheet.create({
     minWidth: 10,
     color: '#10213A',
     textAlign: 'center',
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '900'
   },
   hoursPill: {
@@ -5701,7 +5701,7 @@ const applianceStyles = StyleSheet.create({
   },
   addOtherText: {
     color: '#172031',
-    fontSize: 8.5,
+    fontSize: 10,
     fontWeight: '900'
   },
   addOtherPlus: {
@@ -5757,7 +5757,7 @@ const applianceStyles = StyleSheet.create({
   backupSummaryTitle: {
     flex: 1,
     color: '#10213A',
-    fontSize: 11.5,
+    fontSize: 12,
     lineHeight: 15,
     fontWeight: '900'
   },
@@ -5771,7 +5771,7 @@ const applianceStyles = StyleSheet.create({
   },
   backupSummaryBadgeText: {
     color: '#A66F00',
-    fontSize: 8,
+    fontSize: 10,
     fontWeight: '900'
   },
   backupSummaryGrid: {
@@ -5798,26 +5798,26 @@ const applianceStyles = StyleSheet.create({
   },
   backupSummaryLabel: {
     color: '#7A5A10',
-    fontSize: 7.8,
+    fontSize: 10,
     fontWeight: '800'
   },
   backupSummaryValue: {
     marginTop: 3,
     color: '#10213A',
-    fontSize: 10.2,
+    fontSize: 10,
     fontWeight: '900'
   },
   backupSummaryHelper: {
     marginTop: 7,
     color: '#64748B',
-    fontSize: 8.8,
+    fontSize: 10,
     lineHeight: 12,
     fontWeight: '700'
   },
   backupSummaryHint: {
     textAlign: 'center',
     color: '#7A5A10',
-    fontSize: 8.8,
+    fontSize: 10,
     fontWeight: '800'
   },
   footer: {
@@ -5868,7 +5868,7 @@ const applianceStyles = StyleSheet.create({
   },
   primaryButtonText: {
     color: '#18202D',
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '900'
   },
   validationText: {

@@ -239,7 +239,7 @@ export const TopNotificationBanner = ({
         accessibilityLabel={`Open notification: ${activeNotification.title}`}
       >
         <View style={styles.iconWrap}>
-          <Bell color="#A86F00" size={19} strokeWidth={2.3} />
+          <Bell color="#A86F00" size={20} strokeWidth={2.3} />
           {!activeNotification.isRead ? <View style={styles.unreadDot} /> : null}
         </View>
         <View style={styles.copy}>
@@ -314,6 +314,6 @@ const styles = StyleSheet.create({
   },
   copy: { flex: 1, minWidth: 0 },
   title: { color: '#10213A', fontSize: 15, lineHeight: 20, fontWeight: '700' },
-  message: { marginTop: 2, color: '#64748B', fontSize: 12.5, lineHeight: 17, fontWeight: '500' },
+  message: { marginTop: 2, color: '#64748B', fontSize: 13, lineHeight: 17, fontWeight: '500' },
   closeButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 14, marginRight: 2 }
 });

@@ -184,7 +184,9 @@
     "batteries": "Batteries",
     "batterySubtitle": "Backup power when the grid goes out",
     "accessories": "Solar Accessories",
-    "accessoriesSubtitle": "Structure and accessories"
+    "accessoriesSubtitle": "Structure and accessories",
+    "evCharger": "EV Chargers",
+    "evChargerSubtitle": "Home and commercial charging"
   },
   "tools": {
     "solarSize": "Solar Size Tool",

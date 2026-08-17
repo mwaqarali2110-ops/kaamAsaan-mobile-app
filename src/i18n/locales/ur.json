@@ -184,7 +184,9 @@
     "batteries": "بیٹریز",
     "batterySubtitle": "لوڈ شیڈنگ میں بیک اَپ پاور",
     "accessories": "سولر ایکسیسریز",
-    "accessoriesSubtitle": "سٹرکچر اور ایکسیسریز"
+    "accessoriesSubtitle": "سٹرکچر اور ایکسیسریز",
+    "evCharger": "ای وی چارجرز",
+    "evChargerSubtitle": "گھریلو اور کمرشل چارجنگ"
   },
   "tools": {
     "solarSize": "سولر سائز ٹول",

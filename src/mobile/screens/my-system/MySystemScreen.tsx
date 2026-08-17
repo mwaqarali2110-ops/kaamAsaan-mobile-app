@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { ArrowRight, BatteryCharging, CalendarDays, ChartNoAxesCombined, Home, PanelsTopLeft, ShieldCheck, Sun, Zap } from 'lucide-react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Rect, Stop } from 'react-native-svg';
+import { AppTopBar } from '@/components/ui/AppTopBar';
 import { Header } from '@/components/ui/Header';
 import { useMySystemStatus } from '@/hooks/useMySystemStatus';
 import { formatSurveyReference } from '@/services/journey.api';
@@ -54,6 +55,7 @@ export const MySystemScreen = ({ navigation }: any) => {
   if (status.isLoadingSurvey) {
     return (
       <SafeAreaView style={styles.screen}>
+        <AppTopBar navigation={navigation} activeRoute="MySystem" />
         <View style={styles.loadingState}>
           <ActivityIndicator color={colors.amber} size="large" />
           <Text style={styles.loadingText}>Checking your system...</Text>
@@ -81,23 +83,26 @@ const MySystemEmptyScreen = ({ navigation, bottomPadding }: { navigation: any; b
       </VideoErrorBoundary>
       <View style={styles.emptyVideoOverlay} />
       <SafeAreaView style={[styles.emptySafeArea, { paddingBottom: 24 + bottomPadding }]}>
-        <View style={styles.emptyCard}>
-          <View style={styles.emptyIcon}>
-            <PanelsTopLeft color={colors.amber} size={30} strokeWidth={2.4} />
+        <AppTopBar navigation={navigation} activeRoute="MySystem" />
+        <View style={styles.emptyCardCenter}>
+          <View style={styles.emptyCard}>
+            <View style={styles.emptyIcon}>
+              <PanelsTopLeft color={colors.amber} size={30} strokeWidth={2.4} />
+            </View>
+            <Text style={styles.emptyTitle}>No system yet</Text>
+            <Text style={styles.emptySubtitle}>Design your solar system and track your complete journey here.</Text>
+            <Pressable
+              accessibilityLabel="Design your System"
+              accessibilityRole="button"
+              android_ripple={{ color: 'rgba(16,36,60,0.12)' }}
+              onPress={() => navigation.navigate('DesignFlow', { screen: 'appliances' })}
+              style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
+            >
+              <Sun color={colors.navy} size={20} strokeWidth={2.4} />
+              <Text style={styles.primaryButtonText}>Design your System!</Text>
+              <ArrowRight color={colors.navy} size={20} strokeWidth={2.6} />
+            </Pressable>
           </View>
-          <Text style={styles.emptyTitle}>No system yet</Text>
-          <Text style={styles.emptySubtitle}>Design your solar system and track your complete journey here.</Text>
-          <Pressable
-            accessibilityLabel="Design your System"
-            accessibilityRole="button"
-            android_ripple={{ color: 'rgba(16,36,60,0.12)' }}
-            onPress={() => navigation.navigate('DesignFlow', { screen: 'appliances' })}
-            style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
-          >
-            <Sun color={colors.navy} size={20} strokeWidth={2.4} />
-            <Text style={styles.primaryButtonText}>Design your System!</Text>
-            <ArrowRight color={colors.navy} size={20} strokeWidth={2.6} />
-          </Pressable>
         </View>
       </SafeAreaView>
     </View>
@@ -173,6 +178,7 @@ const ActiveDesignSystem = ({ navigation, bottomPadding }: { navigation: any; bo
 
   return (
     <SafeAreaView style={styles.screen}>
+      <AppTopBar navigation={navigation} activeRoute="MySystem" />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingBottom: 104 + bottomPadding }]}>
         <Header title="My System" subtitle="Continue your solar design" />
         <View style={styles.heroCard}>
@@ -229,6 +235,7 @@ const ConfirmedSurveySystem = ({ navigation, bottomPadding, booking }: { navigat
 
   return (
     <SafeAreaView style={styles.screen}>
+      <AppTopBar navigation={navigation} activeRoute="MySystem" />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.confirmedContent, { paddingBottom: 104 + bottomPadding }]}>
         <View style={styles.confirmedCard}>
           <View style={styles.confirmedIcon}>
@@ -388,9 +395,12 @@ const styles = StyleSheet.create({
   },
   emptySafeArea: {
     flex: 1,
+    paddingHorizontal: 0,
+  },
+  emptyCardCenter: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 0,
   },
   emptyCard: {
     width: '88%',

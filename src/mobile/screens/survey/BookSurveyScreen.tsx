@@ -481,7 +481,7 @@ export const BookSurveyScreen = ({ navigation, route }: any) => {
         ) : null}
         <Pressable style={[styles.dateField, dateError && styles.inputError]} onPress={openCalendar} accessibilityRole="button">
           <View style={styles.inputIcon}>
-            <CalendarDays color="#334155" size={21} strokeWidth={2.1} />
+            <CalendarDays color="#334155" size={20} strokeWidth={2.1} />
           </View>
           <Text
             style={[
@@ -494,7 +494,7 @@ export const BookSurveyScreen = ({ navigation, route }: any) => {
               ? formatDisplayDate(selectedDate)
               : "Select survey date"}
           </Text>
-          <ChevronDown color="#64748B" size={19} strokeWidth={2.3} />
+          <ChevronDown color="#64748B" size={20} strokeWidth={2.3} />
         </Pressable>
         {dateError ? <Text style={styles.errorText}>{dateError}</Text> : null}
 
@@ -738,7 +738,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: "#0F1E33",
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: "900",
     letterSpacing: -0.4,
   },
@@ -761,7 +761,7 @@ const styles = StyleSheet.create({
   dateFieldText: {
     flex: 1,
     color: "#0F1E33",
-    fontSize: 13.5,
+    fontSize: 14,
     fontWeight: "800",
   },
   datePlaceholder: {
@@ -800,7 +800,7 @@ const styles = StyleSheet.create({
     marginTop: -2,
     marginBottom: 12,
     color: "#64748B",
-    fontSize: 11.5,
+    fontSize: 12,
     lineHeight: 16,
     fontWeight: "700",
     textAlign: "center",
@@ -811,7 +811,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FEF2F2",
     padding: 10,
     color: "#B42318",
-    fontSize: 11.5,
+    fontSize: 12,
     fontWeight: "800",
     lineHeight: 16,
   },
@@ -912,7 +912,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   confirmButtonDisabled: { opacity: 0.68 },
-  confirmText: { color: '#0F1E33', fontSize: 17, fontWeight: '900' },
+  confirmText: { color: '#0F1E33', fontSize: 18, fontWeight: '900' },
   cleaningSummaryCard: {
     borderRadius: 18,
     backgroundColor: '#FFF9E8',

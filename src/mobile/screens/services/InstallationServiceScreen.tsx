@@ -125,7 +125,7 @@ export const InstallationServiceScreen = ({ navigation }: any) => {
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
-            <ArrowLeft color="#111827" size={27} strokeWidth={2.25} />
+            <ArrowLeft color="#111827" size={28} strokeWidth={2.25} />
           </Pressable>
           <View style={styles.headerCopy}>
             <Text style={styles.screenTitle}>Solar Panel Installation</Text>
@@ -186,7 +186,7 @@ export const InstallationServiceScreen = ({ navigation }: any) => {
               <Text style={[styles.dropdownText, !structureLabel && styles.placeholderText]} numberOfLines={1}>
                 {structureLabel ?? 'Select structure type'}
               </Text>
-              <ChevronDown color="#A66F00" size={21} strokeWidth={2.35} />
+              <ChevronDown color="#A66F00" size={20} strokeWidth={2.35} />
             </Pressable>
             {form.formState.touchedFields.structureType && form.formState.errors.structureType ? (
               <Text style={styles.errorText}>{form.formState.errors.structureType.message}</Text>
@@ -206,7 +206,7 @@ export const InstallationServiceScreen = ({ navigation }: any) => {
             android_ripple={{ color: 'rgba(227,160,0,0.10)', borderless: false }}
             accessibilityRole="button"
           >
-            <Headphones color="#A66F00" size={21} strokeWidth={2.1} />
+            <Headphones color="#A66F00" size={20} strokeWidth={2.1} />
             <Text style={styles.secondaryButtonText} numberOfLines={1}>Talk to an Expert</Text>
           </Pressable>
           <Pressable
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
   fieldLabel: { marginLeft: 5, marginBottom: 5, color: '#252A34', fontSize: 12, lineHeight: 15, fontWeight: '700' },
   input: { width: '100%', height: 54, borderRadius: 16, borderWidth: 1, borderColor: '#C5C8CE', backgroundColor: '#FFFFFF', color: '#111827', fontSize: 16, fontWeight: '700', paddingHorizontal: 12, paddingVertical: 7 },
   inputError: { borderColor: '#D84A4A', backgroundColor: '#FFFDFD' },
-  errorText: { marginTop: 4, color: '#C62828', fontSize: 9.5, lineHeight: 12, fontWeight: '700' },
+  errorText: { marginTop: 4, color: '#C62828', fontSize: 10, lineHeight: 12, fontWeight: '700' },
   dropdown: { height: 54, borderRadius: 16, borderWidth: 1, borderColor: '#AEB2BA', backgroundColor: '#FFFFFF', flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, overflow: 'hidden' },
   dropdownText: { flex: 1, minWidth: 0, color: '#252A34', fontSize: 16, fontWeight: '700' },
   placeholderText: { color: 'rgba(17, 24, 39, 0.45)', fontSize: 15, fontWeight: '500' },
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
   secondaryButtonText: { color: '#9A6900', fontSize: 12, fontWeight: '900', textAlign: 'center' },
   primaryButton: { flex: 1.25, height: 52, borderRadius: 16, backgroundColor: '#FDB813', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 11, overflow: 'hidden' },
   primaryButtonDisabled: { backgroundColor: '#E7D8A8' },
-  primaryButtonText: { flexShrink: 1, color: '#111827', fontSize: 12.5, fontWeight: '900', textAlign: 'center' },
+  primaryButtonText: { flexShrink: 1, color: '#111827', fontSize: 13, fontWeight: '900', textAlign: 'center' },
   modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(15,23,42,0.34)' },
   selectorSheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: '#FBF8F1', paddingHorizontal: 18, paddingTop: 10 },
   selectorHandle: { alignSelf: 'center', width: 42, height: 4, borderRadius: 2, backgroundColor: '#D1D5DB', marginBottom: 14 },

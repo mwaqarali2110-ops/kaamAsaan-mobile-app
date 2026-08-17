@@ -2,7 +2,11 @@ import { ApiLoaderOverlay } from "@/components/ui/ApiLoaderOverlay";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import { RootNavigator } from "@/mobile/navigation/RootNavigator";
 import { useApiLoaderStore } from "@/store/useApiLoaderStore";
-import { MutationCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  MutationCache,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
 import * as NativeSplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useRef } from "react";
@@ -22,8 +26,8 @@ const queryClient = new QueryClient({
     },
     onSettled: () => {
       useApiLoaderStore.getState().hide();
-    }
-  })
+    },
+  }),
 });
 
 if (Platform.OS !== "web") {
@@ -103,7 +107,8 @@ export default function App() {
 const styles = StyleSheet.create({
   appRoot: {
     flex: 1,
-    backgroundColor: "#FFF4DC",
+    // backgroundColor: "#FFF4DC",
+    backgroundColor: "#F4F2EE",
   },
   webStage: {
     minHeight: "100%",

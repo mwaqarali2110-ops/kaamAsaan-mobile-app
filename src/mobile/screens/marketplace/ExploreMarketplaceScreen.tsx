@@ -1,7 +1,8 @@
-import React from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowRight, BatteryCharging, Cable, Cpu, EvCharger, Grid2X2 } from 'lucide-react-native';
+import { ChevronRight, BatteryCharging, Cable, Cpu, EvCharger, Grid2X2, Search } from 'lucide-react-native';
+import { AppTopBar } from '@/components/ui/AppTopBar';
 import type { ProductCategory } from '@/types/product.types';
 
 type MarketplaceCategory = {
@@ -9,10 +10,8 @@ type MarketplaceCategory = {
   title: string;
   subtitle: string;
   icon: typeof Cpu;
-  // Categories with a real product photo set `image`; categories without one
-  // (no photographic asset available yet) render their icon large in the
-  // product-stage slot instead — same card shell, no new visual system.
-  image?: ImageSourcePropType;
+  tint: string;
+  tintSoft: string;
   routeCategory: ProductCategory;
 };
 
@@ -27,7 +26,8 @@ const marketplaceCategories: MarketplaceCategory[] = [
     title: 'Inverter',
     subtitle: 'Hybrid and on-grid options',
     icon: Cpu,
-    image: require('../../../assets/home/inverter.jpg'),
+    tint: '#F59A00',
+    tintSoft: '#FFF3E0',
     routeCategory: 'inverter'
   },
   {
@@ -35,7 +35,8 @@ const marketplaceCategories: MarketplaceCategory[] = [
     title: 'Solar Panel',
     subtitle: 'Efficient panels for maximum output',
     icon: Grid2X2,
-    image: require('../../../../public/solo solar panel.png'),
+    tint: '#128A3E',
+    tintSoft: '#E6F5EA',
     routeCategory: 'panel'
   },
   {
@@ -43,7 +44,8 @@ const marketplaceCategories: MarketplaceCategory[] = [
     title: 'Batteries',
     subtitle: 'Reliable energy storage solutions',
     icon: BatteryCharging,
-    image: require('../../../assets/home/battery.webp'),
+    tint: '#2563EB',
+    tintSoft: '#E7EEFD',
     routeCategory: 'battery'
   },
   {
@@ -51,7 +53,8 @@ const marketplaceCategories: MarketplaceCategory[] = [
     title: 'Solar Accessories',
     subtitle: 'Cables, connectors and more',
     icon: Cable,
-    image: require('../../../../public/DC wires.jpg'),
+    tint: '#B07800',
+    tintSoft: '#FCF1DA',
     routeCategory: 'accessory'
   },
   {
@@ -59,6 +62,8 @@ const marketplaceCategories: MarketplaceCategory[] = [
     title: 'EV Chargers',
     subtitle: 'Home and commercial charging',
     icon: EvCharger,
+    tint: '#0F766E',
+    tintSoft: '#E1F4F2',
     routeCategory: 'ev_charger'
   }
 ];
@@ -67,69 +72,73 @@ const MarketplaceCategoryCard = ({ category, onPress }: MarketplaceCategoryCardP
   const Icon = category.icon;
 
   return (
-    <View style={styles.card}>
-      <View style={styles.iconCircle}>
-        <Icon color="#F59A00" size={28} strokeWidth={2.6} />
+    <Pressable
+      style={styles.card}
+      onPress={() => onPress(category.routeCategory)}
+      accessibilityLabel={category.title}
+      accessibilityRole="button"
+      android_ripple={{ color: 'rgba(245, 164, 0, 0.08)' }}
+    >
+      <View style={[styles.iconTile, { backgroundColor: category.tintSoft }]}>
+        <Icon color={category.tint} size={22} strokeWidth={2.2} />
       </View>
-
-      <View style={styles.textBlock}>
-        <Text adjustsFontSizeToFit minimumFontScale={0.78} numberOfLines={1} style={styles.title}>
+      <View style={styles.cardCopy}>
+        <Text numberOfLines={1} style={styles.title}>
           {category.title}
         </Text>
-        <Text adjustsFontSizeToFit minimumFontScale={0.7} numberOfLines={1} style={styles.subtitle}>
+        <Text numberOfLines={1} style={styles.subtitle}>
           {category.subtitle}
         </Text>
-        <View style={styles.exploreRow}>
-          <Text style={styles.exploreText}>Explore</Text>
-          <ArrowRight color="#F59A00" size={24} strokeWidth={3} />
-        </View>
       </View>
-
-      <View style={styles.productStage}>
-        <View style={styles.imageBackgroundCircle} />
-        {category.image ? (
-          <Image source={category.image} style={[styles.productImage, category.id === 'accessory' && styles.accessoryImage]} />
-        ) : (
-          <Icon color="#F59A00" size={40} strokeWidth={1.8} />
-        )}
-      </View>
-
-      <Pressable
-        accessibilityLabel={category.title}
-        accessibilityRole="button"
-        android_ripple={{ color: 'rgba(245, 164, 0, 0.08)' }}
-        onPress={() => onPress(category.routeCategory)}
-        style={styles.cardHitArea}
-      />
-    </View>
+      <ChevronRight color="#B0B8C1" size={20} strokeWidth={2.4} />
+    </Pressable>
   );
 };
 
 export const ExploreMarketplaceScreen = ({ navigation }: any) => {
+  const [search, setSearch] = useState('');
+
+  const filteredCategories = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return marketplaceCategories;
+    return marketplaceCategories.filter(
+      (category) => category.title.toLowerCase().includes(query) || category.subtitle.toLowerCase().includes(query)
+    );
+  }, [search]);
+
   const handleCategoryPress = (category: ProductCategory) => {
     navigation.navigate('MarketplaceFlow', { category });
   };
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.screen}>
+      <AppTopBar navigation={navigation} activeRoute="Marketplace" />
+
       <View style={styles.header}>
-        <View style={styles.headerCopy}>
-          <Text adjustsFontSizeToFit minimumFontScale={0.78} numberOfLines={1} style={styles.headerTitle}>Explore Marketplace</Text>
-          <Text style={styles.headerSubtitle}>Select Product</Text>
-        </View>
+        <Text style={styles.headerTitle}>Explore Marketplace</Text>
+        <Text style={styles.headerSubtitle}>Select a product category to get started</Text>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        {marketplaceCategories.map((category) => (
-          <MarketplaceCategoryCard
-            key={category.id}
-            category={category}
-            onPress={handleCategoryPress}
-          />
+      <View style={styles.searchBox}>
+        <Search color="#94A0AC" size={18} strokeWidth={2.2} />
+        <TextInput
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Search categories..."
+          placeholderTextColor="#94A0AC"
+          style={styles.searchInput}
+        />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
+        {filteredCategories.map((category) => (
+          <MarketplaceCategoryCard key={category.id} category={category} onPress={handleCategoryPress} />
         ))}
+        {filteredCategories.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>No categories match "{search}".</Text>
+          </View>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -141,121 +150,97 @@ const styles = StyleSheet.create({
     backgroundColor: '#FBF7EF'
   },
   header: {
-    paddingHorizontal: 24,
-    paddingTop: 38,
-    paddingBottom: 34,
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 14,
     alignItems: 'flex-start'
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: '900',
     color: '#071B33',
-    lineHeight: 34
-  },
-  headerCopy: {
-    flex: 1,
-    minWidth: 0
+    lineHeight: 26
   },
   headerSubtitle: {
-    fontSize: 18,
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '600',
     color: '#737B86',
-    marginTop: 8
+    marginTop: 3
   },
-  content: {
-    paddingTop: 6,
-    paddingBottom: 120
-  },
-  card: {
-    height: 128,
-    marginHorizontal: 24,
+  searchBox: {
+    marginHorizontal: 20,
     marginBottom: 14,
+    height: 46,
     borderRadius: 14,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#F0E8DE',
-    position: 'relative',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 7 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 3
+    borderColor: '#EAE0CE',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    gap: 8
   },
-  cardHitArea: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    zIndex: 10
+  searchInput: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#071B33'
   },
-  iconCircle: {
-    position: 'absolute',
-    left: 30,
-    top: 38,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#FFF3E0',
+  list: {
+    paddingHorizontal: 20,
+    paddingBottom: 24
+  },
+  card: {
+    // Explicit row: icon tile, then a text column (title above subtitle),
+    // then the chevron — all three side by side on one line. Do not remove
+    // flexDirection here; a plain View/Pressable defaults to column on RN.
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 76,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    marginBottom: 12,
+    paddingHorizontal: 14,
+    gap: 12,
+    // White elevated card: no border, shadow does the separation from the
+    // cream background instead.
+    shadowColor: '#1F2937',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    elevation: 5
+  },
+  iconTile: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center'
   },
-  textBlock: {
-    position: 'absolute',
-    left: 88,
-    right: 100,
-    top: 32
+  cardCopy: {
+    flex: 1,
+    minWidth: 0
   },
   title: {
-    fontSize: 20,
-    lineHeight: 25,
+    fontSize: 15,
+    lineHeight: 18,
     fontWeight: '900',
-    color: '#071B33',
-    marginBottom: 7
+    color: '#071B33'
   },
   subtitle: {
-    fontSize: 14,
-    lineHeight: 18,
-    fontWeight: '500',
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '600',
     color: '#68717C',
-    marginBottom: 18
+    marginTop: 2
   },
-  exploreRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10
+  emptyState: {
+    paddingTop: 30,
+    alignItems: 'center'
   },
-  exploreText: {
-    fontSize: 16,
-    lineHeight: 20,
-    fontWeight: '900',
-    color: '#F59A00'
-  },
-  productStage: {
-    position: 'absolute',
-    right: 14,
-    top: 18,
-    width: 92,
-    height: 92,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1
-  },
-  imageBackgroundCircle: {
-    position: 'absolute',
-    width: 92,
-    height: 92,
-    borderRadius: 46,
-    backgroundColor: '#F8F8F7'
-  },
-  productImage: {
-    width: 76,
-    height: 82,
-    resizeMode: 'contain'
-  },
-  accessoryImage: {
-    width: 92,
-    height: 88
+  emptyStateText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#737B86'
   }
 });

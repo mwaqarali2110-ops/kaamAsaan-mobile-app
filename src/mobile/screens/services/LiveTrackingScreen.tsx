@@ -82,7 +82,7 @@ export const LiveTrackingScreen = ({ navigation }: any) => {
     </ScrollView>
 
     <Pressable style={[styles.chatButton, { bottom: 62 + getSafeBottomPadding(insets.bottom) }]} accessibilityLabel="WhatsApp help">
-      <MessageCircle color="#FFFFFF" size={19} strokeWidth={2.2} />
+      <MessageCircle color="#FFFFFF" size={20} strokeWidth={2.2} />
     </Pressable>
 
     <SafeBottomActionBar style={styles.footer} minimumBottomPadding={10}>

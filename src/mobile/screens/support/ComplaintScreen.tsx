@@ -261,7 +261,7 @@ export const ComplaintScreen = ({ navigation }: any) => {
 
             <Field label="Subject" error={errors.subject}>
               <View style={[styles.inputWrap, errors.subject && styles.inputWrapError]}>
-                <FileText size={19} color="#D99A00" strokeWidth={2.2} />
+                <FileText size={20} color="#D99A00" strokeWidth={2.2} />
                 <TextInput
                   style={styles.input}
                   placeholder="Enter complaint subject"
@@ -294,7 +294,7 @@ export const ComplaintScreen = ({ navigation }: any) => {
 
             <Field label="Reference Number / Project ID optional">
               <View style={styles.inputWrap}>
-                <Hash size={19} color="#D99A00" strokeWidth={2.2} />
+                <Hash size={20} color="#D99A00" strokeWidth={2.2} />
                 <TextInput
                   style={styles.input}
                   placeholder="Enter booking or project reference if available"
@@ -307,7 +307,7 @@ export const ComplaintScreen = ({ navigation }: any) => {
 
             <Field label="Contact Number" error={errors.contactNumber}>
               <View style={[styles.inputWrap, errors.contactNumber && styles.inputWrapError]}>
-                <Phone size={19} color="#D99A00" strokeWidth={2.2} />
+                <Phone size={20} color="#D99A00" strokeWidth={2.2} />
                 <TextInput
                   style={styles.input}
                   placeholder="Enter contact number"
@@ -330,7 +330,7 @@ export const ComplaintScreen = ({ navigation }: any) => {
                 accessibilityRole="button"
               >
                 <View style={styles.attachIcon}>
-                  <ImageIcon size={21} color="#D99A00" strokeWidth={2.2} />
+                  <ImageIcon size={20} color="#D99A00" strokeWidth={2.2} />
                 </View>
                 <View style={styles.attachTextWrap}>
                   <Text style={styles.attachTitle}>{attachedPhoto ? 'Change attached photo' : 'Attach photo'}</Text>
@@ -417,14 +417,14 @@ export const ComplaintScreen = ({ navigation }: any) => {
 
             <Pressable style={styles.photoOption} onPress={chooseFromGallery} accessibilityRole="button">
               <View style={styles.photoOptionIcon}>
-                <Images size={21} color="#D99A00" strokeWidth={2.4} />
+                <Images size={20} color="#D99A00" strokeWidth={2.4} />
               </View>
               <Text style={styles.photoOptionText}>Choose from Gallery</Text>
             </Pressable>
 
             <Pressable style={styles.photoOption} onPress={takePhoto} accessibilityRole="button">
               <View style={styles.photoOptionIcon}>
-                <Camera size={21} color="#D99A00" strokeWidth={2.4} />
+                <Camera size={20} color="#D99A00" strokeWidth={2.4} />
               </View>
               <Text style={styles.photoOptionText}>Take Photo</Text>
             </Pressable>
@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#0F172A',
-    fontSize: 25,
+    fontSize: 26,
     lineHeight: 30,
     fontWeight: '900',
   },
@@ -774,7 +774,7 @@ const styles = StyleSheet.create({
   },
   successTitle: {
     color: '#0F172A',
-    fontSize: 23,
+    fontSize: 24,
     lineHeight: 29,
     fontWeight: '900',
     textAlign: 'center',
@@ -851,7 +851,7 @@ const styles = StyleSheet.create({
   },
   photoSheetTitle: {
     color: '#0F172A',
-    fontSize: 21,
+    fontSize: 22,
     lineHeight: 26,
     fontWeight: '900',
   },

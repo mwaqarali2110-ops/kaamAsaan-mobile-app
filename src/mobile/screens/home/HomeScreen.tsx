@@ -1,12 +1,11 @@
 import {
   ArrowRight,
-  Bell,
   Calculator,
   Check,
   ChevronRight,
   ClipboardCheck,
+  EvCharger,
   Home as HomeIcon,
-  Menu,
   Ruler,
   Settings,
   TrendingUp,
@@ -19,12 +18,10 @@ import {
   Animated,
   Image,
   ImageBackground,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from "react-native";
 import Reanimated, {
@@ -49,7 +46,6 @@ import {
   useMarkNotificationRead,
   useNotificationRealtime,
   useNotifications,
-  useUnreadNotificationsCount,
 } from "@/hooks/useNotifications";
 import {
   activeSurveyBookingStatuses,
@@ -63,11 +59,11 @@ import {
 import { useAuthStore } from "@/store/useAuthStore";
 import { useSystemStore } from "@/store/useSystemStore";
 import { TopNotificationBanner } from "@/components/notifications/TopNotificationBanner";
+import { AppTopBar } from "@/components/ui/AppTopBar";
 import { PremiumShimmerSweep } from "@/components/ui/PremiumShimmerSweep";
 import { performNotificationAction } from "@/utils/notificationActions";
 
 /* ─── Assets ─── */
-const logo = require("../../../assets/onboarding/Splash-Screen-Cart-1-transparent.png");
 const heroHouse = require("../../../assets/home/transparent-solar-house-hero-section.png");
 const maintenanceImage = require("../../../assets/home/solar-care.png");
 const cleaningImage = require("../../../assets/home/solar-panel-cleaning.png");
@@ -129,6 +125,14 @@ const MARKETPLACE_CATEGORIES = [
     subtitleKey: "products.accessoriesSubtitle",
     image: accessoriesImage,
   },
+  {
+    id: "ev-chargers",
+    labelKey: "products.evCharger",
+    subtitleKey: "products.evChargerSubtitle",
+    // No product photo asset yet — CategoryCard falls back to the EvCharger
+    // icon on the same neutral tile background when `image` is omitted.
+    image: undefined,
+  },
 ];
 
 const SERVICES = [
@@ -176,6 +180,7 @@ const navigateToCategory = (navigation: any, id: string) => {
     panels: "panel",
     batteries: "battery",
     accessories: "accessory",
+    "ev-chargers": "ev_charger",
   };
   navigation.navigate("MarketplaceFlow", { category: map[id] || "inverter" });
 };
@@ -283,8 +288,16 @@ const CategoryCard = ({
   return (
     <Pressable style={s.catCard} onPress={onPress}>
       <View style={s.catImgWrap}>
-        <Image source={item.image} style={s.catImg} resizeMode="cover" />
-        <View style={s.catImgShade} />
+        {item.image ? (
+          <>
+            <Image source={item.image} style={s.catImg} resizeMode="cover" />
+            <View style={s.catImgShade} />
+          </>
+        ) : (
+          <View style={s.catImgIconFallback}>
+            <EvCharger color="#B07800" size={32} strokeWidth={1.8} />
+          </View>
+        )}
       </View>
       <View style={s.catFoot}>
         <View style={s.catCopy}>
@@ -590,144 +603,6 @@ const ActiveJourneyBar = ({
   );
 };
 
-const HomeMenuModal = ({
-  visible,
-  onClose,
-  navigation,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  navigation: any;
-}) => {
-  const { width } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
-  const drawerWidth = Math.round(width * 0.8);
-  const drawerItems = [
-    { label: "Home", route: "Home" },
-    { label: "How it works", route: "HowItWorks" },
-    { label: "Marketplace", route: "Marketplace" },
-    { label: "Design System", route: "DesignSystem" },
-    { label: "My Project", route: "MyProject" },
-    { label: "Complaint", route: "Complaint" },
-    { label: "Help Center", route: "HelpCenter" },
-    { label: "Profile", route: "Profile" },
-  ];
-  const secondaryItems = [
-    { label: "Settings", route: "Settings" },
-    { label: "Solar Care", route: "SolarCare" },
-  ];
-
-  const navigateToCorrectRoute = (route: string) => {
-    const routeMap: Record<string, () => void> = {
-      Home: () => navigation.navigate("Home"),
-      HowItWorks: () => navigation.navigate("HowItWorks"),
-      Marketplace: () => navigation.navigate("Marketplace"),
-      DesignSystem: () => navigation.navigate("DesignFlow"),
-      MyProject: () => navigation.navigate("MyProject"),
-      Complaint: () => navigation.navigate("Complaint"),
-      HelpCenter: () => navigation.navigate("HelpCenter"),
-      Profile: () => navigation.navigate("Profile"),
-      Settings: () => navigation.navigate("Profile"),
-      SolarCare: () => navigation.navigate("PreventiveMaintenance"),
-    };
-
-    onClose();
-    routeMap[route]?.();
-  };
-
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <Pressable style={s.drawerBackdrop} onPress={onClose}>
-        <Pressable
-          style={[
-            s.drawer,
-            {
-              width: drawerWidth,
-              paddingTop: insets.top + 14,
-              paddingBottom: insets.bottom + 12,
-            },
-          ]}
-        >
-          <View style={s.drawerPanelHeader}>
-            <View style={s.drawerBrand}>
-              <Image
-                source={logo}
-                style={s.drawerBrandLogo}
-                resizeMode="contain"
-              />
-              <Text style={s.drawerBrandText} numberOfLines={1}>
-                <Text style={s.drawerBrandKaam}>Kaam</Text>
-                <Text style={s.drawerBrandAsaan}>Asaan</Text>
-              </Text>
-            </View>
-            <Pressable
-              style={({ pressed }) => [
-                s.drawerClose,
-                pressed && s.headerPressed,
-              ]}
-              onPress={onClose}
-              hitSlop={12}
-              accessibilityLabel="Close menu"
-              accessibilityRole="button"
-            >
-              <X color="#334155" size={24} strokeWidth={2.4} />
-            </Pressable>
-          </View>
-          <View style={s.divider} />
-          <View style={s.menuSection}>
-            {drawerItems.map((item) => {
-              const active = item.label === "Home";
-              return (
-                <Pressable
-                  key={item.label}
-                  style={[s.drawerRow, active && s.activeDrawerRow]}
-                  onPress={() => navigateToCorrectRoute(item.route)}
-                  accessibilityRole="button"
-                >
-                  <Text style={[s.drawerLabel, active && s.activeDrawerLabel]}>
-                    {item.label}
-                  </Text>
-                  <Text
-                    style={[s.drawerChevron, active && s.activeDrawerChevron]}
-                  >
-                    ›
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-          <View style={s.divider} />
-          <View style={s.menuSection}>
-            {secondaryItems.map((item) => (
-              <Pressable
-                key={item.label}
-                style={s.drawerRow}
-                onPress={() => navigateToCorrectRoute(item.route)}
-                accessibilityRole="button"
-              >
-                <Text style={s.drawerLabel}>{item.label}</Text>
-                <Text style={s.drawerChevron}>›</Text>
-              </Pressable>
-            ))}
-          </View>
-          <View style={s.footer}>
-            <Text style={s.drawerFooterBrand}>KaamAsaan</Text>
-            <Text style={s.drawerFooterText}>
-              Pakistan's Smart Solar Marketplace
-            </Text>
-            <Text style={s.drawerFooterVersion}>v1.0</Text>
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
-  );
-};
-
 /* ─── Main HomeScreen ─── */
 export const HomeScreen = ({ navigation }: any) => {
   const { t } = useTranslation();
@@ -735,14 +610,11 @@ export const HomeScreen = ({ navigation }: any) => {
   const userId = useAuthStore((state) => state.session?.user.id);
   const journeyQuery = useActiveSurveyJourney(userId);
   const refetchJourney = journeyQuery.refetch;
-  const unreadNotificationsQuery = useUnreadNotificationsCount(userId);
   const notificationsQuery = useNotifications(userId);
   const markNotificationRead = useMarkNotificationRead(userId);
   useNotificationRealtime(userId);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [continuePlanDismissed, setContinuePlanDismissed] = useState(false);
   const [expertOpinionPressed, setExpertOpinionPressed] = useState(false);
-  const unreadNotifications = unreadNotificationsQuery.data ?? 0;
   const appliances = useSystemStore((state) => state.appliances);
   const backupAppliances = useSystemStore((state) => state.backupAppliances);
   const recommendedSolarKw = useSystemStore(
@@ -842,10 +714,6 @@ export const HomeScreen = ({ navigation }: any) => {
     void AsyncStorage.setItem(CONTINUE_PLAN_DISMISS_KEY, "true");
   };
 
-  const openMenu = () => {
-    setMenuOpen(true);
-  };
-
   const openNotification = async (notification: CustomerNotification) => {
     if (!notification.isRead)
       await markNotificationRead.mutateAsync(notification.id);
@@ -859,41 +727,7 @@ export const HomeScreen = ({ navigation }: any) => {
   return (
     <View style={s.shell}>
       <SafeAreaView style={s.shell} edges={["top"]}>
-        {/* ══ Header ══ */}
-        <View style={s.header}>
-          <View style={s.headerBar}>
-            <Pressable
-              style={({ pressed }) => [s.iconBtn, pressed && s.headerPressed]}
-              onPress={openMenu}
-              accessibilityLabel="Open menu"
-              accessibilityRole="button"
-              hitSlop={12}
-            >
-              <Menu color="#111827" size={22} strokeWidth={2} />
-            </Pressable>
-            <View pointerEvents="none" style={s.logoWrap}>
-              <Image source={logo} style={s.logoImg} resizeMode="contain" />
-              <Text style={s.logoText}>
-                <Text style={s.logoTextKaam}>Kaam</Text>
-                <Text style={s.logoTextAsaan}>Asaan</Text>
-              </Text>
-            </View>
-            <Pressable
-              style={({ pressed }) => [
-                s.iconBtn,
-                s.notificationButton,
-                pressed && s.headerPressed,
-              ]}
-              onPress={() => navigation.navigate("Notifications")}
-              accessibilityLabel="Open notifications"
-              accessibilityRole="button"
-              hitSlop={12}
-            >
-              <Bell color="#B07800" size={20} strokeWidth={2} />
-              {unreadNotifications > 0 ? <View style={s.notifDot} /> : null}
-            </Pressable>
-          </View>
-        </View>
+        <AppTopBar navigation={navigation} activeRoute="Home" />
 
         {/* ══ Scrollable Content ══ */}
         <ScrollView
@@ -1093,11 +927,6 @@ export const HomeScreen = ({ navigation }: any) => {
             bottomOffset={floatingBottom}
           />
         ) : null}
-        <HomeMenuModal
-          visible={menuOpen}
-          onClose={() => setMenuOpen(false)}
-          navigation={navigation}
-        />
       </SafeAreaView>
       <TopNotificationBanner
         userId={userId}
@@ -1116,180 +945,6 @@ export const HomeScreen = ({ navigation }: any) => {
 const s = StyleSheet.create({
   /* Shell */
   shell: { flex: 1, backgroundColor: "#F4F2EE" },
-
-  /* Header */
-  header: {
-    backgroundColor: "#F4F2EE",
-    paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 8,
-    borderBottomWidth: 0,
-    zIndex: 10,
-  },
-  headerBar: {
-    height: 40,
-    position: "relative",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  iconBtn: {
-    width: 34,
-    height: 34,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 999,
-  },
-  notificationButton: { position: "relative" },
-  headerPressed: { opacity: 0.86, backgroundColor: "rgba(17,24,39,0.05)" },
-  notifDot: {
-    position: "absolute",
-    right: 5,
-    top: 4,
-    width: 9,
-    height: 9,
-    borderRadius: 9,
-    backgroundColor: "#FF6B35",
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
-  },
-  logoWrap: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
-  },
-  logoImg: { width: 31, height: 30, opacity: 0.96 },
-  logoText: {
-    fontSize: 22,
-    fontWeight: "900",
-    lineHeight: 24,
-    letterSpacing: -0.6,
-  },
-  logoTextKaam: { color: "#08213F" },
-  logoTextAsaan: { color: "#E8A000" },
-  drawerBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(15,23,42,0.32)",
-    justifyContent: "flex-start",
-  },
-  drawer: {
-    height: "100%",
-    backgroundColor: "#FFFBF2",
-    paddingHorizontal: 22,
-    borderTopRightRadius: 24,
-    borderBottomRightRadius: 24,
-    shadowColor: "#111827",
-    shadowOffset: { width: 8, height: 0 },
-    shadowOpacity: 0.14,
-    shadowRadius: 18,
-    elevation: 8,
-  },
-  drawerPanelHeader: {
-    height: 64,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  drawerBrand: {
-    flex: 1,
-    minWidth: 0,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  drawerBrandLogo: {
-    width: 36,
-    height: 34,
-  },
-  drawerBrandText: {
-    flexShrink: 1,
-    fontSize: 24,
-    lineHeight: 28,
-    fontWeight: "900",
-    letterSpacing: -0.4,
-  },
-  drawerBrandKaam: { color: "#08213F" },
-  drawerBrandAsaan: { color: "#E8A000" },
-  drawerClose: {
-    width: 36,
-    height: 36,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "transparent",
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "rgba(16, 24, 40, 0.12)",
-    marginVertical: 10,
-  },
-  menuSection: {
-    width: "100%",
-  },
-  drawerRow: {
-    width: "100%",
-    height: 44,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    marginBottom: 2,
-    backgroundColor: "transparent",
-  },
-  activeDrawerRow: {
-    backgroundColor: "#FFF2C7",
-    borderLeftWidth: 4,
-    borderLeftColor: "#F5B400",
-    paddingLeft: 10,
-  },
-  drawerLabel: {
-    flex: 1,
-    fontSize: 15,
-    lineHeight: 20,
-    fontWeight: "600",
-    color: "#101828",
-  },
-  activeDrawerLabel: {
-    color: "#D99A00",
-  },
-  drawerChevron: {
-    fontSize: 24,
-    lineHeight: 24,
-    color: "#344054",
-    marginLeft: 12,
-  },
-  activeDrawerChevron: {
-    color: "#D99A00",
-  },
-  footer: {
-    marginTop: "auto",
-    paddingTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(16, 24, 40, 0.12)",
-  },
-  drawerFooterBrand: {
-    color: "#0F172A",
-    fontSize: 15,
-    fontWeight: "800",
-  },
-  drawerFooterText: {
-    marginTop: 5,
-    color: "#64748B",
-    fontSize: 12,
-    lineHeight: 15,
-    fontWeight: "600",
-  },
-  drawerFooterVersion: {
-    marginTop: 10,
-    color: "#D99A00",
-    fontSize: 12,
-    fontWeight: "800",
-  },
 
   /* Scroll */
   scroll: { flex: 1 },
@@ -1525,6 +1180,12 @@ const s = StyleSheet.create({
   },
   catImgWrap: { height: 88, overflow: "hidden", backgroundColor: "#EEECEA" },
   catImg: { width: "100%", height: "100%" },
+  catImgIconFallback: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   catImgShade: {
     ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(0,0,0,0.05)",
@@ -1578,7 +1239,7 @@ const s = StyleSheet.create({
   },
   expertDescription: {
     color: "#687386",
-    fontSize: 13.5,
+    fontSize: 14,
     lineHeight: 19,
     marginTop: 6,
   },

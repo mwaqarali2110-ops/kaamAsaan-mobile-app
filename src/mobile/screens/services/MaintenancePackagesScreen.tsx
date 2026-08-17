@@ -183,7 +183,7 @@ export const MaintenancePackagesScreen = ({ navigation }: any) => {
         style={[styles.chatButton, { bottom: 70 + safeBottom }]}
         accessibilityLabel="WhatsApp help"
       >
-        <MessageCircle color="#FFFFFF" size={19} strokeWidth={2.2} />
+        <MessageCircle color="#FFFFFF" size={20} strokeWidth={2.2} />
       </Pressable>
 
       <View style={[styles.footer, { paddingBottom: 10 + safeBottom }]}>

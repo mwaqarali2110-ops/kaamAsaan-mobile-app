@@ -127,7 +127,7 @@ export const CleaningServiceEstimatorScreen = ({ navigation }: any) => {
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
-            <ArrowLeft color="#111827" size={27} strokeWidth={2.25} />
+            <ArrowLeft color="#111827" size={28} strokeWidth={2.25} />
           </Pressable>
           <View style={styles.headerCopy}>
             <Text style={styles.title}>Solar Panel Cleaning</Text>
@@ -180,7 +180,7 @@ export const CleaningServiceEstimatorScreen = ({ navigation }: any) => {
               <Text style={[styles.dropdownText, !selectedStructureLabel && styles.dropdownPlaceholder]}>
                 {selectedStructureLabel ?? 'Select structure type'}
               </Text>
-              <ChevronDown color="#9A6900" size={21} strokeWidth={2.35} />
+              <ChevronDown color="#9A6900" size={20} strokeWidth={2.35} />
             </Pressable>
 
             {elevated ? (
@@ -189,7 +189,7 @@ export const CleaningServiceEstimatorScreen = ({ navigation }: any) => {
                 <View style={[styles.heightRow, stackHeightFields && styles.heightRowStack]}>
                   <View style={styles.heightFieldGroup}>
                     <View style={[styles.heightInputWrap, Boolean(frontError) && styles.inputErrorBorder]}>
-                      <ArrowDownUp color="#6B7280" size={19} strokeWidth={2} />
+                      <ArrowDownUp color="#6B7280" size={20} strokeWidth={2} />
                       <TextInput
                         style={styles.heightInput}
                         value={frontHeight}
@@ -207,7 +207,7 @@ export const CleaningServiceEstimatorScreen = ({ navigation }: any) => {
                   </View>
                   <View style={styles.heightFieldGroup}>
                     <View style={[styles.heightInputWrap, Boolean(backError) && styles.inputErrorBorder]}>
-                      <ArrowDownUp color="#6B7280" size={19} strokeWidth={2} />
+                      <ArrowDownUp color="#6B7280" size={20} strokeWidth={2} />
                       <TextInput
                         style={styles.heightInput}
                         value={backHeight}
@@ -248,7 +248,7 @@ export const CleaningServiceEstimatorScreen = ({ navigation }: any) => {
             accessibilityRole="button"
             accessibilityLabel="Talk to an expert"
           >
-            <Headphones color="#A66F00" size={21} strokeWidth={2.1} />
+            <Headphones color="#A66F00" size={20} strokeWidth={2.1} />
             <Text style={styles.secondaryText} numberOfLines={1}>Talk to an Expert</Text>
           </Pressable>
           <Pressable
@@ -261,7 +261,7 @@ export const CleaningServiceEstimatorScreen = ({ navigation }: any) => {
             accessibilityState={{ disabled: !estimate }}
           >
             <Text style={styles.primaryText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82}>Continue to Book Survey</Text>
-            <ArrowRight color={estimate ? '#111827' : '#6B7280'} size={21} strokeWidth={2.4} />
+            <ArrowRight color={estimate ? '#111827' : '#6B7280'} size={20} strokeWidth={2.4} />
           </Pressable>
         </View>
 
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
   largeInput: { flex: 1, minWidth: 0, color: '#111827', fontSize: 16, fontWeight: '700', paddingVertical: 7 },
   largeUnit: { color: '#9A6900', fontSize: 14, fontWeight: '900' },
   inputErrorBorder: { borderColor: '#E05252', backgroundColor: '#FFFDFD' },
-  errorText: { marginTop: 6, color: '#C62828', fontSize: 10.5, lineHeight: 14, fontWeight: '700' },
+  errorText: { marginTop: 6, color: '#C62828', fontSize: 11, lineHeight: 14, fontWeight: '700' },
   dropdownField: {
     height: 54,
     borderRadius: 16,
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
     elevation: 2
   },
   estimateTitle: { color: '#23262C', fontSize: 18, lineHeight: 22, fontWeight: '700' },
-  estimateAmount: { marginTop: 3, color: '#A66F00', fontSize: 17, lineHeight: 22, fontWeight: '800', letterSpacing: -0.2 },
+  estimateAmount: { marginTop: 3, color: '#A66F00', fontSize: 18, lineHeight: 22, fontWeight: '800', letterSpacing: -0.2 },
   estimateAmountEmpty: { color: '#A9ACB3' },
   estimateNoteRow: { marginTop: 4, flexDirection: 'row', alignItems: 'center', gap: 7 },
   estimateNote: { flex: 1, color: '#60646C', fontSize: 11, lineHeight: 15, fontWeight: '500' },
@@ -475,7 +475,7 @@ const styles = StyleSheet.create({
     paddingTop: 10
   },
   selectorHandle: { alignSelf: 'center', width: 42, height: 4, borderRadius: 2, backgroundColor: '#D1D5DB', marginBottom: 14 },
-  selectorTitle: { color: '#111827', fontSize: 19, fontWeight: '900', marginBottom: 12 },
+  selectorTitle: { color: '#111827', fontSize: 20, fontWeight: '900', marginBottom: 12 },
   selectorOption: {
     minHeight: 56,
     borderRadius: 15,

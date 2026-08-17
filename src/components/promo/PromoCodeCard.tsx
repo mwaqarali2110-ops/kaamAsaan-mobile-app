@@ -110,7 +110,7 @@ export const PromoCodeCard = ({
               accessibilityRole="button"
               accessibilityLabel={`Remove promo code ${promo.appliedCode ?? ''}`}
             >
-              <X color="#64748B" size={15} strokeWidth={2.5} />
+              <X color="#64748B" size={16} strokeWidth={2.5} />
               <Text style={styles.removeText}>Remove</Text>
             </Pressable>
           ) : null}
@@ -181,14 +181,14 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#10213A',
-    fontSize: 17,
+    fontSize: 18,
     lineHeight: 21,
     fontWeight: '900'
   },
   subtitle: {
     marginTop: 3,
     color: '#64748B',
-    fontSize: 11.5,
+    fontSize: 12,
     lineHeight: 16,
     fontWeight: '700'
   },
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
   },
   totalValue: {
     color: '#10213A',
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '900',
     textAlign: 'right'
   }

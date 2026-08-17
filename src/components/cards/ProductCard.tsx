@@ -40,16 +40,16 @@ export const ProductCard = ({ product, selected, compared, onPress, onCompare, v
             {isAccessory ? <Text className="text-xs font-semibold text-kaam-muted" numberOfLines={1}>{product.brand || 'KaamAsaan'}</Text> : null}
             <Text className="text-sm font-extrabold text-kaam-navy" numberOfLines={2} ellipsizeMode="tail">{product.name}</Text>
           </View>
-          {!isAccessory ? <Bookmark size={17} color={selected ? colors.amber : colors.muted} fill={selected ? colors.amber : 'none'} /> : null}
+          {!isAccessory ? <Bookmark size={16} color={selected ? colors.amber : colors.muted} fill={selected ? colors.amber : 'none'} /> : null}
         </View>
         {isAccessory ? (
           <>
             <View className="mt-1 flex-row items-center gap-1">
-              <Wrench color={colors.muted} size={13} />
+              <Wrench color={colors.muted} size={12} />
               <Text className="flex-1 text-[10px] font-semibold text-kaam-muted" numberOfLines={1} ellipsizeMode="tail">{product.shortSpec || product.specs[0] || 'Solar installation accessory'}</Text>
             </View>
-            {product.secondarySpec ? <View className="mt-1 flex-row items-center gap-1"><Sparkles color={colors.muted} size={13} /><Text className="flex-1 text-[10px] font-semibold text-kaam-muted" numberOfLines={1} ellipsizeMode="tail">{product.secondarySpec}</Text></View> : null}
-            <View className={`mt-1 self-start flex-row items-center gap-1 rounded-xl px-2 py-1 ${stock.kind === 'in' ? 'bg-[#E8F7E9]' : stock.kind === 'out' ? 'bg-[#FEECEB]' : 'bg-[#FFF4D6]'}`}><CheckCircle2 color={stock.kind === 'in' ? '#15803D' : stock.kind === 'out' ? '#B42318' : '#9A6700'} size={13} /><Text className={`text-[10px] font-extrabold ${stock.kind === 'in' ? 'text-[#15803D]' : stock.kind === 'out' ? 'text-[#B42318]' : 'text-[#9A6700]'}`}>{stock.label}</Text></View>
+            {product.secondarySpec ? <View className="mt-1 flex-row items-center gap-1"><Sparkles color={colors.muted} size={12} /><Text className="flex-1 text-[10px] font-semibold text-kaam-muted" numberOfLines={1} ellipsizeMode="tail">{product.secondarySpec}</Text></View> : null}
+            <View className={`mt-1 self-start flex-row items-center gap-1 rounded-xl px-2 py-1 ${stock.kind === 'in' ? 'bg-[#E8F7E9]' : stock.kind === 'out' ? 'bg-[#FEECEB]' : 'bg-[#FFF4D6]'}`}><CheckCircle2 color={stock.kind === 'in' ? '#15803D' : stock.kind === 'out' ? '#B42318' : '#9A6700'} size={12} /><Text className={`text-[10px] font-extrabold ${stock.kind === 'in' ? 'text-[#15803D]' : stock.kind === 'out' ? 'text-[#B42318]' : 'text-[#9A6700]'}`}>{stock.label}</Text></View>
             <Text className="mt-1 text-sm font-extrabold text-kaam-navy" numberOfLines={1}>{product.price == null ? 'Price on request' : formatPkr(product.price)}</Text>
           </>
         ) : (
@@ -63,7 +63,7 @@ export const ProductCard = ({ product, selected, compared, onPress, onCompare, v
         <View className="mt-3 flex-row items-center justify-between gap-2">
           {isAccessory ? (
             <>
-              <Pressable className="flex-1 flex-row items-center justify-center gap-1" onPress={onPress}><Text className="text-xs font-extrabold text-[#173A86]">View Details</Text><ChevronRight color="#173A86" size={15} /></Pressable>
+              <Pressable className="flex-1 flex-row items-center justify-center gap-1" onPress={onPress}><Text className="text-xs font-extrabold text-[#173A86]">View Details</Text><ChevronRight color="#173A86" size={16} /></Pressable>
               <Pressable disabled={stock.kind === 'out'} className={`h-11 flex-row items-center justify-center gap-1 rounded-xl px-3 ${stock.kind === 'out' ? 'opacity-40' : 'bg-kaam-yellow'}`} onPress={onAdd}><Package color={colors.navy} size={16} /><Text className="text-[10px] font-extrabold text-kaam-navy">{stock.kind === 'request' ? 'Request' : 'Order'}</Text></Pressable>
             </>
           ) : (

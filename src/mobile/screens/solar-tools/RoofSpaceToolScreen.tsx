@@ -133,7 +133,7 @@ export const RoofSpaceToolScreen = ({ navigation }: any) => {
           </Pressable>
           <Text style={styles.topTitle}>Roof Space</Text>
           <Pressable style={styles.toolButton} accessibilityLabel="Roof space settings">
-            <Ruler color="#C98300" size={17} strokeWidth={2.2} />
+            <Ruler color="#C98300" size={16} strokeWidth={2.2} />
           </Pressable>
         </View>
 
@@ -329,9 +329,9 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 3
   },
-  resultLabel: { color: '#9B7A2D', fontSize: 9.5, fontWeight: '900', letterSpacing: 1.1, marginBottom: 5 },
-  areaValue: { color: '#0F1E33', fontSize: 25, fontWeight: '900', lineHeight: 29 },
-  resultSubtext: { color: '#64748B', fontSize: 10.5, fontWeight: '800', marginTop: 1 },
+  resultLabel: { color: '#9B7A2D', fontSize: 10, fontWeight: '900', letterSpacing: 1.1, marginBottom: 5 },
+  areaValue: { color: '#0F1E33', fontSize: 26, fontWeight: '900', lineHeight: 29 },
+  resultSubtext: { color: '#64748B', fontSize: 11, fontWeight: '800', marginTop: 1 },
   bestCard: {
     borderRadius: 12,
     backgroundColor: 'rgba(255,248,231,0.95)',

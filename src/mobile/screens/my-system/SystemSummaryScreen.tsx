@@ -311,7 +311,7 @@ export const SystemSummaryScreen = ({ navigation, route }: any) => {
             <Text style={styles.summaryLabel}>System Size</Text>
             <Text style={styles.systemSize}>{formatKw(systemSizeKw)}</Text>
             <View style={styles.compatBadge}>
-              <ShieldCheck color="#0F8F54" size={17} strokeWidth={2.2} />
+              <ShieldCheck color="#0F8F54" size={16} strokeWidth={2.2} />
               <Text style={styles.compatText}>
                 {selectedPackage.compatibilityStatus === 'compatible' ? 'Compatible' : 'Check compatibility'}
               </Text>
@@ -334,7 +334,7 @@ export const SystemSummaryScreen = ({ navigation, route }: any) => {
         </View>
 
         <View style={styles.preliminaryNote}>
-          <ShieldCheck color="#9A6B00" size={17} strokeWidth={2.2} />
+          <ShieldCheck color="#9A6B00" size={16} strokeWidth={2.2} />
           <Text style={styles.preliminaryNoteText}>{selectedPackage.preliminaryDisclaimer}</Text>
         </View>
 
@@ -430,15 +430,15 @@ const styles = StyleSheet.create({
   summaryColumn: { flex: 1, justifyContent: 'center' },
   summaryColumnRight: { flex: 1.22, justifyContent: 'center', paddingLeft: 17 },
   summaryDivider: { width: 1, marginVertical: 14, backgroundColor: '#E7E2DA' },
-  summaryLabel: { color: '#64748B', fontSize: 12.5, fontWeight: '800' },
-  systemSize: { color: '#10213A', fontSize: 31, fontWeight: '900', marginTop: 7 },
+  summaryLabel: { color: '#64748B', fontSize: 13, fontWeight: '800' },
+  systemSize: { color: '#10213A', fontSize: 32, fontWeight: '900', marginTop: 7 },
   compatBadge: { marginTop: 17, alignSelf: 'flex-start', borderRadius: 12, backgroundColor: '#EEF7EA', flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 9, paddingVertical: 7 },
   compatText: { color: '#0F8F54', fontSize: 11, fontWeight: '900' },
-  costValue: { color: '#10213A', fontSize: 19, fontWeight: '900', marginTop: 12 },
-  costSub: { color: '#64748B', fontSize: 10.5, lineHeight: 14, fontWeight: '700', marginTop: 6, paddingRight: 20 },
+  costValue: { color: '#10213A', fontSize: 20, fontWeight: '900', marginTop: 12 },
+  costSub: { color: '#64748B', fontSize: 11, lineHeight: 14, fontWeight: '700', marginTop: 6, paddingRight: 20 },
   watermark: { position: 'absolute', right: 2, bottom: -6, flexDirection: 'row', alignItems: 'flex-end', opacity: 0.55, gap: 4 },
   preliminaryNote: { marginTop: 12, borderRadius: 14, borderWidth: 1, borderColor: '#F2D88C', backgroundColor: '#FFFAE8', flexDirection: 'row', alignItems: 'flex-start', gap: 9, padding: 12 },
-  preliminaryNoteText: { flex: 1, color: '#6F540B', fontSize: 11.5, lineHeight: 17, fontWeight: '700' },
+  preliminaryNoteText: { flex: 1, color: '#6F540B', fontSize: 12, lineHeight: 17, fontWeight: '700' },
   sectionTitle: { color: '#10213A', fontSize: 18, fontWeight: '900', marginTop: 24, marginBottom: 12 },
   sectionTitleAfterPromo: { marginTop: 0 },
   componentsCard: { borderRadius: 22, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: 'rgba(232,217,190,0.75)', paddingHorizontal: 14, shadowColor: '#6B5B43', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.07, shadowRadius: 16, elevation: 2 },
@@ -447,10 +447,10 @@ const styles = StyleSheet.create({
   productImageBox: { width: 60, height: 60, borderRadius: 17, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   productImage: { width: 56, height: 56 },
   componentCopy: { flex: 1, minWidth: 0 },
-  componentLabel: { color: '#64748B', fontSize: 11.5, fontWeight: '800' },
-  componentName: { color: '#10213A', fontSize: 13.5, lineHeight: 17, fontWeight: '900', marginTop: 4 },
-  componentDetail: { color: '#64748B', fontSize: 10.5, lineHeight: 14, fontWeight: '700', marginTop: 3 },
-  componentPrice: { maxWidth: 82, color: '#10213A', fontSize: 11.5, lineHeight: 15, textAlign: 'right', fontWeight: '900' },
+  componentLabel: { color: '#64748B', fontSize: 12, fontWeight: '800' },
+  componentName: { color: '#10213A', fontSize: 14, lineHeight: 17, fontWeight: '900', marginTop: 4 },
+  componentDetail: { color: '#64748B', fontSize: 11, lineHeight: 14, fontWeight: '700', marginTop: 3 },
+  componentPrice: { maxWidth: 82, color: '#10213A', fontSize: 12, lineHeight: 15, textAlign: 'right', fontWeight: '900' },
   batteryNote: { marginTop: 14, borderRadius: 14, backgroundColor: '#F1F5F9', flexDirection: 'row', alignItems: 'center', gap: 9, padding: 12 },
   batteryNoteText: { color: '#64748B', fontSize: 12, fontWeight: '800' },
   compatibilityCard: { marginTop: 18, borderRadius: 20, borderWidth: 1, borderColor: '#D6EFD6', backgroundColor: '#F4FBF1', flexDirection: 'row', alignItems: 'center', gap: 13, padding: 14 },

@@ -44,7 +44,7 @@ const ElectricalServiceCard = ({
   onPress: () => void;
 }) => {
   const renderIcon = () => {
-    if (service.icon === 'grid') return <Grid2X2 size={29} color="#D69A00" strokeWidth={2.1} />;
+    if (service.icon === 'grid') return <Grid2X2 size={28} color="#D69A00" strokeWidth={2.1} />;
     if (service.icon === 'zap') return <Zap size={32} color="#D69A00" strokeWidth={2.15} />;
     return <Activity size={32} color="#D69A00" strokeWidth={2.15} />;
   };
@@ -95,7 +95,7 @@ export const ElectricalWorkServicesScreen = ({ navigation }: any) => {
           accessibilityLabel="Go back"
           android_ripple={{ color: 'rgba(166, 111, 0, 0.10)', borderless: false }}
         >
-          <ArrowLeft size={27} color="#111827" strokeWidth={2.25} />
+          <ArrowLeft size={28} color="#111827" strokeWidth={2.25} />
         </Pressable>
 
         <View style={styles.serviceHeaderCopy}>

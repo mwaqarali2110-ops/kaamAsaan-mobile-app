@@ -1,4 +1,5 @@
 import { AppButton } from "@/components/ui/AppButton";
+import { AppTopBar } from "@/components/ui/AppTopBar";
 import { colors } from "@/constants/colors";
 import { languages } from "@/i18n";
 import { useAppLanguage } from "@/i18n/I18nProvider";
@@ -125,6 +126,7 @@ export const ProfileScreen = ({ navigation }: any) => {
   if (!session) {
     return (
       <SafeAreaView style={styles.safe}>
+        <AppTopBar navigation={navigation} activeRoute="Profile" />
         <ScrollView
           contentContainerStyle={styles.guestContent}
           showsVerticalScrollIndicator={false}
@@ -167,6 +169,7 @@ export const ProfileScreen = ({ navigation }: any) => {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <AppTopBar navigation={navigation} activeRoute="Profile" />
       <KeyboardAvoidingView
         enabled={Platform.OS === "ios"}
         behavior="padding"
@@ -194,7 +197,7 @@ export const ProfileScreen = ({ navigation }: any) => {
               style={styles.logoutIcon}
               accessibilityLabel={t("profile.logout")}
             >
-              <LogOut color="#8A6A16" size={19} strokeWidth={2.3} />
+              <LogOut color="#8A6A16" size={20} strokeWidth={2.3} />
             </Pressable>
           </View>
 

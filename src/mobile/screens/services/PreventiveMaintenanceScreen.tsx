@@ -1,17 +1,8 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, {
-  cancelAnimation,
-  Easing,
-  useAnimatedProps,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withRepeat,
-  withTiming
-} from 'react-native-reanimated';
-import Svg, { Defs, LinearGradient as SvgLinearGradient, Rect, Stop } from 'react-native-svg';
+import { getMaintenancePlan } from "@/data/maintenancePlans";
+import { useApiLoader } from "@/hooks/useApiLoader";
+import { useActiveSurveyJourney } from "@/hooks/useSurveyJourney";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useMaintenanceBookingStore } from "@/store/useMaintenanceBookingStore";
 import {
   ArrowLeft,
   CalendarCheck,
@@ -24,29 +15,53 @@ import {
   ShieldCheck,
   TrendingUp,
   UserCheck,
-  Users
-} from 'lucide-react-native';
-import { getMaintenancePlan } from '@/data/maintenancePlans';
-import { useMaintenanceBookingStore } from '@/store/useMaintenanceBookingStore';
-import { useAuthStore } from '@/store/useAuthStore';
-import { useActiveSurveyJourney } from '@/hooks/useSurveyJourney';
-import { useApiLoader } from '@/hooks/useApiLoader';
+  Users,
+} from "lucide-react-native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import Animated, {
+  cancelAnimation,
+  Easing,
+  useAnimatedProps,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withTiming,
+} from "react-native-reanimated";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import Svg, {
+  Defs,
+  Rect,
+  Stop,
+  LinearGradient as SvgLinearGradient,
+} from "react-native-svg";
 
 const includedServices = [
-  'Quarterly panel cleaning',
-  'DC earthing water filling',
-  'MC4 connectors tightening',
-  'Nut bolts tightening',
-  'Production monitoring',
-  'Diagnostic visit if required',
-  'Warranty claim support',
-  'Maintenance report'
+  "Quarterly panel cleaning",
+  "DC earthing water filling",
+  "MC4 connectors tightening",
+  "Nut bolts tightening",
+  "Production monitoring",
+  "Diagnostic visit if required",
+  "Warranty claim support",
+  "Maintenance report",
 ];
 
 const trustItems = [
-  { label: 'Trained technicians', Icon: UserCheck },
-  { label: '1000+ customers', Icon: Users },
-  { label: 'Reliable support', Icon: Headphones }
+  { label: "Trained technicians", Icon: UserCheck },
+  { label: "1000+ customers", Icon: Users },
+  { label: "Reliable support", Icon: Headphones },
 ];
 
 const checklistRowBaseDelay = 80;
@@ -58,7 +73,17 @@ const checklistCurrentDuration = 3200;
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
 const AnimatedChecklistRow = React.memo(
-  ({ service, index, isLast, shouldAnimate }: { service: string; index: number; isLast: boolean; shouldAnimate: boolean }) => {
+  ({
+    service,
+    index,
+    isLast,
+    shouldAnimate,
+  }: {
+    service: string;
+    index: number;
+    isLast: boolean;
+    shouldAnimate: boolean;
+  }) => {
     const rowProgress = useSharedValue(0);
     const delay = checklistRowBaseDelay + index * checklistRowDelay;
 
@@ -68,8 +93,8 @@ const AnimatedChecklistRow = React.memo(
         delay,
         withTiming(1, {
           duration: checklistRowDuration,
-          easing: Easing.out(Easing.cubic)
-        })
+          easing: Easing.out(Easing.cubic),
+        }),
       );
 
       return () => {
@@ -81,38 +106,52 @@ const AnimatedChecklistRow = React.memo(
       opacity: rowProgress.value,
       transform: [
         { translateY: (1 - rowProgress.value) * 7 },
-        { scale: 0.985 + rowProgress.value * 0.015 }
-      ]
+        { scale: 0.985 + rowProgress.value * 0.015 },
+      ],
     }));
 
     return (
-      <Animated.View style={[styles.serviceRow, isLast && styles.serviceRowLast, rowAnimatedStyle]}>
+      <Animated.View
+        style={[
+          styles.serviceRow,
+          isLast && styles.serviceRowLast,
+          rowAnimatedStyle,
+        ]}
+      >
         <View>
           <CheckCircle2 size={18} color="#F5A400" strokeWidth={2.4} />
         </View>
         <Text style={styles.serviceText}>{service}</Text>
       </Animated.View>
     );
-  }
+  },
 );
-AnimatedChecklistRow.displayName = 'AnimatedChecklistRow';
+AnimatedChecklistRow.displayName = "AnimatedChecklistRow";
 
 export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
   const insets = useSafeAreaInsets();
   const userId = useAuthStore((state) => state.session?.user.id);
-  const setSelectedPlan = useMaintenanceBookingStore((state) => state.setSelectedPlan);
+  const setSelectedPlan = useMaintenanceBookingStore(
+    (state) => state.setSelectedPlan,
+  );
   const isNavigatingRef = useRef(false);
   const activeJourneyQuery = useActiveSurveyJourney(userId);
   const { withApiLoader } = useApiLoader();
-  const [showBlockedInfo, setShowBlockedInfo] = useState(Boolean(route.params?.showActiveInstallationBlocked));
+  const [showBlockedInfo, setShowBlockedInfo] = useState(
+    Boolean(route.params?.showActiveInstallationBlocked),
+  );
   const [checklistSize, setChecklistSize] = useState({ width: 0, height: 0 });
-  const [checklistAnimationStarted, setChecklistAnimationStarted] = useState(false);
+  const [checklistAnimationStarted, setChecklistAnimationStarted] =
+    useState(false);
   const checklistAnimationStartedRef = useRef(false);
   const checklistLayoutRef = useRef({ y: 0, height: 0 });
   const scrollViewportHeightRef = useRef(0);
   const scrollOffsetYRef = useRef(0);
   const borderProgress = useSharedValue(0);
-  const checklistPerimeter = checklistSize.width > 0 && checklistSize.height > 0 ? (checklistSize.width + checklistSize.height) * 2 : 1;
+  const checklistPerimeter =
+    checklistSize.width > 0 && checklistSize.height > 0
+      ? (checklistSize.width + checklistSize.height) * 2
+      : 1;
   const currentDash = Math.min(76, Math.max(52, checklistPerimeter * 0.12));
 
   const startChecklistAnimationWhenVisible = useCallback(() => {
@@ -124,7 +163,9 @@ export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
 
     const viewportBottom = scrollTop + viewportHeight;
     const checklistBottom = checklistLayout.y + checklistLayout.height;
-    const isVisible = checklistLayout.y < viewportBottom - 24 && checklistBottom > scrollTop + 24;
+    const isVisible =
+      checklistLayout.y < viewportBottom - 24 &&
+      checklistBottom > scrollTop + 24;
     if (!isVisible) return;
 
     checklistAnimationStartedRef.current = true;
@@ -135,17 +176,17 @@ export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
     borderProgress.value = withRepeat(
       withTiming(1, {
         duration: checklistCurrentDuration,
-        easing: Easing.linear
+        easing: Easing.linear,
       }),
       -1,
-      false
+      false,
     );
 
     // Stop the loop the moment the screen loses focus, not just on unmount —
     // native-stack keeps this screen mounted for part of the push/pop
     // transition, and an in-flight repeat can otherwise still be pumping
     // frame updates into the SVG node while it's being torn down.
-    const unsubscribeBlur = navigation.addListener?.('blur', () => {
+    const unsubscribeBlur = navigation.addListener?.("blur", () => {
       cancelAnimation(borderProgress);
     });
 
@@ -156,7 +197,7 @@ export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
   }, [borderProgress, navigation]);
 
   const currentBorderAnimatedProps = useAnimatedProps(() => ({
-    strokeDashoffset: -borderProgress.value * checklistPerimeter
+    strokeDashoffset: -borderProgress.value * checklistPerimeter,
   }));
 
   useEffect(() => {
@@ -166,7 +207,9 @@ export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
   }, [route.params?.showActiveInstallationBlocked]);
 
   const talkToRepresentative = () => {
-    const message = encodeURIComponent('Hi KaamAsaan, I need help with my solar installation survey.');
+    const message = encodeURIComponent(
+      "Hi KaamAsaan, I need help with my solar installation survey.",
+    );
     void Linking.openURL(`https://wa.me/?text=${message}`);
   };
 
@@ -174,22 +217,27 @@ export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
     if (isNavigatingRef.current) return;
     isNavigatingRef.current = true;
 
-    const activeJourney = activeJourneyQuery.data ?? (userId
-      ? await withApiLoader(async () => (await activeJourneyQuery.refetch()).data, 'Checking eligibility…')
-      : null);
+    const activeJourney =
+      activeJourneyQuery.data ??
+      (userId
+        ? await withApiLoader(
+            async () => (await activeJourneyQuery.refetch()).data,
+            "Checking eligibility…",
+          )
+        : null);
     if (activeJourney) {
       setShowBlockedInfo(true);
       isNavigatingRef.current = false;
       return;
     }
 
-    const plan = getMaintenancePlan('premium');
+    const plan = getMaintenancePlan("premium");
     setSelectedPlan(plan);
-    navigation.navigate('MaintenanceBooking', {
+    navigation.navigate("MaintenanceBooking", {
       plan,
-      selectedPackage: 'premium',
-      packageName: 'Premium Care',
-      price: 20000
+      selectedPackage: "premium",
+      packageName: "Premium Care",
+      price: 20000,
     });
 
     setTimeout(() => {
@@ -199,11 +247,14 @@ export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
 
   if (showBlockedInfo) {
     return (
-      <SafeAreaView style={styles.root} edges={['top']}>
+      <SafeAreaView style={styles.root} edges={["top"]}>
         <View style={styles.infoShell}>
           <View style={styles.header}>
             <Pressable
-              style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+              style={({ pressed }) => [
+                styles.backButton,
+                pressed && styles.pressed,
+              ]}
               onPress={() => navigation.goBack()}
               hitSlop={12}
               accessibilityLabel="Back"
@@ -221,21 +272,45 @@ export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
             <View style={styles.infoIcon}>
               <CalendarCheck size={30} color="#0F172A" strokeWidth={2.4} />
             </View>
-            <Text style={styles.infoTitle}>Your solar installation survey is already booked</Text>
-            <Text style={styles.infoText}>
-              Our agent will contact you soon regarding the site survey for your solar system installation. Once your system is installed, you can activate KaamAsaan Solar Care for annual preventive maintenance.
+            <Text style={styles.infoTitle}>
+              Your solar installation survey is already booked
             </Text>
-            <Text style={styles.supportText}>For further help, please talk to our representative.</Text>
+            <Text style={styles.infoText}>
+              Our agent will contact you soon regarding the site survey for your
+              solar system installation. Once your system is installed, you can
+              activate KaamAsaan Solar Care for annual preventive maintenance.
+            </Text>
+            <Text style={styles.supportText}>
+              For further help, please talk to our representative.
+            </Text>
 
-            <Pressable style={styles.infoPrimaryButton} onPress={() => navigation.navigate('MainTabs', { screen: 'MyProject' })} accessibilityRole="button">
+            <Pressable
+              style={styles.infoPrimaryButton}
+              onPress={() =>
+                navigation.navigate("MainTabs", { screen: "MyProject" })
+              }
+              accessibilityRole="button"
+            >
               <ShieldCheck size={20} color="#0F172A" strokeWidth={2.4} />
               <Text style={styles.infoPrimaryText}>Track My Project</Text>
             </Pressable>
-            <Pressable style={styles.infoSecondaryButton} onPress={talkToRepresentative} accessibilityRole="button">
+            <Pressable
+              style={styles.infoSecondaryButton}
+              onPress={talkToRepresentative}
+              accessibilityRole="button"
+            >
               <MessageCircle size={20} color="#D99A00" strokeWidth={2.4} />
-              <Text style={styles.infoSecondaryText}>Talk to Representative</Text>
+              <Text style={styles.infoSecondaryText}>
+                Talk to Representative
+              </Text>
             </Pressable>
-            <Pressable style={styles.infoTertiaryButton} onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })} accessibilityRole="button">
+            <Pressable
+              style={styles.infoTertiaryButton}
+              onPress={() =>
+                navigation.navigate("MainTabs", { screen: "Home" })
+              }
+              accessibilityRole="button"
+            >
               <Home size={18} color="#64748B" strokeWidth={2.4} />
               <Text style={styles.infoTertiaryText}>Back to Home</Text>
             </Pressable>
@@ -246,10 +321,13 @@ export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
   }
 
   return (
-    <SafeAreaView style={styles.root} edges={['top']}>
+    <SafeAreaView style={styles.root} edges={["top"]}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.content, { paddingBottom: Math.max(120, insets.bottom + 120) }]}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: Math.max(120, insets.bottom + 120) },
+        ]}
         showsVerticalScrollIndicator={false}
         onLayout={(event) => {
           scrollViewportHeightRef.current = event.nativeEvent.layout.height;
@@ -263,7 +341,10 @@ export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
       >
         <View style={styles.header}>
           <Pressable
-            style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+            style={({ pressed }) => [
+              styles.backButton,
+              pressed && styles.pressed,
+            ]}
             onPress={() => navigation.goBack()}
             hitSlop={12}
             accessibilityLabel="Back"
@@ -280,13 +361,25 @@ export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
         <View style={styles.summaryCard}>
           <Svg style={styles.summaryGradient} pointerEvents="none">
             <Defs>
-              <SvgLinearGradient id="premium-summary-gradient" x1="0" y1="0" x2="1" y2="1">
+              <SvgLinearGradient
+                id="premium-summary-gradient"
+                x1="0"
+                y1="0"
+                x2="1"
+                y2="1"
+              >
                 <Stop offset="0" stopColor="#FFFFFF" />
                 <Stop offset="0.52" stopColor="#FFF8E6" />
                 <Stop offset="1" stopColor="#FFEFC2" />
               </SvgLinearGradient>
             </Defs>
-            <Rect x="0" y="0" width="100%" height="100%" fill="url(#premium-summary-gradient)" />
+            <Rect
+              x="0"
+              y="0"
+              width="100%"
+              height="100%"
+              fill="url(#premium-summary-gradient)"
+            />
           </Svg>
           <View style={styles.summaryTop}>
             <View style={styles.summaryIcon}>
@@ -320,7 +413,9 @@ export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
 
         <View style={styles.urgencyCard}>
           <CircleAlert size={18} color="#B07800" strokeWidth={2.4} />
-          <Text style={styles.urgencyText}>Prevent small issues before they become costly.</Text>
+          <Text style={styles.urgencyText}>
+            Prevent small issues before they become costly.
+          </Text>
         </View>
 
         <View
@@ -334,7 +429,7 @@ export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
             setChecklistSize((current) =>
               current.width === nextWidth && current.height === nextHeight
                 ? current
-                : { width: nextWidth, height: nextHeight }
+                : { width: nextWidth, height: nextHeight },
             );
             startChecklistAnimationWhenVisible();
           }}
@@ -417,7 +512,12 @@ export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
           {trustItems.map(({ label, Icon }) => (
             <View key={label} style={styles.trustItem}>
               <Icon size={16} color="#F5A400" strokeWidth={2.3} />
-              <Text style={styles.trustText} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.9}>
+              <Text
+                style={styles.trustText}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+                minimumFontScale={0.9}
+              >
                 {label}
               </Text>
             </View>
@@ -425,7 +525,9 @@ export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
         </View>
 
         <View style={styles.promiseRow}>
-          <Text style={styles.promiseText}>Reliable • Transparent • Hassle-free</Text>
+          <Text style={styles.promiseText}>
+            Reliable • Transparent • Hassle-free
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -435,366 +537,366 @@ export const PreventiveMaintenanceScreen = ({ navigation, route }: any) => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#FFFCF5'
+    backgroundColor: "#FFFCF5",
   },
   scroll: {
     flex: 1,
-    width: '100%'
+    width: "100%",
   },
   content: {
-    width: '100%',
+    width: "100%",
     paddingHorizontal: 16,
     paddingTop: 10,
-    gap: 0
+    gap: 0,
   },
   infoShell: {
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 10,
     paddingBottom: 24,
-    justifyContent: 'center'
+    justifyContent: "center",
   },
   header: {
     minHeight: 64,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
   },
   backButton: {
     width: 42,
     height: 42,
-    alignItems: 'center',
-    justifyContent: 'center'
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerText: {
-    flex: 1
+    flex: 1,
   },
   title: {
-    color: '#0B1528',
-    fontSize: 30,
+    color: "#0B1528",
+    fontSize: 16,
     lineHeight: 35,
-    fontWeight: '900'
+    fontWeight: "900",
   },
   subtitle: {
-    color: '#5B677A',
+    color: "#5B677A",
     fontSize: 18,
     lineHeight: 22,
-    fontWeight: '500'
+    fontWeight: "500",
   },
   summaryCard: {
-    width: '100%',
+    width: "100%",
     borderRadius: 24,
-    backgroundColor: '#FFF8E6',
+    backgroundColor: "#FFF8E6",
     padding: 18,
-    position: 'relative',
+    position: "relative",
     borderWidth: 1,
-    borderColor: '#F3D27A',
-    shadowColor: '#D99A00',
+    borderColor: "#F3D27A",
+    shadowColor: "#D99A00",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 3,
-    marginTop: 14
+    marginTop: 14,
   },
   summaryGradient: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     right: 0,
     bottom: 0,
     left: 0,
     borderRadius: 24,
-    overflow: 'hidden'
+    overflow: "hidden",
   },
   summaryTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
   summaryIcon: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#F5B400',
-    alignItems: 'center',
-    justifyContent: 'center'
+    backgroundColor: "#F5B400",
+    alignItems: "center",
+    justifyContent: "center",
   },
   summaryCopy: {
-    flex: 1
+    flex: 1,
   },
   planTitle: {
-    color: '#0B1528',
+    color: "#0B1528",
     fontSize: 22,
     lineHeight: 27,
-    fontWeight: '900'
+    fontWeight: "900",
   },
   planSubtitle: {
     marginTop: 2,
-    color: '#5B677A',
+    color: "#5B677A",
     fontSize: 14,
     lineHeight: 18,
-    fontWeight: '600'
+    fontWeight: "600",
   },
   priceBlock: {
-    alignItems: 'flex-end'
+    alignItems: "flex-end",
   },
   price: {
-    color: '#0B1528',
+    color: "#0B1528",
     fontSize: 20,
     lineHeight: 24,
-    fontWeight: '900'
+    fontWeight: "900",
   },
   priceMeta: {
-    color: '#5B677A',
+    color: "#5B677A",
     fontSize: 13,
     lineHeight: 17,
-    fontWeight: '600'
+    fontWeight: "600",
   },
   chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
-    marginTop: 16
+    marginTop: 16,
   },
   chip: {
     minHeight: 32,
     borderRadius: 999,
-    backgroundColor: '#FFF4D8',
-    flexDirection: 'row',
-    alignItems: 'center',
+    backgroundColor: "#FFF4D8",
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
-    paddingHorizontal: 10
+    paddingHorizontal: 10,
   },
   chipText: {
-    color: '#0B1528',
+    color: "#0B1528",
     fontSize: 13,
-    fontWeight: '800'
+    fontWeight: "800",
   },
   urgencyCard: {
-    width: '100%',
+    width: "100%",
     minHeight: 48,
     borderRadius: 16,
-    backgroundColor: '#FFF6DF',
-    flexDirection: 'row',
-    alignItems: 'center',
+    backgroundColor: "#FFF6DF",
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: '#F3DCA8',
-    marginTop: 14
+    borderColor: "#F3DCA8",
+    marginTop: 14,
   },
   urgencyText: {
     flex: 1,
-    color: '#263247',
+    color: "#263247",
     fontSize: 14,
     lineHeight: 18,
-    fontWeight: '600'
+    fontWeight: "600",
   },
   checklistCard: {
-    width: '100%',
+    width: "100%",
     borderRadius: 22,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     padding: 16,
-    position: 'relative',
+    position: "relative",
     borderWidth: 1,
-    borderColor: '#F3E7C4',
-    shadowColor: '#7A6A52',
+    borderColor: "#F3E7C4",
+    shadowColor: "#7A6A52",
     shadowOffset: { width: 0, height: 7 },
     shadowOpacity: 0.07,
     shadowRadius: 16,
     elevation: 2,
-    marginTop: 14
+    marginTop: 14,
   },
   sectionTitle: {
-    color: '#0B1528',
+    color: "#0B1528",
     fontSize: 18,
     lineHeight: 23,
-    fontWeight: '900',
-    marginBottom: 8
+    fontWeight: "900",
+    marginBottom: 8,
   },
   checklist: {
-    width: '100%'
+    width: "100%",
   },
   serviceRow: {
     minHeight: 39,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0E8DC'
+    borderBottomColor: "#F0E8DC",
   },
   serviceRowLast: {
-    borderBottomWidth: 0
+    borderBottomWidth: 0,
   },
   serviceText: {
     flex: 1,
-    color: '#263247',
+    color: "#263247",
     fontSize: 14,
     lineHeight: 18,
-    fontWeight: '600'
+    fontWeight: "600",
   },
   primaryButton: {
-    width: '100%',
+    width: "100%",
     height: 58,
     borderRadius: 18,
-    backgroundColor: '#F5B400',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#F5B400",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 10,
     paddingHorizontal: 16,
     marginTop: 16,
     marginBottom: 18,
-    shadowColor: '#C87500',
+    shadowColor: "#C87500",
     shadowOffset: { width: 0, height: 7 },
     shadowOpacity: 0.22,
     shadowRadius: 12,
-    elevation: 4
+    elevation: 4,
   },
   primaryButtonText: {
-    color: '#0F172A',
+    color: "#0F172A",
     fontSize: 16,
     lineHeight: 22,
-    fontWeight: '800'
+    fontWeight: "800",
   },
   trustRow: {
     marginHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: 8,
     marginTop: 18,
     marginBottom: 20,
     paddingVertical: 12,
     paddingHorizontal: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#F0E8DC',
-    shadowColor: '#7A6A52',
+    borderColor: "#F0E8DC",
+    shadowColor: "#7A6A52",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.07,
     shadowRadius: 14,
-    elevation: 2
+    elevation: 2,
   },
   trustItem: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
   },
   trustText: {
     flexShrink: 1,
-    color: '#5B677A',
+    color: "#5B677A",
     fontSize: 12,
     lineHeight: 15,
-    fontWeight: '800',
-    textAlign: 'center'
+    fontWeight: "800",
+    textAlign: "center",
   },
   promiseRow: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 30
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 30,
   },
   promiseText: {
-    color: '#5B677A',
+    color: "#5B677A",
     fontSize: 12,
     lineHeight: 17,
-    fontWeight: '600',
-    textAlign: 'center'
+    fontWeight: "600",
+    textAlign: "center",
   },
   pressed: {
     opacity: 0.9,
-    transform: [{ scale: 0.99 }]
+    transform: [{ scale: 0.99 }],
   },
   infoCard: {
-    width: '100%',
+    width: "100%",
     borderRadius: 24,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: '#F0E3CF',
+    borderColor: "#F0E3CF",
     padding: 20,
-    shadowColor: '#7A6A52',
+    shadowColor: "#7A6A52",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.08,
     shadowRadius: 18,
-    elevation: 3
+    elevation: 3,
   },
   infoIcon: {
     width: 62,
     height: 62,
     borderRadius: 31,
-    backgroundColor: '#F5B400',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16
+    backgroundColor: "#F5B400",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
   },
   infoTitle: {
-    color: '#0F172A',
+    color: "#0F172A",
     fontSize: 24,
     lineHeight: 29,
-    fontWeight: '900'
+    fontWeight: "900",
   },
   infoText: {
     marginTop: 10,
-    color: '#64748B',
+    color: "#64748B",
     fontSize: 14,
     lineHeight: 21,
-    fontWeight: '600'
+    fontWeight: "600",
   },
   supportText: {
     marginTop: 12,
-    color: '#263247',
+    color: "#263247",
     fontSize: 13,
     lineHeight: 18,
-    fontWeight: '800'
+    fontWeight: "800",
   },
   infoPrimaryButton: {
-    width: '100%',
+    width: "100%",
     height: 54,
     borderRadius: 17,
-    backgroundColor: '#F5B400',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#F5B400",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 9,
-    marginTop: 20
+    marginTop: 20,
   },
   infoPrimaryText: {
-    color: '#0F172A',
+    color: "#0F172A",
     fontSize: 15,
-    fontWeight: '900'
+    fontWeight: "900",
   },
   infoSecondaryButton: {
-    width: '100%',
+    width: "100%",
     height: 52,
     borderRadius: 17,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderWidth: 1.4,
-    borderColor: '#EAB308',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: "#EAB308",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 9,
-    marginTop: 12
+    marginTop: 12,
   },
   infoSecondaryText: {
-    color: '#B07800',
+    color: "#B07800",
     fontSize: 15,
-    fontWeight: '900'
+    fontWeight: "900",
   },
   infoTertiaryButton: {
     height: 42,
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 7,
     paddingHorizontal: 10,
-    marginTop: 12
+    marginTop: 12,
   },
   infoTertiaryText: {
-    color: '#64748B',
+    color: "#64748B",
     fontSize: 13,
-    fontWeight: '800'
-  }
+    fontWeight: "800",
+  },
 });

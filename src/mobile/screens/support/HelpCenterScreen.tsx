@@ -269,21 +269,21 @@ export const HelpCenterScreen = ({ navigation }: any) => {
 
             <Pressable style={styles.supportOption} onPress={openWhatsApp} accessibilityRole="button">
               <View style={styles.supportIcon}>
-                <MessageCircle size={21} color="#D99A00" strokeWidth={2.4} />
+                <MessageCircle size={20} color="#D99A00" strokeWidth={2.4} />
               </View>
               <Text style={styles.supportText}>WhatsApp Support</Text>
             </Pressable>
 
             <Pressable style={styles.supportOption} onPress={callSupport} accessibilityRole="button">
               <View style={styles.supportIcon}>
-                <Phone size={21} color="#D99A00" strokeWidth={2.4} />
+                <Phone size={20} color="#D99A00" strokeWidth={2.4} />
               </View>
               <Text style={styles.supportText}>Call Support</Text>
             </Pressable>
 
             <Pressable style={styles.supportOption} onPress={emailSupport} accessibilityRole="button">
               <View style={styles.supportIcon}>
-                <Mail size={21} color="#D99A00" strokeWidth={2.4} />
+                <Mail size={20} color="#D99A00" strokeWidth={2.4} />
               </View>
               <Text style={styles.supportText}>Email Support</Text>
             </Pressable>
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#0F172A',
-    fontSize: 25,
+    fontSize: 26,
     lineHeight: 30,
     fontWeight: '900',
   },
@@ -500,7 +500,7 @@ const styles = StyleSheet.create({
   },
   sheetTitle: {
     color: '#0F172A',
-    fontSize: 21,
+    fontSize: 22,
     lineHeight: 26,
     fontWeight: '900',
   },

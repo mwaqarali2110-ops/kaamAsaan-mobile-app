@@ -143,7 +143,7 @@ export const BatterySizeToolScreen = ({ navigation }: any) => {
           <View style={styles.summaryHeader}>
             <View style={styles.summaryTitleRow}>
               <View style={styles.summaryIcon}>
-                <Zap color="#10213A" size={15} strokeWidth={2.5} />
+                <Zap color="#10213A" size={16} strokeWidth={2.5} />
               </View>
               <Text style={styles.summaryTitle}>Your Backup Load Summary</Text>
             </View>
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
   summaryTitle: {
     flex: 1,
     color: '#10213A',
-    fontSize: 12.5,
+    fontSize: 13,
     lineHeight: 16,
     fontWeight: '900'
   },
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
   },
   summaryBadgeText: {
     color: '#A66F00',
-    fontSize: 8.5,
+    fontSize: 10,
     fontWeight: '900'
   },
   summaryGrid: {
@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
   },
   summaryMetricLabel: {
     color: '#7A5A10',
-    fontSize: 8.5,
+    fontSize: 10,
     fontWeight: '800'
   },
   summaryMetricValue: {
@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
   summaryHelper: {
     marginTop: 8,
     color: '#64748B',
-    fontSize: 9.5,
+    fontSize: 10,
     lineHeight: 13,
     fontWeight: '700'
   },
@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
     marginBottom: 7,
     textAlign: 'center',
     color: '#7A5A10',
-    fontSize: 9.5,
+    fontSize: 10,
     fontWeight: '800'
   },
   calculateButton: {

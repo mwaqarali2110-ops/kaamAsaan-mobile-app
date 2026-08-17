@@ -81,7 +81,7 @@ export const HowItWorksScreen = ({ navigation }: any) => {
     <SafeAreaView style={styles.screen} edges={['top']}>
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="Back">
-          <ArrowLeft color="#10213A" size={19} strokeWidth={2.4} />
+          <ArrowLeft color="#10213A" size={20} strokeWidth={2.4} />
         </Pressable>
         <Text style={styles.headerTitle}>How it works</Text>
         <View style={styles.headerSpacer} />
@@ -98,7 +98,7 @@ export const HowItWorksScreen = ({ navigation }: any) => {
 
         <View style={styles.infoCard}>
           <View style={styles.infoIcon}>
-            <Zap color="#10213A" size={17} strokeWidth={2.5} />
+            <Zap color="#10213A" size={16} strokeWidth={2.5} />
           </View>
           <View style={styles.infoCopy}>
             <Text style={styles.infoTitle}>Why this journey matters</Text>
@@ -127,7 +127,7 @@ export const HowItWorksScreen = ({ navigation }: any) => {
                 <StepPreview type={item.preview} />
                 <View style={styles.viewStepRow}>
                   <Text style={styles.viewStepText}>View step</Text>
-                  <ArrowRight color="#D99A00" size={15} strokeWidth={2.6} />
+                  <ArrowRight color="#D99A00" size={16} strokeWidth={2.6} />
                 </View>
               </View>
             </Pressable>
@@ -163,7 +163,7 @@ export const HowItWorksScreen = ({ navigation }: any) => {
             <Text style={styles.modalDescription}>{selectedStep?.description}</Text>
             <Pressable style={styles.modalStartButton} onPress={startJourney}>
               <Text style={styles.modalStartText}>Start this journey</Text>
-              <ArrowRight color="#10213A" size={17} strokeWidth={2.6} />
+              <ArrowRight color="#10213A" size={16} strokeWidth={2.6} />
             </Pressable>
           </Pressable>
         </Pressable>
@@ -351,8 +351,8 @@ const styles = StyleSheet.create({
   stepLabel: { color: '#D99A00', fontSize: 11, fontWeight: '900' },
   tag: { borderRadius: 999, backgroundColor: '#FFF4D6', paddingHorizontal: 9, paddingVertical: 4 },
   tagText: { color: '#A66F00', fontSize: 10, fontWeight: '900' },
-  stepTitle: { marginTop: 8, color: '#10213A', fontSize: 17, fontWeight: '900', lineHeight: 22 },
-  stepDescription: { marginTop: 6, color: '#64748B', fontSize: 12.5, lineHeight: 18, fontWeight: '600' },
+  stepTitle: { marginTop: 8, color: '#10213A', fontSize: 18, fontWeight: '900', lineHeight: 22 },
+  stepDescription: { marginTop: 6, color: '#64748B', fontSize: 13, lineHeight: 18, fontWeight: '600' },
   viewStepRow: { marginTop: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 5 },
   viewStepText: { color: '#D99A00', fontSize: 12, fontWeight: '900' },
   preview: {
@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
   previewInner: { padding: 12, gap: 8 },
   miniRow: { height: 18, flexDirection: 'row', alignItems: 'center', gap: 7 },
   miniDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#F5B400' },
-  miniLabel: { flex: 1, color: '#10213A', fontSize: 10.5, fontWeight: '800' },
+  miniLabel: { flex: 1, color: '#10213A', fontSize: 11, fontWeight: '800' },
   miniValue: { color: '#64748B', fontSize: 10, fontWeight: '900' },
   panelPreview: { alignSelf: 'center', gap: 5 },
   panelPreviewRow: { flexDirection: 'row', gap: 5 },
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
   trackText: { color: '#10213A', fontSize: 11, fontWeight: '800' },
   bottomCtaCard: { borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E8DED0', padding: 16, marginTop: 2 },
   bottomCtaTitle: { color: '#10213A', fontSize: 18, fontWeight: '900' },
-  bottomCtaText: { marginTop: 6, color: '#64748B', fontSize: 12.5, lineHeight: 18, fontWeight: '600' },
+  bottomCtaText: { marginTop: 6, color: '#64748B', fontSize: 13, lineHeight: 18, fontWeight: '600' },
   startButton: { marginTop: 14, height: 54, borderRadius: 16, backgroundColor: '#F5B400', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   startButtonText: { color: '#10213A', fontSize: 15, fontWeight: '900' },
   laterButton: { height: 42, alignItems: 'center', justifyContent: 'center' },
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
   detailModal: { width: '100%', borderRadius: 22, backgroundColor: '#FFFBF2', padding: 16, borderWidth: 1, borderColor: '#E8DED0' },
   modalHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   modalStep: { color: '#D99A00', fontSize: 11, fontWeight: '900' },
-  modalTitle: { marginTop: 4, color: '#10213A', fontSize: 21, lineHeight: 26, fontWeight: '900' },
+  modalTitle: { marginTop: 4, color: '#10213A', fontSize: 22, lineHeight: 26, fontWeight: '900' },
   closeButton: { width: 34, height: 34, borderRadius: 12, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E8DED0', alignItems: 'center', justifyContent: 'center' },
   modalDescription: { marginTop: 12, color: '#64748B', fontSize: 13, lineHeight: 19, fontWeight: '600' },
   modalStartButton: { marginTop: 16, height: 52, borderRadius: 16, backgroundColor: '#F5B400', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },

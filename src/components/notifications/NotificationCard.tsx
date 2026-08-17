@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
 
   notificationTitle: {
     color: '#10233F',
-    fontSize: 17,
+    fontSize: 18,
     lineHeight: 22,
     fontWeight: '800',
     flexShrink: 1,
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 6,
     color: '#806B41',
-    fontSize: 12.5,
+    fontSize: 13,
     lineHeight: 17,
     fontWeight: '600',
     flexShrink: 1,
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
 
   notificationCTAText: {
     marginLeft: 8,
-    fontSize: 14.5,
+    fontSize: 15,
     lineHeight: 19,
     fontWeight: '800',
     textAlign: 'center',

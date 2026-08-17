@@ -200,12 +200,12 @@ export const MaintenanceBookingScreen = ({ navigation, route }: any) => {
             accessibilityLabel="Select preferred maintenance date"
           >
             <View style={styles.inputIcon}>
-              <CalendarDays color="#334155" size={21} strokeWidth={2.1} />
+              <CalendarDays color="#334155" size={20} strokeWidth={2.1} />
             </View>
             <Text style={[styles.dateFieldText, !preferredDate && styles.datePlaceholder]} numberOfLines={1}>
               {preferredDate ? formatDisplayDate(preferredDate) : 'Select maintenance date'}
             </Text>
-            <ChevronDown color="#64748B" size={19} strokeWidth={2.3} />
+            <ChevronDown color="#64748B" size={20} strokeWidth={2.3} />
           </Pressable>
           {errors.preferredDate ? <Text style={styles.errorText}>{errors.preferredDate}</Text> : null}
 
@@ -229,7 +229,7 @@ export const MaintenanceBookingScreen = ({ navigation, route }: any) => {
                 >
                   {selected ? (
                     <View style={styles.slotCheck}>
-                      <Check color="#FFFFFF" size={11} strokeWidth={3.2} />
+                      <Check color="#FFFFFF" size={12} strokeWidth={3.2} />
                     </View>
                   ) : null}
                   <Text style={[styles.slotText, selected && styles.slotTextSelected]}>{slot}</Text>
@@ -403,10 +403,10 @@ const styles = StyleSheet.create({
   planCopy: { flex: 1, minWidth: 0 },
   planLabel: { color: '#9A7B33', fontSize: 10, fontWeight: '900', letterSpacing: 0.7 },
   planTitle: { marginTop: 3, color: '#0F1E33', fontSize: 15, fontWeight: '900' },
-  planMeta: { marginTop: 2, color: '#64748B', fontSize: 11.5, fontWeight: '700' },
+  planMeta: { marginTop: 2, color: '#64748B', fontSize: 12, fontWeight: '700' },
   sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 7 },
   sectionSpacing: { marginTop: 4 },
-  sectionTitle: { color: '#0F1E33', fontSize: 17, fontWeight: '900', letterSpacing: -0.4 },
+  sectionTitle: { color: '#0F1E33', fontSize: 18, fontWeight: '900', letterSpacing: -0.4 },
   dateField: {
     height: 60,
     borderRadius: 16,
@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 2
   },
-  dateFieldText: { flex: 1, color: '#0F1E33', fontSize: 13.5, fontWeight: '800' },
+  dateFieldText: { flex: 1, color: '#0F1E33', fontSize: 14, fontWeight: '800' },
   datePlaceholder: { color: '#64748B', fontWeight: '600' },
   slotRow: { gap: 8, marginBottom: 12 },
   slotChip: {
@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center'
   },
-  slotText: { flex: 1, color: '#334155', fontSize: 13.5, fontWeight: '700' },
+  slotText: { flex: 1, color: '#334155', fontSize: 14, fontWeight: '700' },
   slotTextSelected: { color: '#0F1E33', fontWeight: '900' },
   fields: { gap: 8, marginBottom: 12 },
   inputWrap: {
@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
     marginTop: -2,
     marginBottom: 12,
     color: '#64748B',
-    fontSize: 11.5,
+    fontSize: 12,
     lineHeight: 16,
     fontWeight: '700',
     textAlign: 'center'
@@ -503,15 +503,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   trustCopy: { flex: 1, minWidth: 0 },
-  trustTitle: { color: '#0F1E33', fontSize: 13.5, fontWeight: '900' },
-  trustText: { marginTop: 3, color: '#526174', fontSize: 11.5, lineHeight: 16, fontWeight: '600' },
+  trustTitle: { color: '#0F1E33', fontSize: 14, fontWeight: '900' },
+  trustText: { marginTop: 3, color: '#526174', fontSize: 12, lineHeight: 16, fontWeight: '600' },
   submitErrorText: {
     marginTop: 10,
     borderRadius: 10,
     backgroundColor: '#FEF2F2',
     padding: 10,
     color: '#B42318',
-    fontSize: 11.5,
+    fontSize: 12,
     fontWeight: '800',
     lineHeight: 16
   },
@@ -541,5 +541,5 @@ const styles = StyleSheet.create({
     elevation: 3
   },
   confirmButtonDisabled: { opacity: 0.68 },
-  confirmText: { color: '#0F1E33', fontSize: 17, fontWeight: '900' }
+  confirmText: { color: '#0F1E33', fontSize: 18, fontWeight: '900' }
 });
