@@ -1,8 +1,17 @@
-node_modules/ 
-.expo/
 node_modules/
 .expo/
-node_modules/
+dist/
+web-build/
+
+# Bare workflow: android/ is tracked (it has its own .gitignore for build
+# output). ios/ stays generated since this project only ships Android.
+ios/
+
+# Signing material and backups — never commit keystores or credentials.
+credentials/
+*.jks
+
+*.log
 Mobile App.zip
 
 .env

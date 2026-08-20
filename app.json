@@ -6,9 +6,7 @@
     "icon": "./assets/branding/kaamasaan-app-icon.png",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": false
     },
@@ -50,9 +48,9 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/branding/kaamasaan-native-splash-logo.png",
+          "image": "./assets/branding/logo4-icon-only.png",
           "backgroundColor": "#FFF5DE",
-          "imageWidth": 220,
+          "imageWidth": 180,
           "resizeMode": "contain"
         }
       ]

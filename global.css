@@ -11,6 +11,13 @@ body,
   background: #dde8e9;
 }
 
+/* react-native-web sets its own font stack per Text element, so the
+   family must be forced at the element level, not inherited. */
+#root,
+#root * {
+  font-family: 'Roboto', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
 body {
   overflow: hidden;
 }
