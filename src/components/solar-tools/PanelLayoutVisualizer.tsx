@@ -32,7 +32,7 @@ type PanelLayoutVisualizerProps = {
   orientation: PanelOrientation;
   onOrientationChange: (orientation: PanelOrientation) => void;
   layout: PanelLayoutResult;
-  alternateLayout: PanelLayoutResult;
+  alternateLayout?: PanelLayoutResult;
   emptyMessage?: string;
 };
 
@@ -268,7 +268,6 @@ export const PanelLayoutVisualizer = ({
   orientation,
   onOrientationChange,
   layout,
-  alternateLayout,
   emptyMessage = 'Panel layout is unavailable.'
 }: PanelLayoutVisualizerProps) => {
   const hasPanelLayout = panelQuantity > 0 && panelWattage > 0;
@@ -298,15 +297,11 @@ export const PanelLayoutVisualizer = ({
       </View>
 
       <View style={styles.orientationCard}>
-        <Text style={styles.orientationTitle}>{orientation === 'landscape' ? 'LANDSCAPE' : 'PORTRAIT'} ORIENTATION</Text>
         <View style={styles.orientationControls}>
-          <View style={styles.rowsPill}>
-            <Text style={styles.rowsButton}>-</Text>
-            <Text style={styles.rowsText}>{layout.rows} rows</Text>
-            <Text style={styles.rowsButton}>+</Text>
+          <Text style={styles.orientationTitle}>{orientation === 'landscape' ? 'LANDSCAPE' : 'PORTRAIT'} ORIENTATION</Text>
+          <View style={styles.bestFitPill}>
+            <Text style={styles.bestFitText}>Best fit</Text>
           </View>
-          <Text style={styles.compactText}>{layout.columns} columns</Text>
-          <Text style={styles.compactText}>{layout.area <= alternateLayout.area ? 'Best fit' : 'Alt. fit available'}</Text>
         </View>
         <View style={styles.panelPreviewRow}>
           {hasPanelLayout ? <PanelLayoutIllustration panelCount={panelQuantity} layout={layout} /> : (
@@ -332,11 +327,9 @@ const styles = StyleSheet.create({
   toggleInactiveText: { color: '#6B7280', fontSize: 12, fontWeight: '800' },
   orientationCard: { borderRadius: 16, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E5E7EB', padding: 12, gap: 12 },
   orientationTitle: { color: '#6B7280', fontSize: 11, fontWeight: '900', letterSpacing: 0.8 },
-  orientationControls: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  rowsPill: { height: 30, borderRadius: 999, backgroundColor: '#EEF2F7', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, gap: 8 },
-  rowsButton: { width: 22, textAlign: 'center', color: '#64748B', fontSize: 15, fontWeight: '900' },
-  rowsText: { color: '#1F2A3D', fontSize: 11, fontWeight: '900' },
-  compactText: { color: '#64748B', fontSize: 10, fontWeight: '900' },
+  orientationControls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  bestFitPill: { borderRadius: 999, backgroundColor: '#EAF7EF', borderWidth: 1, borderColor: '#BFE6CE', paddingHorizontal: 10, paddingVertical: 5 },
+  bestFitText: { color: '#1E8A4C', fontSize: 10, fontWeight: '900' },
   panelPreviewRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
   emptyPanelPreview: { minHeight: 220, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18 },
   noWattageText: { flex: 1, color: '#64748B', fontSize: 11, fontWeight: '800', lineHeight: 16 },

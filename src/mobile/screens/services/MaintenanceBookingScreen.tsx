@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     elevation: 3
   },
-  title: { flex: 1, color: '#0F1E33', textAlign: 'center', fontSize: 22, fontWeight: '900', letterSpacing: -0.6 },
+  title: { flex: 1, color: '#0F1E33', textAlign: 'center', fontSize: 20, fontWeight: '900', letterSpacing: -0.6 },
   topSpacer: { width: 46 },
   keyboard: { flex: 1 },
   scroll: { flex: 1 },

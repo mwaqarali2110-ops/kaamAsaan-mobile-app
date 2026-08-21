@@ -3,6 +3,7 @@ import { ActivityIndicator, Text, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { PlatformPressable } from '@react-navigation/elements';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Home, PanelsTopLeft, ShoppingBag, User, ClipboardList } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
@@ -17,6 +18,8 @@ import { MarketplaceFlowScreen } from '@/mobile/screens/marketplace/MarketplaceF
 import { ProductDetailScreen } from '@/mobile/screens/marketplace/ProductDetailScreen';
 import { ProductOrderSummaryScreen } from '@/mobile/screens/marketplace/ProductOrderSummaryScreen';
 import { OrderPlacedScreen } from '@/mobile/screens/marketplace/OrderPlacedScreen';
+import { MyOrdersScreen } from '@/mobile/screens/marketplace/MyOrdersScreen';
+import { OrderDetailScreen } from '@/mobile/screens/marketplace/OrderDetailScreen';
 import { MySystemScreen } from '@/mobile/screens/my-system/MySystemScreen';
 import { SystemSummaryScreen } from '@/mobile/screens/my-system/SystemSummaryScreen';
 import { CustomSystemSummaryScreen } from '@/mobile/screens/my-system/CustomSystemSummaryScreen';
@@ -116,7 +119,12 @@ const MainTabs = () => {
           borderTopWidth: 1
         },
         tabBarItemStyle: { paddingVertical: 2 },
-        tabBarLabelStyle: { fontSize: 10, fontWeight: '800' }
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '800' },
+        // PlatformPressable (the tab bar's default button) applies an
+        // Android ripple by default via `pressColor`; disable it so tapping
+        // a tab has no ripple/highlight, matching the rest of the app's
+        // touch feedback.
+        tabBarButton: (props) => <PlatformPressable {...props} pressColor="transparent" pressOpacity={1} />
       }}
     >
       <Tabs.Screen name="Home" component={HomeScreen} options={{ title: t('tabs.home'), tabBarIcon: ({ color }) => <Home color={color} size={20} /> }} />
@@ -166,6 +174,8 @@ export const RootNavigator = ({ onReady }: RootNavigatorProps) => {
         <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
         <Stack.Screen name="ProductOrderSummary" component={ProductOrderSummaryScreen} />
         <Stack.Screen name="OrderPlaced" component={OrderPlacedScreen} />
+        <Stack.Screen name="MyOrders" component={MyOrdersScreen} />
+        <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
         <Stack.Screen name="SystemSummary" component={SystemSummaryScreen} />
         <Stack.Screen name="CustomSystemSummary" component={CustomSystemSummaryScreen} />
         <Stack.Screen name="BookSurvey" component={ProtectedBookSurveyScreen} />

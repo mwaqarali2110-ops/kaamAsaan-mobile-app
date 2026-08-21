@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center'
   },
-  topTitle: { flex: 1, color: '#172031', textAlign: 'center', fontSize: 13, fontWeight: '900' },
+  topTitle: { flex: 1, color: '#172031', textAlign: 'center', fontSize: 20, fontWeight: '900' },
   topSpacer: { width: 32 },
   scroll: { flex: 1 },
   content: { paddingHorizontal: 16, paddingTop: 22, paddingBottom: 144 },

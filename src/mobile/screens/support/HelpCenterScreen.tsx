@@ -352,15 +352,15 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#0F172A',
-    fontSize: 26,
-    lineHeight: 30,
+    fontSize: 24,
+    lineHeight: 29,
     fontWeight: '900',
   },
   subtitle: {
     marginTop: 5,
     color: '#64748B',
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 19,
     fontWeight: '600',
   },
   searchBox: {

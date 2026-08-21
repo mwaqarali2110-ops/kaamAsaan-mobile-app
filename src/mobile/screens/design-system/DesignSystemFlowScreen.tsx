@@ -60,7 +60,7 @@ const steps = designSystemSteps;
 type Step = typeof steps[number];
 
 const applianceGroups = [
-  { title: 'ESSENTIALS', ids: ['lights', 'fans', 'fridge', 'washingMachine'] },
+  { title: 'ESSENTIALS', ids: ['lights', 'fans', 'fridge'] },
   { title: 'AIR CONDITIONERS', ids: ['ac1TonInverter', 'ac15TonInverter', 'ac2TonInverter'] }
 ];
 
@@ -83,6 +83,7 @@ const applianceIconMap = {
 };
 
 const extraApplianceOptions = [
+  { id: 'washingMachine', name: 'Washing Machine', watts: 500 },
   { id: 'tv', name: 'TV', watts: 100 },
   { id: 'router', name: 'WiFi Router', watts: 20 },
   { id: 'laptop', name: 'Laptop', watts: 65 },
@@ -100,6 +101,15 @@ const recommendedSystemImage = require('../../../assets/design-system/recommende
 export const DesignSystemFlowScreen = ({ navigation, route }: any) => {
   const initialStep = steps.includes(route?.params?.screen) ? route.params.screen : 'appliances';
   const [step, setStep] = useState<Step>(initialStep);
+  // DesignFlow is a root-level stack screen that stays mounted once pushed
+  // (see RootNavigator.tsx) — navigating to it again with a different
+  // `screen` param does not remount the component, so `step` must be
+  // re-synced on every param change rather than seeded once via useState.
+  useEffect(() => {
+    if (route?.params?.screen && steps.includes(route.params.screen)) {
+      setStep(route.params.screen);
+    }
+  }, [route?.params?.screen]);
   const store = useSystemStore();
   const orientation = store.panelOrientation;
   const setOrientation = store.setPanelOrientation;
@@ -988,7 +998,7 @@ const packagesStyles = StyleSheet.create({
   },
   sectionTitle: {
     color: '#10213A',
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '900'
   },
   sectionSubtitle: {
@@ -2935,6 +2945,7 @@ const RoofSpaceStepScreen = ({
 }) => {
   const insets = useSafeAreaInsets();
   const safeBottom = insets.bottom || 16;
+  const [panelDropdownOpen, setPanelDropdownOpen] = useState(false);
   const selectedPVSizeKW = Math.min(20, Math.max(1, Math.round(Number(store.recommendedSolarKw || 3))));
   const requestedPanelWattage = Math.round(Number(store.panelWattage || 610));
   const panelProductsQuery = useProducts('panel');
@@ -3011,6 +3022,7 @@ const RoofSpaceStepScreen = ({
     store.setPanelWattage(wattage);
     store.setSelectedPanelBrand(getProductBrandName(panel));
     store.setSelectedProduct(panel);
+    setPanelDropdownOpen(false);
   };
 
   return (
@@ -3036,32 +3048,45 @@ const RoofSpaceStepScreen = ({
         <View style={roofStyles.metricCard}>
           <Text style={roofStyles.metricLabel}>REQUIRED PANELS</Text>
           <Text style={roofStyles.metricValue}>{selectedPanel ? panelCount : 0}</Text>
-          {selectedPanel ? (
-            <Text style={roofStyles.selectedPanelText}>Selected Panel: {panelOptionLabel(selectedPanel)}</Text>
-          ) : null}
-          <View style={roofStyles.wattageSelector}>
-            {panelProductsQuery.isLoading ? (
-              [1, 2, 3].map((item) => (
-                <View key={item} style={[roofStyles.wattagePill, roofStyles.wattagePillSkeleton]}>
-                  <Text style={roofStyles.wattagePillText}>...</Text>
-                </View>
-              ))
-            ) : panelProductsQuery.isError || panelProducts.length === 0 ? (
-              <Text style={roofStyles.noWattageText}>{panelEmptyMessage}</Text>
-            ) : panelProducts.map((panel) => {
-              const selected = panel.id === selectedPanel?.id;
-              return (
-                <Pressable
-                  key={panel.id}
-                  style={[roofStyles.wattagePill, selected && roofStyles.wattagePillActive]}
-                  onPress={() => handlePanelSelect(panel)}
-                >
-                  <Text style={[roofStyles.wattagePillText, selected && roofStyles.wattagePillTextActive]}>{panelOptionLabel(panel)}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
+          {panelProductsQuery.isLoading ? (
+            <View style={[roofStyles.panelDropdown, roofStyles.panelDropdownSkeleton]}>
+              <Text style={roofStyles.panelDropdownText}>Loading panels...</Text>
+            </View>
+          ) : panelProductsQuery.isError || panelProducts.length === 0 ? (
+            <Text style={roofStyles.noWattageText}>{panelEmptyMessage}</Text>
+          ) : (
+            <Pressable style={roofStyles.panelDropdown} onPress={() => setPanelDropdownOpen(true)} accessibilityRole="button">
+              <Text style={roofStyles.panelDropdownText} numberOfLines={1}>
+                {selectedPanel ? panelOptionLabel(selectedPanel) : 'Select a panel'}
+              </Text>
+              <ChevronDown color="#334155" size={18} strokeWidth={2.4} />
+            </Pressable>
+          )}
         </View>
+
+        <Modal visible={panelDropdownOpen} transparent animationType="slide" onRequestClose={() => setPanelDropdownOpen(false)}>
+          <Pressable style={roofStyles.dropdownBackdrop} onPress={() => setPanelDropdownOpen(false)}>
+            <Pressable style={[roofStyles.dropdownSheet, { paddingBottom: 18 + safeBottom }]}>
+              <View style={roofStyles.dropdownHandle} />
+              <Text style={roofStyles.dropdownTitle}>Select Solar Panel</Text>
+              <ScrollView style={roofStyles.dropdownList}>
+                {panelProducts.map((panel) => {
+                  const selected = panel.id === selectedPanel?.id;
+                  return (
+                    <Pressable
+                      key={panel.id}
+                      style={[roofStyles.dropdownRow, selected && roofStyles.dropdownRowActive]}
+                      onPress={() => handlePanelSelect(panel)}
+                    >
+                      <Text style={[roofStyles.dropdownRowText, selected && roofStyles.dropdownRowTextActive]}>{panelOptionLabel(panel)}</Text>
+                      {selected ? <Check color="#F5B700" size={18} strokeWidth={2.6} /> : null}
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </Pressable>
+          </Pressable>
+        </Modal>
 
         <View style={roofStyles.heroCard}>
           <Text style={roofStyles.heroTitle}>Total Roof Space</Text>
@@ -4864,13 +4889,44 @@ const roofStyles = StyleSheet.create({
   metricLabel: { color: '#A27500', fontSize: 11, fontWeight: '900', letterSpacing: 0.4 },
   metricValue: { marginTop: 6, color: '#1F2A3D', fontSize: 24, fontWeight: '900' },
   metricSub: { marginTop: 6, color: '#64748B', fontSize: 12, fontWeight: '500' },
-  selectedPanelText: { marginTop: 8, color: '#475569', fontSize: 12, fontWeight: '800', lineHeight: 16 },
-  wattageSelector: { marginTop: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
-  wattagePill: { minWidth: 50, minHeight: 30, borderRadius: 999, borderWidth: 1, borderColor: 'rgba(226,221,213,0.9)', backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, paddingVertical: 7 },
-  wattagePillSkeleton: { opacity: 0.55, backgroundColor: '#F5EFE4' },
-  wattagePillActive: { backgroundColor: '#F5B700', borderColor: '#F5B700' },
-  wattagePillText: { color: '#334155', fontSize: 11, fontWeight: '900' },
-  wattagePillTextActive: { color: '#111827' },
+  panelDropdown: {
+    marginTop: 12,
+    height: 46,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: 'rgba(226,221,213,0.9)',
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14
+  },
+  panelDropdownSkeleton: { opacity: 0.55, backgroundColor: '#F5EFE4' },
+  panelDropdownText: { flex: 1, color: '#1F2A3D', fontSize: 13, fontWeight: '900' },
+  dropdownBackdrop: { flex: 1, backgroundColor: 'rgba(15,23,42,0.4)', justifyContent: 'flex-end' },
+  dropdownSheet: {
+    maxHeight: '70%',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 18,
+    paddingTop: 10
+  },
+  dropdownHandle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 999, backgroundColor: '#E2E8F0', marginBottom: 14 },
+  dropdownTitle: { color: '#10213A', fontSize: 16, fontWeight: '900', marginBottom: 10 },
+  dropdownList: { maxHeight: 380 },
+  dropdownRow: {
+    height: 52,
+    borderRadius: 13,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    marginBottom: 4
+  },
+  dropdownRowActive: { backgroundColor: '#FFF8E6' },
+  dropdownRowText: { color: '#334155', fontSize: 14, fontWeight: '800' },
+  dropdownRowTextActive: { color: '#10213A', fontWeight: '900' },
   noWattageText: { flex: 1, color: '#64748B', fontSize: 11, fontWeight: '800', lineHeight: 16 },
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 14, paddingTop: 8, paddingBottom: 10, borderTopWidth: 1, borderTopColor: 'rgba(218,211,203,0.72)', backgroundColor: 'rgba(251,250,246,0.97)', flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   secondaryButton: { flex: 1, minHeight: 48, borderRadius: 14, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: 'rgba(74,99,255,0.14)', alignItems: 'center', justifyContent: 'center' },

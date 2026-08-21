@@ -612,8 +612,8 @@ const styles = StyleSheet.create({
   },
   headerCopy: { flex: 1, alignItems: "center" },
   headerSpacer: { width: 38 },
-  title: { color: "#10213A", fontSize: 18, fontWeight: "900" },
-  subtitle: { marginTop: 3, color: "#738094", fontSize: 11, fontWeight: "700" },
+  title: { color: "#10213A", fontSize: 20, fontWeight: "900" },
+  subtitle: { marginTop: 3, color: "#738094", fontSize: 13, fontWeight: "600" },
   content: { padding: 14, paddingBottom: 34, gap: 12 },
   referenceCard: {
     minHeight: 80,
@@ -684,7 +684,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginTop: 3,
     color: "#10213A",
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: "900",
   },
   detailCard: {
@@ -724,7 +724,7 @@ const styles = StyleSheet.create({
   timelineLine: { width: 2, flex: 1, marginVertical: 3 },
   timelineCopy: { flex: 1, paddingTop: 3, paddingBottom: 8 },
   timelineHead: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 7 },
-  timelineTitle: { flex: 1, color: '#697586', fontSize: 13, fontWeight: '800' },
+  timelineTitle: { flex: 1, color: '#697586', fontSize: 14, fontWeight: '800' },
   timelineTitleStrong: { color: '#10213A' },
   timelineText: { marginTop: 5, color: '#7A8492', fontSize: 11, fontWeight: '600', lineHeight: 15 },
   timelineSchedule: { marginTop: 4, color: '#2563EB', fontSize: 11, fontWeight: '800', lineHeight: 15 },

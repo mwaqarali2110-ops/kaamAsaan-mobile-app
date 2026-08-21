@@ -6,7 +6,7 @@ type AppTextProps = TextProps & {
 };
 
 const variants = {
-  title: 'text-3xl font-extrabold text-kaam-navy',
+  title: 'text-2xl font-black text-kaam-navy',
   subtitle: 'text-base font-semibold text-kaam-muted',
   body: 'text-sm text-kaam-navy',
   caption: 'text-xs text-kaam-muted',

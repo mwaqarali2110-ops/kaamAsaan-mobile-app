@@ -247,8 +247,8 @@ const styles = StyleSheet.create({
   },
   loginHeading: {
     color: '#0F172A',
-    fontSize: 30,
-    lineHeight: 35,
+    fontSize: 24,
+    lineHeight: 29,
     fontWeight: '900',
     marginTop: 6
   },

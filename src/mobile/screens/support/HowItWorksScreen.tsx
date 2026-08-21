@@ -293,12 +293,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center'
   },
-  headerTitle: { color: '#10213A', fontSize: 15, fontWeight: '900' },
+  headerTitle: { color: '#10213A', fontSize: 20, fontWeight: '900' },
   headerSpacer: { width: 38 },
   content: { paddingHorizontal: 18, paddingTop: 8, gap: 14 },
   heroBlock: { alignItems: 'center', paddingHorizontal: 8 },
-  title: { color: '#10213A', fontSize: 28, lineHeight: 34, fontWeight: '900', letterSpacing: -0.5 },
-  subtitle: { marginTop: 8, color: '#64748B', textAlign: 'center', fontSize: 14, lineHeight: 20, fontWeight: '600' },
+  title: { color: '#10213A', fontSize: 24, lineHeight: 30, fontWeight: '900', letterSpacing: -0.5 },
+  subtitle: { marginTop: 8, color: '#64748B', textAlign: 'center', fontSize: 13, lineHeight: 19, fontWeight: '600' },
   infoCard: {
     borderRadius: 18,
     backgroundColor: '#FFFFFF',

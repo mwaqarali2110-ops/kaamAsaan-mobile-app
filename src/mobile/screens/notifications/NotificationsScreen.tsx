@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: '#10213A',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '900',
     textAlign: 'center',
   },

@@ -721,14 +721,14 @@ const styles = StyleSheet.create({
   },
   topTitle: {
     color: '#10213A',
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '900'
   },
   topSubtitle: {
     marginTop: 3,
     color: '#64748B',
-    fontSize: 12,
-    fontWeight: '700'
+    fontSize: 13,
+    fontWeight: '600'
   },
   inputCard: {
     borderRadius: 22,
@@ -982,7 +982,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: '#10213A',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '900'
   },
   sectionSubtitle: {

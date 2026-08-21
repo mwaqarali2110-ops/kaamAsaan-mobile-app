@@ -15,7 +15,7 @@ export const InfoCard = ({ label, title, subtitle, right, children }: InfoCardPr
     <View className="flex-row items-start gap-3">
       <View className="flex-1">
         {label ? <AppText variant="label">{label}</AppText> : null}
-        <AppText className="mt-1 text-lg font-extrabold" variant="body">{title}</AppText>
+        <AppText className="mt-1 text-sm font-extrabold" variant="body">{title}</AppText>
         {subtitle ? <AppText className="mt-1" variant="caption">{subtitle}</AppText> : null}
       </View>
       {right}

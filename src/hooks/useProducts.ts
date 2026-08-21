@@ -77,3 +77,12 @@ export const useProduct = (id: string) => useQuery({
   queryKey: ['product', id],
   queryFn: () => marketplaceApi.getProduct(id)
 });
+
+export const useMyOrders = (userId?: string) => useQuery({
+  queryKey: ['my-orders', userId],
+  queryFn: () => marketplaceApi.getMyOrders(userId!),
+  enabled: Boolean(userId),
+  staleTime: 0,
+  refetchOnMount: 'always',
+  refetchOnWindowFocus: true
+});

@@ -186,7 +186,14 @@ export const useSystemStore = create<SystemState>()(persist((set, get) => ({
   cleaningEstimate: null,
   installationDetails: null,
   promo: createInitialPromoState(),
-  setDesignProgress: (lastDesignStep) => set({ designStarted: true, lastDesignStep }),
+  // Only bookmarks the last-viewed step for "Continue Designing" resume — must
+  // NOT flip designStarted, since DesignSystemFlowScreen calls this on every
+  // mount/step-sync (including just opening the screen and looking at the
+  // default 'appliances' step without picking anything). Real progress is
+  // already tracked independently by the action setters below (setApplianceQuantity,
+  // calculateRecommendation, setRecommendedSolarKw, etc.), which is what should
+  // decide whether My System shows "in progress".
+  setDesignProgress: (lastDesignStep) => set({ lastDesignStep }),
   setApplianceQuantity: (id, quantity) => set((state) => ({
     designStarted: true,
     appliances: state.appliances.map((item) => item.id === id ? { ...item, quantity: Math.max(0, quantity) } : item),
@@ -741,11 +748,31 @@ export const useSystemStore = create<SystemState>()(persist((set, get) => ({
     installationDetails: state.installationDetails,
     promo: state.promo
   }),
-  version: 7,
-  migrate: (persistedState) => {
+  version: 8,
+  migrate: (persistedState, version) => {
     const state = persistedState as Partial<SystemState> | undefined;
+    // Versions <=7 had DesignSystemFlowScreen's step-sync effect mark
+    // designStarted:true just from opening the screen (see setDesignProgress),
+    // so devices that only ever glanced at the design flow are stuck showing
+    // fake progress on My System. Clear that stale flag on upgrade unless
+    // there is real evidence design work actually happened.
+    const hasQuantity = (items?: { quantity: number }[]) => (items ?? []).some((item) => Number(item.quantity) > 0);
+    const hadRealProgress = Boolean(
+      state?.lastDesignStep && state.lastDesignStep !== 'appliances' ||
+      hasQuantity(state?.appliances) ||
+      hasQuantity(state?.backupAppliances) ||
+      (state?.recommendedSolarKw !== undefined && state.recommendedSolarKw !== 3) ||
+      (state?.selectedBatteryKwh ?? 0) > 0 ||
+      state?.selectedPanelBrand ||
+      state?.backupDecision ||
+      state?.selectedPanels ||
+      state?.selectedInverter ||
+      state?.selectedBattery ||
+      (state?.selectedAccessories?.length ?? 0) > 0
+    );
     return {
       ...state,
+      designStarted: version <= 7 ? hadRealProgress : (state?.designStarted ?? false),
       selectedBatteryKwh: 0,
       selectedBatteryConfiguration: null,
       batteryRecommendationRequirementKwh: null,

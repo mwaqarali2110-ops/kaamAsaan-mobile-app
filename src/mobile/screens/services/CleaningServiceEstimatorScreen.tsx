@@ -321,8 +321,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden'
   },
   headerCopy: { flex: 1, minWidth: 0 },
-  title: { color: '#111111', fontSize: 20, lineHeight: 24, fontWeight: '800', letterSpacing: -0.35 },
-  subtitle: { marginTop: 0, color: '#5F6368', fontSize: 13, lineHeight: 16, fontWeight: '500' },
+  title: { color: '#111111', fontSize: 20, lineHeight: 24, fontWeight: '900', letterSpacing: -0.35 },
+  subtitle: { marginTop: 0, color: '#5F6368', fontSize: 13, lineHeight: 16, fontWeight: '600' },
   scroll: { flex: 1 },
   content: {
     width: '100%',
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 2
   },
-  sectionTitle: { color: '#16181D', fontSize: 18, lineHeight: 22, fontWeight: '700', marginBottom: 10 },
+  sectionTitle: { color: '#16181D', fontSize: 18, lineHeight: 22, fontWeight: '900', marginBottom: 10 },
   largeInputWrap: {
     height: 54,
     borderRadius: 16,

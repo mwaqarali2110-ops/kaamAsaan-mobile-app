@@ -1,8 +1,8 @@
 import React from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';
-import { AppText } from './AppText';
 import { colors } from '@/constants/colors';
+import { textRoles } from '@/constants/typography';
 
 type HeaderProps = {
   title: string;
@@ -19,8 +19,8 @@ export const Header = ({ title, subtitle, onBack, right }: HeaderProps) => (
       </Pressable>
     ) : null}
     <View className="flex-1">
-      <AppText className="text-base font-extrabold" variant="body">{title}</AppText>
-      {subtitle ? <AppText variant="caption">{subtitle}</AppText> : null}
+      <Text style={{ fontSize: textRoles.screenTitle.fontSize, fontWeight: textRoles.screenTitle.fontWeight, color: colors.navy }}>{title}</Text>
+      {subtitle ? <Text style={{ fontSize: textRoles.subtitle.fontSize, fontWeight: textRoles.subtitle.fontWeight, color: colors.muted, marginTop: 2 }}>{subtitle}</Text> : null}
     </View>
     {right}
   </View>

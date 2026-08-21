@@ -1,6 +1,6 @@
 import { marketplaceCategories } from '@/constants/products';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
-import type { MarketplaceBrand, Product, ProductCategory } from '@/types/product.types';
+import type { MarketplaceBrand, Product, ProductCategory, ProductOrder } from '@/types/product.types';
 import { formatCapacityKw, parseCapacityKw, parseCapacityWatt } from '@/utils/capacity';
 import { normalizeBatteryCapacity } from '@/utils/batteryCapacity';
 import { normalizePublicStorageUrl } from '@/utils/storage';
@@ -932,5 +932,41 @@ export const marketplaceApi = {
 
     if (error) throw error;
     return { id: data.id, referenceCode: data.reference_code, status: data.status, total: data.total };
+  },
+
+  getMyOrders: async (userId: string): Promise<ProductOrder[]> => {
+    if (!isSupabaseConfigured || !userId) return [];
+    const { data, error } = await supabase
+      .from('product_orders')
+      .select('id, reference_code, product_id, product_name, product_brand, product_category, product_image_url, quantity, service_option, unit_price, transportation_charge, installation_charge, discount_amount, subtotal, total, status, current_milestone, full_name, phone, city, delivery_address, notes, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return (data ?? []).map((row) => ({
+      id: row.id,
+      referenceCode: row.reference_code,
+      productId: row.product_id,
+      productName: row.product_name,
+      productBrand: row.product_brand,
+      productCategory: row.product_category as ProductCategory,
+      productImageUrl: row.product_image_url,
+      quantity: row.quantity,
+      serviceOption: row.service_option,
+      unitPrice: Number(row.unit_price),
+      transportationCharge: Number(row.transportation_charge),
+      installationCharge: Number(row.installation_charge),
+      discountAmount: Number(row.discount_amount),
+      subtotal: Number(row.subtotal),
+      total: Number(row.total),
+      status: row.status,
+      currentMilestone: row.current_milestone,
+      fullName: row.full_name,
+      phone: row.phone,
+      city: row.city,
+      deliveryAddress: row.delivery_address,
+      notes: row.notes,
+      createdAt: row.created_at
+    }));
   }
 };

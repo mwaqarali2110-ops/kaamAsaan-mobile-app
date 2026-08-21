@@ -594,7 +594,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: colors.navy,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '900',
   },
   progressValue: {

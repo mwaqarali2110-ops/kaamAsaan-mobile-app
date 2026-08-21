@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, BatteryCharging, Bolt, CheckCircle2, ChevronRight, Home, Search, ShieldCheck, SlidersHorizontal, Sun, User, Zap } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ArrowLeft, BatteryCharging, CheckCircle2, ChevronRight, Search, ShieldCheck, SlidersHorizontal, Sun, Zap } from 'lucide-react-native';
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
 import { AppButton } from '@/components/ui/AppButton';
+import { AppBottomTabBar, useAppBottomTabBarHeight } from '@/components/ui/AppBottomTabBar';
 import { InfoCard } from '@/components/cards/InfoCard';
 import { ProductCard } from '@/components/cards/ProductCard';
 import { BrandLogo } from '@/components/ui/BrandLogo';
@@ -389,7 +390,7 @@ const BrandHeroBanner = ({
 );
 
 const InverterBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigation: any; onSelectBrand: (brand: string) => void }) => {
-  const insets = useSafeAreaInsets();
+  const bottomBarHeight = useAppBottomTabBarHeight();
   const [searchText, setSearchText] = useState('');
   const [filter, setFilter] = useState('All');
   const isFocused = useIsFocused();
@@ -431,7 +432,7 @@ const InverterBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigatio
         </View>
       </View>
 
-      <ScrollView style={brandStyles.scroll} contentContainerStyle={[brandStyles.content, { paddingBottom: 82 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+      <ScrollView style={brandStyles.scroll} contentContainerStyle={[brandStyles.content, { paddingBottom: bottomBarHeight + 20 }]} showsVerticalScrollIndicator={false}>
         <View style={brandStyles.searchWrap}>
           <Search color="#94A3B8" size={16} strokeWidth={2.1} />
           <TextInput
@@ -494,25 +495,13 @@ const InverterBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigatio
         </View>
       </ScrollView>
 
-      <View style={[brandStyles.bottomNav, { height: 58 + insets.bottom, paddingBottom: Math.max(4, insets.bottom) }]}>
-        {[
-          { label: 'Home', Icon: Home, active: false },
-          { label: 'Explore', Icon: Search, active: true },
-          { label: 'Plans', Icon: Bolt, active: false },
-          { label: 'Profile', Icon: User, active: false }
-        ].map(({ label, Icon, active }) => (
-          <Pressable key={label} style={brandStyles.navItem} onPress={() => label === 'Home' ? navigation.navigate('MainTabs', { screen: 'Home' }) : undefined}>
-            <Icon color={active ? '#F5A400' : '#94A3B8'} size={18} strokeWidth={2.1} />
-            <Text style={[brandStyles.navText, active && brandStyles.navTextActive]}>{label}</Text>
-          </Pressable>
-        ))}
-      </View>
+      <AppBottomTabBar navigation={navigation} activeTab="Marketplace" />
     </SafeAreaView>
   );
 };
 
 const SolarPanelBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigation: any; onSelectBrand: (brand: string) => void }) => {
-  const insets = useSafeAreaInsets();
+  const bottomBarHeight = useAppBottomTabBarHeight();
   const [searchText, setSearchText] = useState('');
   const [filter, setFilter] = useState('All');
   const brandsQuery = useBrands('panel');
@@ -538,7 +527,7 @@ const SolarPanelBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigat
         </View>
       </View>
 
-      <ScrollView style={brandStyles.scroll} contentContainerStyle={[brandStyles.content, { paddingBottom: 82 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+      <ScrollView style={brandStyles.scroll} contentContainerStyle={[brandStyles.content, { paddingBottom: bottomBarHeight + 20 }]} showsVerticalScrollIndicator={false}>
         <View style={brandStyles.searchWrap}>
           <Search color="#94A3B8" size={16} strokeWidth={2.1} />
           <TextInput
@@ -596,25 +585,13 @@ const SolarPanelBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigat
         </View>
       </ScrollView>
 
-      <View style={[brandStyles.bottomNav, { height: 58 + insets.bottom, paddingBottom: Math.max(4, insets.bottom) }]}>
-        {[
-          { label: 'Home', Icon: Home, active: false },
-          { label: 'Explore', Icon: Search, active: true },
-          { label: 'Plans', Icon: Bolt, active: false },
-          { label: 'Profile', Icon: User, active: false }
-        ].map(({ label, Icon, active }) => (
-          <Pressable key={label} style={brandStyles.navItem} onPress={() => label === 'Home' ? navigation.navigate('MainTabs', { screen: 'Home' }) : undefined}>
-            <Icon color={active ? '#F5A400' : '#94A3B8'} size={18} strokeWidth={2.1} />
-            <Text style={[brandStyles.navText, active && brandStyles.navTextActive]}>{label}</Text>
-          </Pressable>
-        ))}
-      </View>
+      <AppBottomTabBar navigation={navigation} activeTab="Marketplace" />
     </SafeAreaView>
   );
 };
 
 const BatteryBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigation: any; onSelectBrand: (brand: string) => void }) => {
-  const insets = useSafeAreaInsets();
+  const bottomBarHeight = useAppBottomTabBarHeight();
   const [searchText, setSearchText] = useState('');
   const [filter, setFilter] = useState('All');
   const brandsQuery = useBrands('battery');
@@ -640,7 +617,7 @@ const BatteryBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigation
         </View>
       </View>
 
-      <ScrollView style={brandStyles.scroll} contentContainerStyle={[brandStyles.content, { paddingBottom: 82 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+      <ScrollView style={brandStyles.scroll} contentContainerStyle={[brandStyles.content, { paddingBottom: bottomBarHeight + 20 }]} showsVerticalScrollIndicator={false}>
         <View style={brandStyles.searchWrap}>
           <Search color="#94A3B8" size={16} strokeWidth={2.1} />
           <TextInput
@@ -698,19 +675,7 @@ const BatteryBrandSelectionScreen = ({ navigation, onSelectBrand }: { navigation
         </View>
       </ScrollView>
 
-      <View style={[brandStyles.bottomNav, { height: 58 + insets.bottom, paddingBottom: Math.max(4, insets.bottom) }]}>
-        {[
-          { label: 'Home', Icon: Home, active: false },
-          { label: 'Explore', Icon: Search, active: true },
-          { label: 'Plans', Icon: Bolt, active: false },
-          { label: 'Profile', Icon: User, active: false }
-        ].map(({ label, Icon, active }) => (
-          <Pressable key={label} style={brandStyles.navItem} onPress={() => label === 'Home' ? navigation.navigate('MainTabs', { screen: 'Home' }) : undefined}>
-            <Icon color={active ? '#F5A400' : '#94A3B8'} size={18} strokeWidth={2.1} />
-            <Text style={[brandStyles.navText, active && brandStyles.navTextActive]}>{label}</Text>
-          </Pressable>
-        ))}
-      </View>
+      <AppBottomTabBar navigation={navigation} activeTab="Marketplace" />
     </SafeAreaView>
   );
 };
@@ -775,7 +740,8 @@ export const MarketplaceFlowScreen = ({ route, navigation }: any) => {
   }
 
   return (
-    <Screen refreshing={productsQuery.isRefetching} onRefresh={() => void productsQuery.refetch()}>
+    <View style={{ flex: 1, backgroundColor: '#F8F3E8' }}>
+    <Screen includeBottomInset={false} refreshing={productsQuery.isRefetching} onRefresh={() => void productsQuery.refetch()}>
       <Header
         title={isBrandProductList ? selectedBrandLabel : categoryTitle[category]}
         subtitle={isBrandProductList ? modelSubtitleByCategory[category] : 'Brand Selection'}
@@ -841,6 +807,8 @@ export const MarketplaceFlowScreen = ({ route, navigation }: any) => {
       {!productsQuery.isLoading && !productsQuery.isError && visibleProducts.length === 0 ? <QueryFeedback message="No products are available in this category yet." /> : null}
 
     </Screen>
+    <AppBottomTabBar navigation={navigation} activeTab="Marketplace" />
+    </View>
   );
 };
 
@@ -871,8 +839,8 @@ const brandStyles = StyleSheet.create({
     elevation: 2
   },
   titleBlock: { flex: 1, alignItems: 'center', paddingHorizontal: 8 },
-  title: { color: '#172031', fontSize: 14, fontWeight: '900' },
-  subtitle: { color: '#64748B', fontSize: 11, fontWeight: '700', marginTop: 3 },
+  title: { color: '#172031', fontSize: 20, fontWeight: '900' },
+  subtitle: { color: '#64748B', fontSize: 13, fontWeight: '600', marginTop: 3 },
   toolIcon: {
     width: 34,
     height: 34,
@@ -1110,7 +1078,7 @@ const brandStyles = StyleSheet.create({
   logoText: { color: '#0F1E33', fontSize: 13, fontWeight: '900' },
   brandCopy: { flex: 1, minWidth: 0 },
   brandNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
-  brandName: { color: '#111827', fontSize: 14, fontWeight: '900' },
+  brandName: { color: '#111827', fontSize: 14, fontWeight: '800' },
   badge: { borderRadius: 999, backgroundColor: '#DCFCE7', paddingHorizontal: 6, paddingVertical: 2 },
   premiumBadge: { backgroundColor: '#FFF1CC' },
   gridBadge: { backgroundColor: '#E0F2FE' },
@@ -1131,20 +1099,5 @@ const brandStyles = StyleSheet.create({
     paddingHorizontal: 7
   },
   trustItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  trustText: { color: '#334155', fontSize: 10, fontWeight: '800' },
-  bottomNav: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(218,211,203,0.78)',
-    backgroundColor: '#FFFFFF',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-  },
-  navItem: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3 },
-  navText: { color: '#94A3B8', fontSize: 10, fontWeight: '800' },
-  navTextActive: { color: '#F5A400' }
+  trustText: { color: '#334155', fontSize: 10, fontWeight: '800' }
 });

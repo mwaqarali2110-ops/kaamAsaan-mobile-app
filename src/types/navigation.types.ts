@@ -1,4 +1,4 @@
-import type { ProductCategory } from './product.types';
+import type { ProductCategory, ProductOrder } from './product.types';
 import type { MaintenanceBooking, MaintenancePlanSelection } from './maintenance.types';
 import type { Appliance } from './system.types';
 import type { BookingContext } from '@/store/useSystemStore';
@@ -24,6 +24,7 @@ export type RootStackParamList = {
     quantity: number;
     serviceOption: 'product-only' | 'product-installation';
     city: string;
+    address: string;
     phone: string;
   };
   OrderPlaced: {
@@ -31,6 +32,8 @@ export type RootStackParamList = {
     referenceCode: string;
     serviceOption: 'product-only' | 'product-installation';
   };
+  MyOrders: undefined;
+  OrderDetail: { order: ProductOrder };
   SystemSummary: {
     packageId?: string;
     selectedAppliances?: Appliance[];

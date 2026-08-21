@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center'
   },
-  topTitle: { flex: 1, color: '#172031', textAlign: 'center', fontSize: 13, fontWeight: '900' },
+  topTitle: { flex: 1, color: '#172031', textAlign: 'center', fontSize: 20, fontWeight: '900' },
   toolButton: {
     width: 31,
     height: 31,
@@ -288,9 +288,9 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 8
   },
-  heading: { color: '#0F1E33', textAlign: 'center', fontSize: 28, lineHeight: 31, fontWeight: '900', marginBottom: 10 },
+  heading: { color: '#0F1E33', textAlign: 'center', fontSize: 24, lineHeight: 29, fontWeight: '900', marginBottom: 10 },
   headingAccent: { color: '#E6A400' },
-  subtitle: { color: '#6B7280', textAlign: 'center', fontSize: 11, lineHeight: 15, fontWeight: '600', paddingHorizontal: 24, marginBottom: 17 },
+  subtitle: { color: '#6B7280', textAlign: 'center', fontSize: 13, lineHeight: 18, fontWeight: '600', paddingHorizontal: 24, marginBottom: 17 },
   inputBlock: { marginBottom: 17 },
   inputLabel: { color: '#9AA4B2', fontSize: 10, fontWeight: '900', letterSpacing: 0.8, marginBottom: 7 },
   input: {

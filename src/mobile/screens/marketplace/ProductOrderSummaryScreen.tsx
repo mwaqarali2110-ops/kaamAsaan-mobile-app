@@ -17,11 +17,12 @@ const SummaryRow = ({ label, value, emphasis = false }: { label: string; value: 
 );
 
 export const ProductOrderSummaryScreen = ({ navigation, route }: any) => {
-  const { productId, quantity, serviceOption, city, phone } = route.params as {
+  const { productId, quantity, serviceOption, city, address, phone } = route.params as {
     productId: string;
     quantity: number;
     serviceOption: 'product-only' | 'product-installation';
     city: string;
+    address: string;
     phone: string;
   };
   const productQuery = useProduct(productId);
@@ -55,6 +56,7 @@ export const ProductOrderSummaryScreen = ({ navigation, route }: any) => {
         fullName: profile?.full_name || 'Customer',
         phone,
         city,
+        deliveryAddress: address,
         transportationCharge,
         installationCharge
       });
@@ -87,6 +89,7 @@ export const ProductOrderSummaryScreen = ({ navigation, route }: any) => {
 
         <View className="rounded-3xl border border-kaam-line bg-white p-4">
           <AppText variant="label" className="mb-1">Delivery Details</AppText>
+          <SummaryRow label="Address" value={address} />
           <SummaryRow label="City" value={city} />
           <SummaryRow label="Phone" value={phone} />
           <SummaryRow label="Service" value={hasInstallation ? 'Product + Installation' : 'Product only'} />

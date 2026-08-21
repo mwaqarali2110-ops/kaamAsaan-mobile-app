@@ -45,8 +45,19 @@ export const useSurveyJourneyRealtime = (bookingId?: string, userId?: string) =>
         queryClient.invalidateQueries({ queryKey: latestSurveyJourneyQueryKey(userId) })
       ]);
     };
+    const topic = `survey-journey-${bookingId}`;
+    // supabase-js reuses an existing channel instance for a topic that's still
+    // joined/joining rather than creating a fresh one, so calling .on() below
+    // throws "cannot add postgres_changes callbacks ... after subscribe()" if a
+    // prior instance of this effect (e.g. from a fast remount during a
+    // navigation transition) hasn't finished its unmount cleanup yet. Removing
+    // any stale channel for this topic first guarantees .channel() below always
+    // returns a fresh, unsubscribed instance.
+    supabase.getChannels().forEach((existing) => {
+      if (existing.topic === `realtime:${topic}`) void supabase.removeChannel(existing);
+    });
     const channel = supabase
-      .channel(`survey-journey-${bookingId}`)
+      .channel(topic)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'survey_bookings', filter: `id=eq.${bookingId}` }, invalidateJourney)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'survey_booking_status_history', filter: `booking_id=eq.${bookingId}` }, invalidateJourney)
       .subscribe();

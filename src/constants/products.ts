@@ -13,7 +13,6 @@ export const defaultAppliances: Appliance[] = [
   { id: 'lights', name: 'LED Bulbs', watts: 12, quantity: 0, hours: 6 },
   { id: 'fans', name: 'Fans', watts: 80, quantity: 0, hours: 8 },
   { id: 'fridge', name: 'Refrigerators', watts: 200, quantity: 0, hours: 10 },
-  { id: 'washingMachine', name: 'Washing Machine', watts: 500, quantity: 0, hours: 1 },
   { id: 'ac1TonInverter', name: 'AC 1 Ton (Inverter)', watts: 900, quantity: 0, hours: 4 },
   { id: 'ac15TonInverter', name: 'AC 1.5 Ton (Inverter)', watts: 1200, quantity: 0, hours: 4 },
   { id: 'ac2TonInverter', name: 'AC 2 Ton (Inverter)', watts: 1800, quantity: 0, hours: 4 }

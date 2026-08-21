@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
   title: {
     marginTop: 3,
     color: "#10213A",
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "900",
   },
   logoutIcon: {
@@ -508,7 +508,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: "#10213A",
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "900",
   },
   inputBlock: {

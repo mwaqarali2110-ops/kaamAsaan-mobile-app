@@ -264,11 +264,11 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2
   },
-  topTitle: { color: '#10213A', fontSize: 13, fontWeight: '900' },
+  topTitle: { color: '#10213A', fontSize: 20, fontWeight: '900' },
   content: { paddingHorizontal: 14, paddingBottom: 92 },
   headingBlock: { paddingTop: 12, paddingBottom: 12 },
-  heading: { color: '#10213A', fontSize: 22, lineHeight: 25, fontWeight: '900' },
-  subtitle: { marginTop: 7, color: '#64748B', fontSize: 11, fontWeight: '700' },
+  heading: { color: '#10213A', fontSize: 24, lineHeight: 28, fontWeight: '900' },
+  subtitle: { marginTop: 7, color: '#64748B', fontSize: 13, fontWeight: '600' },
   sectionCard: {
     borderRadius: 17,
     backgroundColor: '#FFFFFF',

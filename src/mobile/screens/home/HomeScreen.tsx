@@ -7,7 +7,6 @@ import {
   EvCharger,
   Home as HomeIcon,
   Ruler,
-  Settings,
   TrendingUp,
   X,
   Zap,
@@ -96,7 +95,6 @@ const QUICK_ACTIONS = [
   { id: "roof-space", labelKey: "tools.roofSpace", Icon: Ruler },
   { id: "roi", labelKey: "tools.roi", Icon: TrendingUp },
   { id: "solar-size", labelKey: "tools.solarSize", Icon: Calculator },
-  { id: "inverter-size", labelKey: "tools.loadCalculator", Icon: Settings },
   { id: "battery-size", labelKey: "tools.batterySize", Icon: Calculator },
 ];
 
@@ -230,7 +228,7 @@ const ElectricHeroCta = ({ onPress }: { onPress: () => void }) => {
       accessibilityRole="button"
       accessibilityLabel={t('home.designSystem')}
     >
-      <PremiumShimmerSweep showSparkle />
+      <PremiumShimmerSweep />
 
       <View style={s.heroCtaContent}>
         <Text style={s.heroCtaText}>{t("home.designSystem")}</Text>
@@ -452,7 +450,11 @@ const ContinuePlanBar = ({
       </View>
       <Pressable
         style={s.planCta}
-        onPress={() => navigation.navigate("DesignFlow")}
+        onPress={() =>
+          navigation.navigate("DesignFlow", {
+            screen: useSystemStore.getState().lastDesignStep,
+          })
+        }
       >
         <Text style={s.planCtaText}>{t("common.continue")}</Text>
         <ArrowRight color="#3f2a00" size={14} strokeWidth={2.5} />
@@ -1062,9 +1064,9 @@ const s = StyleSheet.create({
   },
   sectionTitle: {
     color: "#111827",
-    fontSize: 15,
-    fontWeight: "600",
-    lineHeight: 18,
+    fontSize: 18,
+    fontWeight: "900",
+    lineHeight: 22,
     letterSpacing: -0.16,
   },
   viewAll: { color: "#C07800", fontSize: 13, fontWeight: "600" },
@@ -1202,9 +1204,9 @@ const s = StyleSheet.create({
   catCopy: { flex: 1, gap: 2 },
   catLabel: {
     color: "#111827",
-    fontSize: 12,
-    fontWeight: "700",
-    lineHeight: 15,
+    fontSize: 14,
+    fontWeight: "800",
+    lineHeight: 17,
   },
   catMeta: { color: "#6B7280", fontSize: 10, lineHeight: 13 },
   catArrow: {

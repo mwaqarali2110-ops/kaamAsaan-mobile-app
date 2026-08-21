@@ -112,3 +112,39 @@ export type MarketplaceCategory = {
   title: string;
   subtitle: string;
 };
+
+export type ProductOrderStatus =
+  | 'order_received'
+  | 'order_confirmed'
+  | 'payment_received'
+  | 'in_transit'
+  | 'product_received'
+  | 'product_installed'
+  | 'cancelled'
+  | 'on_hold';
+
+export type ProductOrder = {
+  id: string;
+  referenceCode: string;
+  productId: string | null;
+  productName: string;
+  productBrand: string | null;
+  productCategory: ProductCategory;
+  productImageUrl: string | null;
+  quantity: number;
+  serviceOption: 'product_only' | 'product_installation';
+  unitPrice: number;
+  transportationCharge: number;
+  installationCharge: number;
+  discountAmount: number;
+  subtotal: number;
+  total: number;
+  status: ProductOrderStatus;
+  currentMilestone: string | null;
+  fullName: string;
+  phone: string;
+  city: string;
+  deliveryAddress: string | null;
+  notes: string | null;
+  createdAt: string;
+};

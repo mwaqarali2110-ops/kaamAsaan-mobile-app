@@ -573,15 +573,15 @@ const styles = StyleSheet.create({
   },
   title: {
     color: "#0B1528",
-    fontSize: 16,
-    lineHeight: 35,
+    fontSize: 20,
+    lineHeight: 24,
     fontWeight: "900",
   },
   subtitle: {
     color: "#5B677A",
-    fontSize: 18,
-    lineHeight: 22,
-    fontWeight: "500",
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: "600",
   },
   summaryCard: {
     width: "100%",

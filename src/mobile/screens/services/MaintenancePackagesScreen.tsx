@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: "center",
     color: "#172031",
-    fontSize: 15,
+    fontSize: 20,
     fontWeight: "900",
   },
   topSpacer: { width: 36 },

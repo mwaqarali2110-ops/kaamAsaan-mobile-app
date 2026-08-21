@@ -156,10 +156,10 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start'
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '900',
     color: '#071B33',
-    lineHeight: 26
+    lineHeight: 24
   },
   headerSubtitle: {
     fontSize: 13,

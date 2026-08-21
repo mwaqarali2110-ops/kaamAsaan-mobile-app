@@ -183,6 +183,7 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
   const [panelQuantityOverride, setPanelQuantityOverride] = useState<number | null>(null);
   const [quantity, setQuantity] = useState('1');
   const [city, setCity] = useState('Islamabad');
+  const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('+923351351472');
   const [serviceOption, setServiceOption] = useState<'product-only' | 'product-installation'>('product-only');
   const [submitted, setSubmitted] = useState(false);
@@ -295,12 +296,13 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
 
   const submitOrder = () => {
     setSubmitted(true);
-    if (Number(quantity) < 1 || city.trim().length < 2 || phone.trim().length < 7) return;
+    if (Number(quantity) < 1 || city.trim().length < 2 || address.trim().length < 5 || phone.trim().length < 7) return;
     navigation.navigate('ProductOrderSummary', {
       productId: product.id,
       quantity: Math.max(1, Number(quantity) || 1),
       serviceOption,
       city: city.trim(),
+      address: address.trim(),
       phone: phone.trim()
     });
   };
@@ -370,6 +372,16 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
               <TextInput style={orderStyles.input} value={city} onChangeText={setCity} placeholder="Islamabad" />
               <ChevronDown size={18} color="#10213A" strokeWidth={2.4} />
             </View>
+            <Text style={orderStyles.inputLabel}>Delivery Address</Text>
+            <View style={orderStyles.inputShell}>
+              <TextInput
+                style={orderStyles.input}
+                value={address}
+                onChangeText={setAddress}
+                placeholder="House #, street, area"
+                multiline
+              />
+            </View>
             <Text style={orderStyles.inputLabel}>Phone</Text>
             <View style={orderStyles.inputShell}>
               <TextInput style={orderStyles.input} value={phone} onChangeText={setPhone} placeholder="+923351351472" keyboardType="phone-pad" />
@@ -407,8 +419,8 @@ export const ProductDetailScreen = ({ route, navigation }: any) => {
             </View>
           </View>
 
-          {submitted && (Number(quantity) < 1 || city.trim().length < 2 || phone.trim().length < 7) ? (
-            <Text style={orderStyles.errorText}>Enter quantity, city and phone to request a quotation.</Text>
+          {submitted && (Number(quantity) < 1 || city.trim().length < 2 || address.trim().length < 5 || phone.trim().length < 7) ? (
+            <Text style={orderStyles.errorText}>Enter quantity, city, delivery address and phone to request a quotation.</Text>
           ) : null}
         </ScrollView>
 
@@ -1171,8 +1183,8 @@ const batterySelectStyles = StyleSheet.create({
   header: { minHeight: 70, paddingHorizontal: 16, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 12 },
   headerButton: { width: 44, height: 44, borderRadius: 15, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: 'rgba(232,217,190,0.76)', alignItems: 'center', justifyContent: 'center', shadowColor: '#6B5B43', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.07, shadowRadius: 11, elevation: 2 },
   headerCopy: { flex: 1 },
-  headerTitle: { color: '#10213A', fontSize: 22, fontWeight: '900' },
-  headerSubtitle: { color: '#64748B', fontSize: 13, fontWeight: '700', marginTop: 2 },
+  headerTitle: { color: '#10213A', fontSize: 20, fontWeight: '900' },
+  headerSubtitle: { color: '#64748B', fontSize: 13, fontWeight: '600', marginTop: 2 },
   content: { paddingHorizontal: 14, paddingTop: 4, paddingBottom: 88, gap: 11 },
   infoCard: { borderRadius: 19, backgroundColor: '#FFF9EB', borderWidth: 1, borderColor: '#F5D482', padding: 13, flexDirection: 'row', alignItems: 'center', gap: 11 },
   infoIcon: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#FFF0BF', alignItems: 'center', justifyContent: 'center' },
@@ -1214,13 +1226,13 @@ const orderStyles = StyleSheet.create({
   header: { minHeight: 70, paddingHorizontal: 16, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 12 },
   headerButton: { width: 44, height: 44, borderRadius: 15, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(232,217,190,0.72)', shadowColor: '#6B5B43', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 11, elevation: 2 },
   headerCopy: { flex: 1 },
-  headerTitle: { color: '#10213A', fontSize: 22, fontWeight: '900' },
-  headerSubtitle: { color: '#64748B', fontSize: 13, fontWeight: '700', marginTop: 2 },
+  headerTitle: { color: '#10213A', fontSize: 20, fontWeight: '900' },
+  headerSubtitle: { color: '#64748B', fontSize: 13, fontWeight: '600', marginTop: 2 },
   content: { paddingHorizontal: 14, paddingTop: 4, paddingBottom: 92, gap: 12 },
   productCard: { minHeight: 132, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: 'rgba(232,217,190,0.76)', padding: 13, flexDirection: 'row', alignItems: 'center', gap: 13, shadowColor: '#6B5B43', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.07, shadowRadius: 14, elevation: 2 },
   productVisual: { width: 106, height: 106, borderRadius: 15, backgroundColor: '#F8F6F0', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   productCopy: { flex: 1, alignItems: 'flex-start' },
-  productTitle: { color: '#10213A', fontSize: 15, lineHeight: 19, fontWeight: '900' },
+  productTitle: { color: '#10213A', fontSize: 14, lineHeight: 17, fontWeight: '800' },
   categoryBadge: { marginTop: 7, borderRadius: 9, backgroundColor: '#FFF3D6', paddingHorizontal: 9, paddingVertical: 5 },
   categoryBadgeText: { color: '#9A6B00', fontSize: 11, fontWeight: '900', textTransform: 'capitalize' },
   productPrice: { color: '#10213A', fontSize: 18, fontWeight: '900', marginTop: 10 },
@@ -1230,7 +1242,7 @@ const orderStyles = StyleSheet.create({
   card: { borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: 'rgba(232,217,190,0.76)', padding: 13, shadowColor: '#6B5B43', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.06, shadowRadius: 14, elevation: 2 },
   sectionHeading: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 12 },
   sectionIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#FFF3D6', alignItems: 'center', justifyContent: 'center' },
-  sectionTitle: { color: '#10213A', fontSize: 15, fontWeight: '900' },
+  sectionTitle: { color: '#10213A', fontSize: 18, fontWeight: '900' },
   quantityRow: { minHeight: 54, borderRadius: 14, borderWidth: 1, borderColor: '#E2E8F0', paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   fieldLabel: { color: '#10213A', fontSize: 13, fontWeight: '900' },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: 13 },
@@ -1277,7 +1289,7 @@ const detailStyles = StyleSheet.create({
     minWidth: 70
   },
   backText: { color: '#10213A', fontSize: 13, fontWeight: '900' },
-  topTitle: { flex: 1, color: '#10213A', fontSize: 15, fontWeight: '900', textAlign: 'center' },
+  topTitle: { flex: 1, color: '#10213A', fontSize: 20, fontWeight: '900', textAlign: 'center' },
   topActions: { minWidth: 70, flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },
   iconButton: {
     width: 32,
@@ -1391,7 +1403,7 @@ const detailStyles = StyleSheet.create({
   },
   trustChipWide: { maxWidth: 190 },
   trustText: { color: '#334155', fontSize: 11, fontWeight: '800' },
-  sectionTitle: { marginTop: 20, marginBottom: 10, color: '#10213A', fontSize: 16, fontWeight: '900' },
+  sectionTitle: { marginTop: 20, marginBottom: 10, color: '#10213A', fontSize: 18, fontWeight: '900' },
   specGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   specCard: {
     width: '48%',
@@ -1961,7 +1973,7 @@ const solarSizeStyles = StyleSheet.create({
   },
   sectionTitle: {
     color: '#0F172A',
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: '900'
   },
   sectionSubtitle: {

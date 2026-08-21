@@ -5,10 +5,9 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  useWindowDimensions,
   View
 } from 'react-native';
-import { BadgePercent, CheckCircle2, Tag, X } from 'lucide-react-native';
+import { ArrowRight, BadgePercent, CheckCircle2, Tag, X } from 'lucide-react-native';
 import type { PromoState } from '@/types/promo.types';
 import { formatPkrCurrency } from '@/utils/promo';
 
@@ -25,11 +24,9 @@ export const PromoCodeCard = ({
   onApply,
   onRemove
 }: PromoCodeCardProps) => {
-  const { width } = useWindowDimensions();
   const isLoading = promo.status === 'loading';
   const isApplied = promo.status === 'applied';
   const canApply = Boolean(promo.enteredCode.trim()) && !isLoading && !isApplied;
-  const compact = width <= 350;
   const targetLabel = promo.appliesTo === 'installation'
     ? 'Installation Charges'
     : promo.appliesTo === 'panels'
@@ -52,45 +49,44 @@ export const PromoCodeCard = ({
         </View>
       </View>
 
-      <View style={styles.inputRow}>
-        <View style={[styles.inputShell, isApplied && styles.inputShellApplied]}>
-          {isApplied ? <CheckCircle2 color="#15935A" size={18} strokeWidth={2.4} /> : null}
-          <TextInput
-            value={promo.enteredCode}
-            onChangeText={onChangeCode}
-            style={styles.input}
-            placeholder="Enter promo code"
-            placeholderTextColor="#9AA4B2"
-            autoCapitalize="characters"
-            autoCorrect={false}
-            maxLength={32}
-            editable={!isLoading}
-            returnKeyType="done"
-            onSubmitEditing={() => {
-              if (canApply) onApply();
-            }}
-            accessibilityLabel="Promo code"
-          />
-        </View>
-        <Pressable
-          onPress={onApply}
-          disabled={!canApply}
-          accessibilityRole="button"
-          accessibilityLabel="Apply promo code"
-          accessibilityState={{ disabled: !canApply }}
-          style={({ pressed }) => [
-            styles.applyButton,
-            compact && styles.applyButtonCompact,
-            !canApply && styles.applyButtonDisabled,
-            pressed && canApply && styles.applyButtonPressed
-          ]}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#FFFFFF" size="small" />
-          ) : (
-            <Text style={styles.applyText}>{isApplied ? 'Applied' : 'Apply'}</Text>
-          )}
-        </Pressable>
+      <View style={[styles.inputShell, isApplied && styles.inputShellApplied]}>
+        {isApplied ? <CheckCircle2 color="#15935A" size={18} strokeWidth={2.4} /> : null}
+        <TextInput
+          value={promo.enteredCode}
+          onChangeText={onChangeCode}
+          style={styles.input}
+          placeholder="Enter promo code"
+          placeholderTextColor="#9AA4B2"
+          autoCapitalize="characters"
+          autoCorrect={false}
+          maxLength={32}
+          editable={!isLoading && !isApplied}
+          returnKeyType="done"
+          onSubmitEditing={() => {
+            if (canApply) onApply();
+          }}
+          accessibilityLabel="Promo code"
+        />
+        {!isApplied ? (
+          <Pressable
+            onPress={onApply}
+            disabled={!canApply}
+            accessibilityRole="button"
+            accessibilityLabel="Apply promo code"
+            accessibilityState={{ disabled: !canApply }}
+            style={({ pressed }) => [
+              styles.applyArrowButton,
+              !canApply && styles.applyArrowButtonDisabled,
+              pressed && canApply && styles.applyButtonPressed
+            ]}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <ArrowRight color="#FFFFFF" size={18} strokeWidth={2.6} />
+            )}
+          </Pressable>
+        ) : null}
       </View>
 
       {promo.message ? (
@@ -192,15 +188,8 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     fontWeight: '700'
   },
-  inputRow: {
-    marginTop: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10
-  },
   inputShell: {
-    flex: 1,
-    minWidth: 0,
+    marginTop: 12,
     height: 51,
     borderRadius: 15,
     borderWidth: 1,
@@ -209,6 +198,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
+    paddingRight: 6,
     gap: 8
   },
   inputShellApplied: {
@@ -224,35 +214,27 @@ const styles = StyleSheet.create({
     letterSpacing: 0.25,
     paddingVertical: 0
   },
-  applyButton: {
-    width: 104,
-    height: 51,
-    borderRadius: 15,
+  applyArrowButton: {
+    width: 39,
+    height: 39,
+    borderRadius: 999,
     backgroundColor: '#F5B400',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#D28D00',
-    shadowOffset: { width: 0, height: 5 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.16,
-    shadowRadius: 10,
+    shadowRadius: 8,
     elevation: 2
   },
-  applyButtonCompact: {
-    width: 88
-  },
-  applyButtonDisabled: {
+  applyArrowButtonDisabled: {
     backgroundColor: '#E8D9AB',
     shadowOpacity: 0,
     elevation: 0
   },
   applyButtonPressed: {
     opacity: 0.86,
-    transform: [{ scale: 0.98 }]
-  },
-  applyText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '900'
+    transform: [{ scale: 0.96 }]
   },
   messageRow: {
     minHeight: 28,

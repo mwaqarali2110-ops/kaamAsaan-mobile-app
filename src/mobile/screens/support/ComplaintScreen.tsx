@@ -359,11 +359,7 @@ export const ComplaintScreen = ({ navigation }: any) => {
             </View>
 
             <Pressable
-              style={({ pressed }) => [
-                styles.submitButton,
-                pressed && !isSubmitting && styles.buttonPressed,
-                isSubmitting && styles.buttonDisabled,
-              ]}
+              style={[styles.submitButton, isSubmitting && styles.buttonDisabled]}
               onPress={handleSubmit}
               disabled={isSubmitting}
               accessibilityRole="button"
@@ -722,17 +718,17 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     height: 56,
-    borderRadius: 18,
-    backgroundColor: '#F5B400',
+    borderRadius: 16,
+    backgroundColor: '#F5A400',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    shadowColor: '#D99A00',
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
+    shadowColor: '#C07A00',
+    shadowOpacity: 0.22,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 7 },
+    elevation: 3,
   },
   buttonPressed: {
     opacity: 0.86,

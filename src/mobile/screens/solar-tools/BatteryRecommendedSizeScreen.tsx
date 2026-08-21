@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#FBF8F1' },
   topBar: { height: 58, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconButton: { width: 36, height: 36, borderRadius: 13, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: 'rgba(232,217,190,0.76)', alignItems: 'center', justifyContent: 'center', shadowColor: '#6B5B43', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
-  topTitle: { color: '#10213A', fontSize: 13, fontWeight: '900' },
+  topTitle: { color: '#10213A', fontSize: 20, fontWeight: '900' },
   content: { paddingHorizontal: 14, paddingTop: 7, paddingBottom: 42, gap: 12 },
   recommendationCard: { borderRadius: 22, backgroundColor: '#FFF8E5', borderWidth: 1, borderColor: '#F5C542', paddingHorizontal: 17, paddingVertical: 20, alignItems: 'center', shadowColor: '#D79300', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.07, shadowRadius: 15, elevation: 2 },
   eyebrow: { color: '#B07800', fontSize: 10, fontWeight: '900', letterSpacing: 0.7, backgroundColor: '#FFF0BF', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
